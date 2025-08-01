@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Categorias')
+@section('title', config('app.name') . ' - Categorias')
 
 @section('content_header')
     <p style="font-size: 1.2em;">

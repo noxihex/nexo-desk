@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Auditoria')
+@section('title', config('app.name') . ' - Auditoria')
 
 @section('content_header')
 <p style="font-size: 1.2em;">

@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Grupos')
+@section('title', config('app.name') . ' - Grupos')
 
 @section('content_header')
 

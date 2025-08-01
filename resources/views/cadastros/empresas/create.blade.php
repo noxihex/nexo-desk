@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Criar Empresa')
+@section('title', config('app.name') . ' - Criar Empresa')
 
 @section('content_header')
     <p style="font-size: 1.2em;">

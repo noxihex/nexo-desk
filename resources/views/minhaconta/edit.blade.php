@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Minha Conta')
+@section('title', config('app.name') . ' - Minha Conta')
 
 @section('content_header')
     <h1>Minha Conta</h1>

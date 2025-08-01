@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Meus Tickets')
+@section('title', config('app.name') . ' - Meus Tickets')
 
 @section('content_header')
 <p style="font-size: 1.2em;">

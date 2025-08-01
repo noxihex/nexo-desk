@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Instalação do Sistema - Criar Usuário')
+@section('title', config('app.name') . ' - Criar Usuário')
 
 @section('content_header')
     <p style="font-size: 1.2em;">

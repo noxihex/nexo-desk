@@ -1,10 +1,10 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk')
+@section('title', config('app.name') . ' - Visão Geral')
 
 @section('content_header')
 <p style="font-size: 1.2em;">
-    BTXDesk <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Visão Geral
+    {{ config('app.name') }} <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Visão Geral
 </p>
 @stop
 

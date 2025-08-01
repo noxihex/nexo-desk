@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Empresas')
+@section('title', config('app.name') . ' - Empresas')
 
 @section('content_header')
 

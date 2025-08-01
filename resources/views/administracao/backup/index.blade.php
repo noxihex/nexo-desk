@@ -1,5 +1,5 @@
 @extends('adminlte::page')
-@section('title', 'BTXDesk - Backup')
+@section('title', config('app.name') . ' - Backup')
 
 @section('content_header')
 <p style="font-size: 1.2em;">

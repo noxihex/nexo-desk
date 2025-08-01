@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'Tickets Pendentes')
+@section('title', config('app.name') . ' - Tickets Pendentes')
 
 @section('content_header')
 <p style="font-size: 1.2em;">

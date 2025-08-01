@@ -1,6 +1,6 @@
 @extends('adminlte::page')
 
-@section('title', 'BTXDesk - Usuários Logados')
+@section('title', config('app.name') . ' - Usuários Logados')
 
 @section('content_header')
 <p style="font-size: 1.2em;">
