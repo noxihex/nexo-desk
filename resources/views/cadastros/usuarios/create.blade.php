@@ -1,0 +1,147 @@
+@extends('adminlte::page')
+
+@section('title', 'BTXDesk - Criar Usuário')
+
+@section('content_header')
+    <p style="font-size: 1.2em;">
+        Cadastros <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Usuários <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Criar
+    </p>
+@endsection
+
+@section('content')
+
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Preencha os dados para criar um novo usuário</h3>
+        </div>
+
+        <div class="card-body">
+            <form action="{{ route('usuarios.store') }}" method="POST">
+                @csrf
+
+                {{-- Nome --}}
+                <div class="form-group">
+                    <label for="name"><i class="fas fa-user"></i> Nome</label>
+                    <input type="text" name="name" id="name" class="form-control @error('name') is-invalid @enderror" value="{{ old('name') }}" required>
+                    @error('name')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Email --}}
+                <div class="form-group">
+                    <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="email" name="email" id="email" class="form-control @error('email') is-invalid @enderror" value="{{ old('email') }}" required>
+                    @error('email')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Senha --}}
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Senha</label>
+                    <input type="password" name="password" id="password" class="form-control @error('password') is-invalid @enderror" required>
+                    @error('password')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Confirmação de Senha --}}
+                <div class="form-group">
+                    <label for="password_confirmation"><i class="fas fa-lock"></i> Confirmar Senha</label>
+                    <input type="password" name="password_confirmation" id="password_confirmation" class="form-control @error('password_confirmation') is-invalid @enderror" required>
+                    @error('password_confirmation')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Grupo --}}
+                <div class="form-group">
+                    <label for="grupo"><i class="fas fa-users"></i> Grupo</label>
+                    <select name="grupo_id" id="grupo" class="form-control @error('grupo_id') is-invalid @enderror">
+                        <option value="">Sem Grupo</option> {{-- Permite a opção "Sem Grupo" --}}
+                        @foreach($grupos as $grupo)
+                            <option value="{{ $grupo->id }}">{{ $grupo->nome }}</option>
+                        @endforeach
+                    </select>
+                    @error('grupo_id')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Setor --}}
+                <div class="form-group">
+                    <label for="setor_id"><i class="fas fa-briefcase"></i> Setor</label>
+                    <select name="setor_id" id="setor_id" class="form-control @error('setor_id') is-invalid @enderror">
+                        <option value="">Sem Setor</option> {{-- Permite a opção "Sem Setor" --}}
+                        @foreach($setores as $setor)
+                            <option value="{{ $setor->id }}">{{ $setor->nome }}</option>
+                        @endforeach
+                    </select>
+                    @error('setor_id')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                {{-- Permissão (Papel/Role) --}}
+                <div class="form-group">
+                    <label for="role"><i class="fas fa-shield-alt"></i> Permissão</label>
+                    <select name="role" id="role" class="form-control @error('role') is-invalid @enderror">
+                        @foreach($roles as $role)
+                            <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                        @endforeach
+                    </select>
+                    @error('role')
+                        <span class="invalid-feedback" role="alert">
+                            <strong>{{ $message }}</strong>
+                        </span>
+                    @enderror
+                </div>
+
+                <div class="form-group d-flex justify-content-start">
+                    {{-- Botão de Salvar --}}
+                    <button type="submit" class="btn btn-success mr-2">
+                        <i class="fas fa-save"></i> Criar Usuário
+                    </button>
+
+                    {{-- Botão de Voltar --}}
+                    <a href="{{ route('usuarios.index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+@endsection
+
+@section('css')
+    <style>
+        .form-group label {
+            font-weight: 600;
+        }
+    </style>
+@endsection
+
+@section('js')
+    {{-- Incluindo o jQuery --}}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Esconde as opções "cliente" e "clientedc"
+            $('#role option[value="cliente"], #role option[value="clientedc"]').hide();
+        });
+    </script>
+@endsection
