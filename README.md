@@ -10,7 +10,7 @@ Siga os passos abaixo para configurar o projeto em seu ambiente local.
 
 Certifique-se de ter as seguintes ferramentas instaladas:
 
-* **PHP**: Versão 8.1 ou superior.
+* **PHP**: Versão 7.3 ou superior (recomendável até a 8.1).
 * **Composer**: Gerenciador de dependências PHP.
 * **Node.js e NPM**: Para gerenciar os assets de frontend.
 
