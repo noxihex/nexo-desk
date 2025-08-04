@@ -28,3 +28,6 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+/public/favicon.ico
+/public/vendor/adminlte/dist/img/logodesk.png
