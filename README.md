@@ -58,7 +58,7 @@ Certifique-se de ter as seguintes ferramentas instaladas:
 7.  **Instale as dependências do Node.js e compile os assets:**
     ```bash
     npm install
-    npm run build
+    npm run prod
     ```
 
 ### Primeiro Acesso (Sistema do Zero)
