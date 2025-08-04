@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'BTX Desk',
+    'title' => env('APP_NAME_INICIO') . ' ' . env('APP_NAME_FINAL'),
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -64,12 +64,12 @@ return [
     |
     */
 
-    'logo' => '<b>BTX</b> Desk',
-    'logo_img' => 'vendor/adminlte/dist/img/logobtxdesk.png',
+    'logo' => '<b>' . env('APP_NAME_INICIO') . '</b> ' . env('APP_NAME_FINAL'),
+    'logo_img' => 'vendor/adminlte/dist/img/logodesk.png',
     'logo_img_class' => 'brand-image img-circle elevation-3',
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
-    'logo_img_alt' => 'BTX Desk',
+    'logo_img_alt' => env('APP_NAME_INICIO') . ' ' . env('APP_NAME_FINAL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -87,8 +87,8 @@ return [
     'auth_logo' => [
         'enabled' => false,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/logobtxdesk.png',
-            'alt' => 'BTX Desk',
+            'path' => 'vendor/adminlte/dist/img/logodesk.png',
+            'alt' => env('APP_NAME_INICIO') . ' ' . env('APP_NAME_FINAL'),
             'class' => '',
             'width' => 50,
             'height' => 50,
@@ -114,8 +114,8 @@ return [
         'enabled' => true,
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/logobtxdesk.png',
-            'alt' => 'BTX Desk',
+            'path' => 'vendor/adminlte/dist/img/logodesk.png',
+            'alt' => env('APP_NAME_INICIO') . ' ' . env('APP_NAME_FINAL'),
             'effect' => 'animation__shake',
             'width' => 80,
             'height' => 80,
