@@ -17,6 +17,7 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClienteTicketController;
 use App\Http\Controllers\NotificacaoController;
+use App\Http\Controllers\ContratoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -146,7 +147,8 @@ Route::post('/tickets/{ticket}/mensagens', [MensagemController::class, 'store'])
     Route::prefix('cadastros')->group(function () {
 
 
-
+        // Rotas para gestão de contratos
+        Route::resource('contratos', ContratoController::class);
 
         // Rotas para gestão de categorias
         Route::resource('categorias', CategoriaController::class);
