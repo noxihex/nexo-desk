@@ -18,19 +18,16 @@
         <form action="{{ route('tickets.cliente.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
 
-            <!-- Campo de Assunto -->
             <div class="form-group">
                 <label for="assunto"><i class="fas fa-tag"></i> Assunto</label>
                 <input type="text" name="assunto" class="form-control" required>
             </div>
 
-            <!-- Campo de Descrição -->
             <div class="form-group">
                 <label for="descricao"><i class="fas fa-align-left"></i> Descrição</label>
-                <textarea name="descricao" class="form-control" rows="5" required></textarea>
+                <textarea id="descricao" name="descricao" class="form-control" rows="5" required></textarea>
             </div>
 
-            <!-- Campo de Contato e Empresa (não editáveis) -->
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="cliente_id"><i class="fas fa-user"></i> Contato</label>
@@ -45,18 +42,32 @@
                 </div>
             </div>
 
-            <!-- Campo de Setor -->
             <div class="form-group">
                 <label for="setor_id"><i class="fas fa-sitemap"></i> Setor</label>
-                <select name="setor_id" id="setor_id" class="form-control">
+                <select name="setor_id" id="setor_id" class="form-control" required>
                     <option value="">Selecione um setor</option>
                     @foreach($setores as $setor)
                         <option value="{{ $setor->id }}">{{ $setor->nome }}</option>
                     @endforeach
                 </select>
             </div>
+            
+            {{-- NOVO: Campo de Serviço --}}
+            <div class="form-group">
+                <label for="servico_id"><i class="fas fa-concierge-bell"></i> Serviço:</label>
+                <select name="servico_id" id="servico_id" class="form-control">
+                    <option value="">Nenhum serviço específico</option>
+                    @foreach($servicos as $servico)
+                        <option value="{{ $servico->id }}">{{ $servico->nome }}</option>
+                    @endforeach
+                </select>
+            </div>
 
-            <!-- Botão para anexos -->
+            {{-- NOVO: Container para o questionário dinâmico --}}
+            <div id="questionario-container">
+                </div>
+
+
             <div class="form-group">
                 <button type="button" class="btn btn-info" onclick="mostrarAnexos()">
                     <i class="fas fa-paperclip"></i> Enviar Anexos
@@ -64,7 +75,6 @@
                 <small class="form-text text-muted">Você pode adicionar até 5 anexos, máximo 5MB cada.</small>
             </div>
 
-            <!-- Campos de Anexos (inicialmente ocultos) -->
             <div class="form-group d-none" id="anexosFields">
                 <label for="anexos"><i class="fas fa-paperclip"></i> Selecionar Anexos:</label>
                 <div class="d-flex">
@@ -74,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- Botões de Ação -->
             <div class="form-group d-flex justify-content-start mt-3">
                 <button type="submit" class="btn btn-success mr-2">
                     <i class="fas fa-save"></i> Criar Ticket
@@ -95,5 +104,56 @@
     function mostrarAnexos() {
         document.getElementById('anexosFields').classList.toggle('d-none');
     }
+
+    // NOVO: Lógica para carregar o questionário dinamicamente
+    document.addEventListener('DOMContentLoaded', function () {
+        const servicoSelect = document.getElementById('servico_id');
+        const questionarioContainer = document.getElementById('questionario-container');
+
+        servicoSelect.addEventListener('change', function () {
+            const servicoId = this.value;
+            // Limpa o container de perguntas anteriores
+            questionarioContainer.innerHTML = '';
+
+            if (servicoId) {
+                // Faz a chamada AJAX para buscar o questionário
+                fetch(`/servicos/${servicoId}/questionario`)
+                    .then(response => response.json())
+                    .then(perguntas => {
+                        if (perguntas && perguntas.length > 0) {
+                            
+                            // Cria um cabeçalho para a seção
+                            const header = document.createElement('h5');
+                            header.className = 'mt-3';
+                            header.innerText = '';
+                            questionarioContainer.appendChild(header);
+
+                            // Itera sobre as perguntas e cria os inputs
+                            perguntas.forEach(pergunta => {
+                                // Só cria o campo se a pergunta não for vazia
+                                if (pergunta.trim() !== '') {
+                                    const formGroup = document.createElement('div');
+                                    formGroup.className = 'form-group';
+
+                                    const label = document.createElement('label');
+                                    label.innerText = pergunta;
+
+                                    const input = document.createElement('input');
+                                    input.type = 'text';
+                                    input.name = 'questionario_respostas[]';
+                                    input.className = 'form-control';
+                                    input.required = true; // Torna a resposta obrigatória se a pergunta existe
+
+                                    formGroup.appendChild(label);
+                                    formGroup.appendChild(input);
+                                    questionarioContainer.appendChild(formGroup);
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => console.error('Erro ao buscar o questionário:', error));
+            }
+        });
+    });
 </script>
 @endsection

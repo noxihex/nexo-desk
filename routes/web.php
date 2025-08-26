@@ -18,6 +18,7 @@ use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClienteTicketController;
 use App\Http\Controllers\NotificacaoController;
 use App\Http\Controllers\ContratoController;
+use App\Http\Controllers\Cadastros\ServicoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -94,6 +95,8 @@ Route::middleware('auth', 'verifica.status')->group(function () {
     Route::get('/tickets/cliente/{id}', [ClienteTicketController::class, 'show'])->name('tickets.cliente.show');
 
     Route::post('/tickets/cliente/{id}/mensagens', [ClienteTicketController::class, 'storeMessage'])->name('tickets.cliente.mensagens.store');
+
+    Route::get('/servicos/{servico}/questionario', [ClienteTicketController::class, 'getQuestionario'])->name('servicos.questionario');
 
 
 // Rota para carregar a página/modal de transferência (GET)
@@ -181,6 +184,19 @@ Route::post('/tickets/{ticket}/mensagens', [MensagemController::class, 'store'])
         Route::resource('setores', SetorController::class)->parameters([
             'setores' => 'setor',
         ]);
+
+        Route::get('/empresas/{empresa}/servicos/create', [ServicoController::class, 'create'])->name('servicos.create');
+        Route::post('/empresas/{empresa}/servicos', [ServicoController::class, 'store'])->name('servicos.store');
+        Route::get('/servicos/{servico}/edit', [ServicoController::class, 'edit'])->name('servicos.edit');
+        Route::put('/servicos/{servico}', [ServicoController::class, 'update'])->name('servicos.update');
+        Route::delete('/servicos/{servico}', [ServicoController::class, 'destroy'])->name('servicos.destroy');
+            
+
+
+
+    
+    
     });
+    
 });
 

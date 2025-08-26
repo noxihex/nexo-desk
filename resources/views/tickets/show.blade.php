@@ -80,7 +80,8 @@
         </div>
 
         <div class="mt-2">
-            <p><strong>Descrição:</strong> {{ $ticket->descricao }}</p>
+            <p><strong>Descrição:</strong></p>
+<div style="white-space: pre-line;">{{ $ticket->descricao }}</div>
         </div>
 
         @if($ticket->status === 'fechado' && !empty($ticket->descricao_final))

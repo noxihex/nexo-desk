@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Ticket;
 use App\Models\Categoria;
 use App\Models\Empresa;
+use App\Models\Servico;
 use App\Models\User;
 use App\Models\Grupo;
 use App\Models\Setor;
@@ -16,6 +17,7 @@ use App\Models\Mensagem;
 use App\Models\Notificacao;
 use App\Models\TicketAttachment;
 use App\Models\MessageAttachment;
+
 
 
 
@@ -135,38 +137,92 @@ public function storeMessage(Request $request, $id)
 
 public function create()
 {
-    // Obtém todos os setores disponíveis para preencher o select
+    $user = auth()->user();
+    $empresa = $user->empresa;
+    
+    // Busca os setores e os serviços da empresa do usuário
     $setores = Setor::all();
+    $servicos = $empresa ? $empresa->servicos()->get() : collect();
 
-    // Retorna a view de criação de ticket com os setores disponíveis
-    return view('tickets.cliente.create', compact('setores'));
+    // Retorna a view com os dados necessários
+    return view('tickets.cliente.create', compact('setores', 'servicos'));
 }
 
 public function store(Request $request)
 {
-    // Valida os campos do formulário
+    // Valida os campos do formulário, incluindo os novos
     $request->validate([
         'assunto' => 'required|string|max:255',
         'descricao' => 'required|string',
-        'setor_id' => 'required|exists:setores,id',
-        'anexos.*' => 'file|max:5120', // Valida os anexos (opcional)
+        'setor_id' => 'nullable|exists:setores,id', // Setor agora pode ser nulo
+        'servico_id' => 'nullable|exists:servicos,id',
+        'questionario_respostas' => 'nullable|array',
+        'anexos.*' => 'file|max:5120',
     ]);
 
+    // Prepara a descrição do ticket
+    $descricaoOriginal = $request->input('descricao');
+    $prependText = '';
+
+    // Se um serviço foi selecionado, busca os dados e monta o texto
+    if ($request->filled('servico_id')) {
+        $servico = Servico::find($request->input('servico_id'));
+        
+        if ($servico) {
+            // Monta o texto do questionário
+            $respostas = $request->input('questionario_respostas', []);
+            $perguntas = $servico->questionario ?? [];
+            
+            $questionarioText = '';
+            foreach ($perguntas as $index => $pergunta) {
+                if (!empty($pergunta) && isset($respostas[$index]) && !empty($respostas[$index])) {
+                    $questionarioText .= "-> {$pergunta}\n";
+                    $questionarioText .= "R: {$respostas[$index]}\n\n";
+                }
+            }
+            
+            if (!empty($questionarioText)) {
+                 $prependText .= "--- QUESTIONÁRIO DO SERVIÇO: {$servico->nome} ---\n";
+                 $prependText .= $questionarioText;
+            }
+
+            // Monta o texto das informações do serviço
+            $informacoes = $servico->informacoes ?? [];
+            $informacoesText = '';
+            foreach ($informacoes as $info) {
+                if (!empty($info['campo']) && !empty($info['valor'])) {
+                    $informacoesText .= "- {$info['campo']}: {$info['valor']}\n";
+                }
+            }
+            
+            if (!empty($informacoesText)) {
+                $prependText .= "--- INFORMAÇÕES DO SERVIÇO ---\n";
+                $prependText .= $informacoesText . "\n";
+            }
+        }
+    }
+    
+    if(!empty($prependText)){
+        $prependText .= "--------------------------------------------------\n\n";
+    }
+
+    $descricaoFinal = $prependText . $descricaoOriginal;
+    
     // Obtém o usuário autenticado
     $user = auth()->user();
 
-    // Cria o ticket
+    // Cria o ticket com a descrição modificada
     $ticket = Ticket::create([
         'assunto' => $request->assunto,
-        'descricao' => $request->descricao,
+        'descricao' => $descricaoFinal, // Usa a descrição final
         'setor_id' => $request->setor_id,
-        'user_id' => $user->id, // ID do usuário autenticado
-        'cliente_id' => $user->id, // ID do cliente (também o usuário autenticado)
-        'empresa_id' => $user->empresa_id, // Empresa vinculada ao usuário
-        'status' => 'aberto', // Status inicial
-        'grupo_id' => null, // Sem grupo inicialmente
-        'categoria_id' => null, // Sem categoria inicialmente
-        'atribuido_ao_analista_id' => null, // Sem analista atribuído inicialmente
+        'user_id' => $user->id,
+        'cliente_id' => $user->id,
+        'empresa_id' => $user->empresa_id,
+        'status' => 'aberto',
+        'grupo_id' => null,
+        'categoria_id' => null,
+        'atribuido_ao_analista_id' => null,
     ]);
 
     // Processa anexos, se houver
@@ -183,6 +239,7 @@ public function store(Request $request)
             }
         }
     }
+
 
         // Criação de notificação
         $this->criarNotificacao($ticket);
@@ -314,5 +371,10 @@ public function calcularHorasSugeridas($id)
     }
 }
 
+public function getQuestionario(Servico $servico)
+{
+    // Garante que a resposta seja sempre um array, mesmo se o campo for nulo no BD
+    return response()->json($servico->questionario ?? []);
+}
 
 }

@@ -9,24 +9,26 @@
 @endsection
 
 @section('content')
+    {{-- CARD PRINCIPAL PARA EDITAR A EMPRESA --}}
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Editar Empresa: {{ $empresa->nome }}</h3>
         </div>
 
         <div class="card-body">
+            {{-- O formulário da empresa começa aqui --}}
             <form action="{{ route('empresas.update', $empresa->id) }}" method="POST" id="empresaForm">
                 @csrf
                 @method('PUT')
 
-                {{-- Nome Fantasia --}}
+                {{-- NOME FANTASIA --}}
                 <div class="form-group">
                     <label for="nome"><i class="fas fa-building"></i> Nome Fantasia</label>
                     <input type="text" name="nome" id="nome" class="form-control @error('nome') is-invalid @enderror" value="{{ old('nome', $empresa->nome) }}" required>
                     @error('nome')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Razão Social --}}
+                {{-- RAZÃO SOCIAL --}}
                 <div class="form-group">
                     <label for="razao_social"><i class="fas fa-briefcase"></i> Razão Social</label>
                     <input type="text" name="razao_social" id="razao_social" class="form-control @error('razao_social') is-invalid @enderror" value="{{ old('razao_social', $empresa->razao_social) }}" @role('analista') disabled @endrole>
@@ -40,28 +42,28 @@
                     @error('cnpj')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Endereço --}}
+                {{-- ENDEREÇO --}}
                 <div class="form-group">
                     <label for="endereco"><i class="fas fa-map-marker-alt"></i> Endereço</label>
                     <input type="text" name="endereco" id="endereco" class="form-control @error('endereco') is-invalid @enderror" value="{{ old('endereco', $empresa->endereco) }}" required>
                     @error('endereco')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Bairro --}}
+                {{-- BAIRRO --}}
                 <div class="form-group">
                     <label for="bairro"><i class="fas fa-map-pin"></i> Bairro</label>
                     <input type="text" name="bairro" id="bairro" class="form-control @error('bairro') is-invalid @enderror" value="{{ old('bairro', $empresa->bairro) }}" required>
                     @error('bairro')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Cidade --}}
+                {{-- CIDADE --}}
                 <div class="form-group">
                     <label for="cidade"><i class="fas fa-city"></i> Cidade</label>
                     <input type="text" name="cidade" id="cidade" class="form-control @error('cidade') is-invalid @enderror" value="{{ old('cidade', $empresa->cidade) }}" required @role('analista') disabled @endrole>
                     @error('cidade')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Estado --}}
+                {{-- ESTADO --}}
                 <div class="form-group">
                     <label for="estado"><i class="fas fa-flag"></i> Estado</label>
                     <select name="estado" id="estado" class="form-control @error('estado') is-invalid @enderror" required @role('analista') disabled @endrole>
@@ -97,42 +99,91 @@
                     @error('estado')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- Horas Contratadas --}}
+                {{-- HORAS CONTRATADAS --}}
                 <div class="form-group">
                     <label for="horas_contratadas"><i class="fas fa-clock"></i> Horas Contratadas</label>
                     <input type="number" name="horas_contratadas" id="horas_contratadas" class="form-control @error('horas_contratadas') is-invalid @enderror" value="{{ old('horas_contratadas', $empresa->horas_contratadas) }}" required @role('analista') disabled @endrole>
                     @error('horas_contratadas')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- NOVO CAMPO DE CONTRATOS --}}
+                {{-- CONTRATOS ASSOCIADOS --}}
                 <div class="form-group">
                     <label for="contratos"><i class="fas fa-file-contract"></i> Contratos Associados</label>
                     <select name="contratos[]" id="contratos" class="form-control select2" multiple="multiple">
                         @foreach($contratos as $contrato)
                             <option value="{{ $contrato->id }}"
-                                {{-- Verifica se o contrato já está associado à empresa para pré-selecionar --}}
-                                @if(in_array($contrato->id, old('contratos', $empresa->contratos->pluck('id')->toArray())))
-                                    selected
-                                @endif
-                            >
+                                @if(in_array($contrato->id, old('contratos', $empresa->contratos->pluck('id')->toArray()))) selected @endif >
                                 {{ $contrato->nome }} - R$ {{ number_format($contrato->valor, 2, ',', '.') }} - {{ $contrato->horas_contratadas }} Horas
                             </option>
                         @endforeach
                     </select>
-                    @error('contratos')
-                        <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
-                    @enderror
                 </div>
 
-                <div class="form-group d-flex justify-content-start">
+                <div class="form-group d-flex justify-content-start mt-4">
                     <button type="submit" class="btn btn-success mr-2"><i class="fas fa-save"></i> Atualizar Empresa</button>
                     <a href="{{ route('empresas.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
                 </div>
             </form>
+            {{-- O formulário da empresa termina aqui --}}
         </div>
     </div>
 
-    {{-- Lista de Clientes Vinculados --}}
+
+{{-- ========================================================================= --}}
+    {{-- ========= SEÇÃO DE SERVIÇOS (COM ESTILO IDÊNTICO AO DE CONTATOS) ========= --}}
+    {{-- ========================================================================= --}}
+    <div class="card mt-4">
+        <div class="card-header d-flex flex-column flex-md-row align-items-md-center">
+            <h3 class="card-title mb-2 mb-md-0">
+                 Serviços Contratados
+            </h3>
+            {{-- BOTÃO "ADICIONAR" COM ESTILO IDÊNTICO AO DE CONTATOS --}}
+            <a href="{{ route('servicos.create', $empresa) }}" class="btn btn-success ml-md-auto">
+                <i class="fas fa-plus-circle"></i> Adicionar Serviço
+            </a>
+        </div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        {{-- COLUNA DE ID RESPONSIVA IDÊNTICA À DE CONTATOS --}}
+                        <th class="d-none d-md-table-cell" style="width: 10%;">ID</th>
+                        <th>Nome do Serviço</th>
+                        <th class="text-center" style="width: 25%;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($empresa->servicos as $servico)
+                        <tr>
+                            <td class="d-none d-md-table-cell">{{ $servico->id }}</td>
+                            <td>{{ $servico->nome }}</td>
+                            <td class="text-center">
+                                {{-- BOTÕES DE AÇÃO COM ESTILO IDÊNTICO AO DE CONTATOS --}}
+                                <a href="{{ route('servicos.edit', $servico) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> Editar
+                                </a>
+                                
+                                <form action="{{ route('servicos.destroy', $servico) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este serviço?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i> Excluir
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="3" class="text-center text-muted">Nenhum serviço cadastrado.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    {{-- Lista de Clientes Vinculados (sem alterações) --}}
     <div class="card mt-4">
         <div class="card-header d-flex flex-column flex-md-row align-items-md-center">
             <h3 class="card-title mb-2 mb-md-0">Contatos da Empresa</h3>
@@ -200,23 +251,26 @@
             padding: .375rem .75rem;
             border: 1px solid #ced4da;
         }
-
-        /* --- COLOQUE O NOVO CÓDIGO AQUI --- */
-        /* Altera a cor de fundo do item selecionado */
         .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #d1e7ff; /* Azul claro suave (cor de alerta 'info' do Bootstrap) */
-            border-color: #b6d4fe;     /* Borda azul um pouco mais escura */
-            color: #0c5460;            /* Cor do texto para bom contraste */
+            background-color: #d1e7ff;
+            border-color: #b6d4fe;
+            color: #0c5460;
+        }
+        /* Estilo para botões de ação pequenos */
+        .btn-xs {
+            padding: 0.1rem 0.4rem;
+            font-size: 0.75rem;
         }
     </style>
 @endsection
 
 @push('js')
+    {{-- O JavaScript complexo de AJAX foi removido, mantendo apenas o essencial --}}
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Toastr para notificações
+            // Toastr para notificações de sucesso/erro vindas do redirect
             @if(session('success'))
                 toastr.success('{{ session('success') }}', 'Sucesso', { closeButton: true, progressBar: true });
             @endif
@@ -224,14 +278,14 @@
                 toastr.error('{{ session('error') }}', 'Erro', { closeButton: true, progressBar: true });
             @endif
 
-            // Inicializa o Select2
+            // Inicializa o Select2 para os contratos
             $('#contratos').select2({
                 placeholder: "Selecione um ou mais contratos",
                 allowClear: true,
-                width: '100%' // <-- Adicione esta linha
+                width: '100%'
             });
 
-            // Máscara de CNPJ
+            // Máscara de CNPJ e submit do form principal
             $('#cnpj').on('input', function() {
                 let cnpj = $(this).val().replace(/\D/g, '').slice(0, 14);
                 if (cnpj.length > 11) {
@@ -240,12 +294,10 @@
                     cnpj = cnpj.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
                 }
                 $(this).val(cnpj);
-            }).trigger('input'); // Aciona a máscara ao carregar a página
+            }).trigger('input');
 
             $('#empresaForm').on('submit', function() {
-                // Habilita campos desabilitados para que seus valores sejam enviados
                 $('#empresaForm :disabled').prop('disabled', false);
-                // Remove a máscara do CNPJ antes de enviar
                 const cnpjSemFormatacao = $('#cnpj').val().replace(/\D/g, '');
                 $('#cnpj').val(cnpjSemFormatacao);
             });
