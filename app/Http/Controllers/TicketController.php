@@ -25,6 +25,8 @@ class TicketController extends Controller
      */
     public function index(Request $request)
 {
+    $user = Auth::user();
+
     // Define um valor padrão para 'sort' se estiver vazio
     $sort = $request->input('sort') ?: 'created_at'; // Padrão é 'created_at'
     $search = $request->input('search'); // Termo de pesquisa
@@ -38,6 +40,10 @@ class TicketController extends Controller
 
     // Query base com os relacionamentos necessários
     $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'grupo', 'setor', 'analista');
+
+    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+        $ticketsQuery->where('setor_id', $user->setor_id);
+    }
 
     // Lógica de pesquisa (ID ou Assunto)
     if ($search) {
@@ -98,10 +104,14 @@ class TicketController extends Controller
     }
 
     // Carrega setores e grupos para os filtros
-    $setores = Setor::all();
+    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+        $setores = Setor::where('id', $user->setor_id)->get();
+    } else {
+        $setores = Setor::all();
+    }
     $grupos = Grupo::all();
 
-    // Retorna a view com os dados
+    // Se o usuário for um analista, ele só poderá ver e filtrar seu próprio setor.
     return view('tickets.index', compact('tickets', 'showClosed', 'setores', 'grupos', 'setorId', 'grupoId'));
 }
 
@@ -202,6 +212,14 @@ class TicketController extends Controller
      */
     public function show(Ticket $ticket)
     {
+            $user = Auth::user();
+    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+        if ($ticket->setor_id !== $user->setor_id) {
+            // Se o setor do ticket for diferente do setor do analista, nega o acesso.
+            abort(403, 'Acesso não autorizado.');
+        }
+    }
+    
         // Recupera os anexos relacionados ao ticket
         $anexos = $ticket->attachments;
 
@@ -598,12 +616,19 @@ public function pendentes(Request $request)
 {
     $user = Auth::user(); // Usuário logado
 
-    // Obtém os tickets abertos sem categoria que pertencem ao mesmo grupo do usuário
-    $tickets = Ticket::with(['cliente', 'empresa', 'setor', 'analista'])
+    // Inicia a query base para tickets pendentes
+    $ticketsQuery = Ticket::with(['cliente', 'empresa', 'setor', 'analista'])
         ->whereNull('categoria_id') // Sem categoria atribuída
-        ->where('status', '!=', 'fechado') // Apenas tickets abertos
-        ->orderBy('created_at', 'desc') // Ordena por data de criação
-        ->paginate(10); // Paginação
+        ->where('status', '!=', 'fechado'); // Apenas tickets abertos
+
+    // ADIÇÃO: Aplica o filtro de setor para o perfil 'analista'
+    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+        $ticketsQuery->where('setor_id', $user->setor_id);
+    }
+
+    // Executa a query final com ordenação e paginação
+    $tickets = $ticketsQuery->orderBy('created_at', 'desc')
+        ->paginate(10);
 
     return view('tickets.pendentes', compact('tickets'));
 }
