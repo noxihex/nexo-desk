@@ -183,4 +183,90 @@ $ticket = Ticket::findOrFail($id);
         ]);
     }
 
+    public function search(Request $request)
+    {
+        // Valida os parâmetros de entrada (todos são opcionais)
+        $request->validate([
+            'assunto' => 'nullable|string|max:255',
+            'setor_id' => 'nullable|integer|exists:setores,id',
+            'grupo_id' => 'nullable|integer|exists:grupos,id',
+            'status' => 'nullable|string|in:aberto,fechado',
+        ]);
+
+        // Inicia a query base com os relacionamentos
+        $query = Ticket::query()->with(['categoria', 'cliente', 'empresa']);
+
+        // Aplica os filtros dinamicamente se eles existirem na requisição
+        $query->when($request->input('assunto'), function ($q, $assunto) {
+            return $q->where('assunto', 'like', "%{$assunto}%");
+        });
+
+        $query->when($request->input('setor_id'), function ($q, $setor_id) {
+            return $q->where('setor_id', $setor_id);
+        });
+
+        $query->when($request->input('grupo_id'), function ($q, $grupo_id) {
+            return $q->where('grupo_id', $grupo_id);
+        });
+
+        $query->when($request->input('status'), function ($q, $status) {
+            if ($status === 'aberto') {
+                return $q->where('status', '!=', 'fechado');
+            }
+            if ($status === 'fechado') {
+                return $q->where('status', 'fechado');
+            }
+        });
+
+        // Executa a query com paginação e mantém os parâmetros de filtro nos links da paginação
+        $tickets = $query->paginate(10)->appends($request->query()); // <-- CORREÇÃO APLICADA AQUI
+
+        return response()->json($tickets);
+    }
+
+
+    public function assumirTicket(Request $request, $id)
+    {
+        // Validação dos dados enviados pela API
+        $request->validate([
+            'analista_id'  => 'required|exists:users,id',
+            'setor_id'     => 'required|exists:setores,id',
+            'categoria_id' => 'required|exists:categorias,id',
+        ]);
+
+        // Busca o ticket pelo ID
+        $ticket = Ticket::findOrFail($id);
+
+        // Busca o analista que foi enviado na API
+        $analista = User::findOrFail($request->analista_id);
+
+        // Atualiza setor e categoria do ticket
+        $ticket->setor_id = $request->setor_id;
+        $ticket->categoria_id = $request->categoria_id;
+
+        // Atribui o ticket ao analista enviado
+        $ticket->atribuido_ao_analista_id = $analista->id;
+
+        // Atribui o grupo do usuário ao ticket, se ele tiver um grupo
+        $ticket->grupo_id = $analista->grupo_id ?? null;
+
+        // Preenche os campos de auditoria para indicar quem assumiu e quando
+        $ticket->assumido_por_usuario_id = $analista->id;
+        $ticket->data_hora_assumido = now();
+
+        $ticket->save();
+
+        // Cria uma mensagem de auditoria no histórico do ticket
+        // Usando o relacionamento igual aos métodos anteriores
+        $ticket->mensagens()->create([
+            'user_id'   => $analista->id,
+            'descricao' => "{$analista->name} assumiu o ticket.",
+        ]);
+
+        return response()->json([
+            'message' => 'Ticket assumido com sucesso!',
+            'ticket'  => $ticket
+        ], 200);
+    }
+
 }
