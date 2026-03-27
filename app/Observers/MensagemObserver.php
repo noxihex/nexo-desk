@@ -6,7 +6,7 @@ use App\Models\Mensagem;
 use App\Models\User;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str; // <-- Importado para podermos limitar os caracteres da mensagem
+use Illuminate\Support\Str;
 
 class MensagemObserver
 {
@@ -76,21 +76,24 @@ class MensagemObserver
 
     private function dispararScriptPython($emails, $titulo, $corpo, $urlBotao, $infoExtra = '')
     {
-        try {
-            $token = env('API_PYTHON_TOKEN', '3be11sXzH0Z9W40nUoFdDyAIw8JPd88T');
+        // O dispatch garante que o Laravel entregue a tela primeiro e execute o código abaixo depois
+        dispatch(function () use ($emails, $titulo, $corpo, $urlBotao, $infoExtra) {
+            try {
+                $token = env('API_PYTHON_TOKEN', '3be11sXzH0Z9W40nUoFdDyAIw8JPd88T');
 
-            Http::withToken($token)
-                ->timeout(5)
-                ->post('http://localhost:5000/send-email', [
-                    'emails' => $emails,
-                    'titulo_do_email' => $titulo,
-                    'corpo_do_email' => $corpo,
-                    'titulo_do_botao' => "Acessar ticket", // Atualizado para o formato novo da API
-                    'url_do_botao' => $urlBotao,
-                    'informacao_extra' => $infoExtra     // Envia a mensagem no Box Amarelo
-                ]);
-        } catch (\Exception $e) {
-            Log::error("Erro ao integrar com Python (MensagemObserver): " . $e->getMessage());
-        }
+                Http::withToken($token)
+                    ->timeout(5)
+                    ->post('http://localhost:5000/send-email', [
+                        'emails' => $emails,
+                        'titulo_do_email' => $titulo,
+                        'corpo_do_email' => $corpo,
+                        'titulo_do_botao' => "Acessar ticket", 
+                        'url_do_botao' => $urlBotao,
+                        'informacao_extra' => $infoExtra     
+                    ]);
+            } catch (\Exception $e) {
+                Log::error("Erro ao integrar com Python (MensagemObserver): " . $e->getMessage());
+            }
+        })->afterResponse(); // <-- O truque mágico do Laravel 8!
     }
 }
