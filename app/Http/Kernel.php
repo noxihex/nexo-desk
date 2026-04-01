@@ -66,5 +66,10 @@ class Kernel extends HttpKernel
 
         // Adicionando o middleware verifica.status
         'verifica.status' => \App\Http\Middleware\VerificaStatusUsuario::class,
+
+        // Middlewares do Spatie para permissões e papéis
+        'role'               => \Spatie\Permission\Middleware\RoleMiddleware::class,
+        'permission'         => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+        'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
     ];
 }
