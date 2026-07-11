@@ -68,24 +68,9 @@
                 </div>
             </div>
 
-            <!-- Campo Setor -->
+            <!-- Campo Categoria -->
             <div class="form-row">
                 <div class="form-group col-md-12">
-                    <label for="setor_id"><i class="fas fa-sitemap"></i> Setor</label>
-                    <select name="setor_id" id="setor_id" class="form-control">
-                        <option value="">Selecione um setor</option>
-                        @foreach($setores as $setor)
-                            <option value="{{ $setor->id }}" {{ $ticket->setor_id == $setor->id ? 'selected' : '' }}>
-                                {{ $setor->nome }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <!-- Campo Categoria e Atribuído ao Analista -->
-            <div class="form-row">
-                <div class="form-group col-md-6">
                     <label for="categoria_id"><i class="fas fa-list"></i> Categoria</label>
                     <select name="categoria_id" id="categoria_id" class="form-control" required>
                         <option value="">Selecione uma categoria</option>
@@ -96,16 +81,26 @@
                         @endforeach
                     </select>
                 </div>
+            </div>
+
+            <!-- Campo Setor e Atribuído ao Analista -->
+            <div class="form-row">
+                <div class="form-group col-md-6">
+                    <label for="setor_id"><i class="fas fa-sitemap"></i> Setor</label>
+                    <select name="setor_id" id="setor_id" class="form-control">
+                        <option value="">Selecione um setor</option>
+                        @foreach($setores as $setor)
+                            <option value="{{ $setor->id }}" {{ $ticket->setor_id == $setor->id ? 'selected' : '' }}>
+                                {{ $setor->nome }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
                 <div class="form-group col-md-6">
                     <label for="atribuido_ao_analista_id"><i class="fas fa-user-tie"></i> Atribuído ao Analista</label>
-                    <select name="atribuido_ao_analista_id" class="form-control">
-                        <option value="">Sem analista</option> <!-- Opção para deixar o campo nulo -->
-                        @foreach($analistas as $analista)
-                            <option value="{{ $analista->id }}" {{ $ticket->atribuido_ao_analista_id == $analista->id ? 'selected' : '' }}>
-                                {{ $analista->name }}
-                            </option>
-                        @endforeach
+                    <select name="atribuido_ao_analista_id" id="atribuido_ao_analista_id" class="form-control" disabled>
+                        <option value="">Selecione um setor primeiro</option>
                     </select>
                 </div>
             </div>
@@ -143,6 +138,31 @@
 
 <script>
     $(document).ready(function() {
+        const analistas = @json($analistas->map(fn ($analista) => ['id' => $analista->id, 'name' => $analista->name, 'setor_id' => $analista->setor_id])->values());
+        const analistaSelect = $('#atribuido_ao_analista_id');
+        const analistaInicial = @json(old('atribuido_ao_analista_id', $ticket->atribuido_ao_analista_id));
+
+        function atualizarAnalistas() {
+            const setorId = $('#setor_id').val();
+            analistaSelect.empty();
+
+            if (!setorId) {
+                analistaSelect.prop('disabled', true)
+                    .append('<option value="">Selecione um setor primeiro</option>');
+                return;
+            }
+
+            analistaSelect.prop('disabled', false)
+                .append('<option value="">Sem analista</option>');
+
+            analistas
+                .filter(analista => String(analista.setor_id) === String(setorId))
+                .forEach(analista => {
+                    const selected = String(analista.id) === String(analistaInicial) ? ' selected' : '';
+                    analistaSelect.append(`<option value="${analista.id}"${selected}>${analista.name}</option>`);
+                });
+        }
+
         // Configura a mensagem de "Nenhum resultado encontrado" para Select2
         $.fn.select2.defaults.set("language", {
             noResults: function() {
@@ -206,6 +226,8 @@
                     }
                 });
             }
+
+            atualizarAnalistas();
         });
 
         // Inicializa o evento 'change' manualmente se o setor estiver preenchido

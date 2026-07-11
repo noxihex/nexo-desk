@@ -323,13 +323,8 @@
                     <!-- Seleção de Analista -->
                     <div class="form-group">
                         <label for="analista-transfer">Analista:</label>
-                        <select name="analista" id="analista-transfer" class="form-control">
-                            <option value="" {{ is_null($ticket->atribuido_ao_analista_id) ? 'selected' : '' }}>Sem analista</option>
-                            @foreach ($analistas as $analista)
-                                <option value="{{ $analista->id }}" {{ $ticket->atribuido_ao_analista_id == $analista->id ? 'selected' : '' }}>
-                                    {{ $analista->name }}
-                                </option>
-                            @endforeach
+                        <select name="analista" id="analista-transfer" class="form-control" disabled>
+                            <option value="">Selecione um setor primeiro</option>
                         </select>
                     </div>
                 </div>
@@ -572,6 +567,34 @@
 
 <script>
     $(document).ready(function () {
+        const analistasTransferencia = @json($analistas->map(fn ($analista) => ['id' => $analista->id, 'name' => $analista->name, 'setor_id' => $analista->setor_id])->values());
+        const analistaTransferSelecionado = @json($ticket->atribuido_ao_analista_id);
+        const analistaTransfer = $('#analista-transfer');
+
+        function atualizarAnalistasTransferencia() {
+            const setorId = $('#setor-transfer').val();
+            analistaTransfer.empty();
+
+            if (!setorId) {
+                analistaTransfer.prop('disabled', true)
+                    .append('<option value="">Selecione um setor primeiro</option>');
+                return;
+            }
+
+            analistaTransfer.prop('disabled', false)
+                .append('<option value="">Sem analista</option>');
+
+            analistasTransferencia
+                .filter(analista => String(analista.setor_id) === String(setorId))
+                .forEach(analista => {
+                    const selected = String(analista.id) === String(analistaTransferSelecionado) ? ' selected' : '';
+                    analistaTransfer.append(`<option value="${analista.id}"${selected}>${analista.name}</option>`);
+                });
+        }
+
+        $('#setor-transfer').on('change', atualizarAnalistasTransferencia);
+        atualizarAnalistasTransferencia();
+
         // Exibir mensagens de sucesso ou erro usando Toastr
         @if(session('success'))
             toastr.success('{{ session('success') }}', 'Sucesso', {

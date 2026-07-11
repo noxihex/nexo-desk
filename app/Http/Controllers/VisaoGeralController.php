@@ -49,7 +49,7 @@ class VisaoGeralController extends Controller
         // Carrega listas de analistas e setores para os filtros
         $analistas = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
-        })->get();
+        })->where('status', true)->get();
 
         $setores = Setor::all();
 

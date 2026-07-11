@@ -127,7 +127,7 @@ class TicketController extends Controller
         $clientes = User::role(['cliente', 'clientedc'])->get();
         $empresas = Empresa::all();
         $setores = Setor::all();
-        $analistas = User::role(['analista', 'supervisor', 'administrador'])->get();
+        $analistas = $this->analistasAtivos()->get();
 
         $returnUrl = TicketReturnUrl::resolve($request);
 
@@ -147,7 +147,7 @@ class TicketController extends Controller
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'setor_id' => 'nullable|exists:setores,id',
-            'atribuido_ao_analista_id' => 'nullable|exists:users,id',
+            'atribuido_ao_analista_id' => $this->regrasAnalista('setor_id'),
         ], AttachmentRules::for('anexos')));
 
         // Criação do ticket
@@ -226,10 +226,8 @@ class TicketController extends Controller
             ? Categoria::where('setor_id', $ticket->setor_id)->get()
             : collect(); // Retorna coleção vazia se não houver setor associado
 
-        // Obter analistas associados ao setor do ticket (ou todos se o setor não estiver definido)
-        $analistas = $ticket->setor_id
-            ? User::where('setor_id', $ticket->setor_id)->get()
-            : User::all();
+        // A interface de transferência filtra esta lista pelo setor escolhido.
+        $analistas = $this->analistasAtivos()->get();
 
 
         $setorSelecionado = $ticket->setor_id;
@@ -248,8 +246,7 @@ class TicketController extends Controller
         $empresas = Empresa::all();
         $setores = Setor::all();
 
-        // Filtrando usuários com os papéis de analista, supervisor ou administrador
-        $analistas = User::role(['analista', 'supervisor', 'administrador'])->get();
+        $analistas = $this->analistasAtivos()->get();
 
         $returnUrl = TicketReturnUrl::resolve($request);
 
@@ -266,7 +263,7 @@ class TicketController extends Controller
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'setor_id' => 'nullable|exists:setores,id',
-            'atribuido_ao_analista_id' => 'nullable|exists:users,id',
+            'atribuido_ao_analista_id' => $this->regrasAnalista('setor_id'),
             'status' => 'required|in:aberto,pendente cliente,pendente analista,fechado',
         ]);
 
@@ -476,15 +473,20 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
 // Função para transferir o ticket
 public function transferirTicket(Request $request, $id)
 {
+    $dados = $request->validate([
+        'setor' => 'required|exists:setores,id',
+        'analista' => $this->regrasAnalista('setor'),
+    ]);
+
     $ticket = Ticket::findOrFail($id);
     $user = Auth::user(); // Recupera o usuário autenticado (quem está fazendo a transferência)
 
     // Atualiza o setor e o analista, se fornecidos
-    if ($request->setor) {
-        $ticket->setor_id = $request->setor;
+    if ($dados['setor']) {
+        $ticket->setor_id = $dados['setor'];
     }
     if ($request->has('analista')) { // Verifica se a chave 'analista' existe na requisição, mesmo que o valor seja null
-        $ticket->atribuido_ao_analista_id = $request->analista; // Define como null se nenhum analista for selecionado
+        $ticket->atribuido_ao_analista_id = $dados['analista']; // Define como null se nenhum analista for selecionado
     }
 
     // Preenche os campos de auditoria de transferência
@@ -494,7 +496,7 @@ public function transferirTicket(Request $request, $id)
     $ticket->save();
 
     // Recupera os nomes do usuário que transferiu e do novo analista atribuído
-    $novoAnalista = User::find($request->analista); // Busca o novo analista pelo ID
+        $novoAnalista = User::find($dados['analista'] ?? null); // Busca o novo analista pelo ID
 
     // Cria a mensagem indicando a transferência
     $mensagem = new Mensagem();
@@ -522,9 +524,7 @@ public function showWithTransferOptions($id)
 
     // Dados para os dropdowns do modal de transferência
     $setores = Setor::all();  // Carrega todos os setores
-    $analistas = User::whereHas('roles', function ($query) {
-        $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
-    })->get(); // Carrega usuários com papéis específicos
+    $analistas = $this->analistasAtivos()->get();
 
     // Retorna os dados como JSON para a requisição AJAX
     return response()->json([
@@ -543,7 +543,7 @@ public function obterDadosTransferencia($ticketId)
 
     // Obter os analistas disponíveis no setor atual do ticket
     $analistas = $ticket->setor_id
-        ? User::where('setor_id', $ticket->setor_id)->get()
+        ? $this->analistasAtivos($ticket->setor_id)->get()
         : collect();
 
     // Retornar os dados como JSON
@@ -583,10 +583,8 @@ public function carregarTransferir($id)
     // Carregar todos os setores
     $setores = Setor::all();
 
-    // Carregar analistas associados ao setor atual do ticket
-    $analistas = $ticket->setor_id
-    ? User::where('setor_id', $ticket->setor_id)->get()
-    : collect(); // Retorna uma coleção vazia se o setor não estiver definido
+    // A interface de transferência filtra os analistas ativos pelo setor escolhido.
+    $analistas = $this->analistasAtivos()->get();
 
     // Retorna os dados para a view do modal (no caso `tickets.show`)
     return view('tickets.show', compact('ticket', 'setores', 'analistas'));
@@ -600,6 +598,37 @@ public function carregarCategorias($setor_id)
     // Retorna as categorias como JSON
     return response()->json($categorias);
 }
+
+    /**
+     * Retorna somente integrantes ativos que podem ser atribuídos a tickets.
+     */
+    private function analistasAtivos(?int $setorId = null)
+    {
+        return User::role(['analista', 'supervisor', 'administrador'])
+            ->where('status', true)
+            ->when($setorId, fn ($query) => $query->where('setor_id', $setorId));
+    }
+
+    /**
+     * Garante que o analista escolhido esteja ativo e pertença ao setor informado.
+     */
+    private function regrasAnalista(string $campoSetor): array
+    {
+        return [
+            'nullable',
+            'exists:users,id',
+            function ($attribute, $value, $fail) use ($campoSetor) {
+                if (!$value) {
+                    return;
+                }
+
+                $setorId = request()->input($campoSetor);
+                if (!$setorId || !$this->analistasAtivos((int) $setorId)->whereKey($value)->exists()) {
+                    $fail('O analista selecionado deve estar ativo e pertencer ao setor escolhido.');
+                }
+            },
+        ];
+    }
 
 public function pendentes(Request $request)
 {
