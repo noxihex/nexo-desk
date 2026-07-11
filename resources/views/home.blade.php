@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Visão Geral')
 
 @section('content_header')
-<p style="font-size: 1.2em;">
-    {{ config('app.name') }} <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Visão Geral
-</p>
+<x-page-header title="Visão Geral" :breadcrumbs="[config('app.name'), 'Visão Geral']" />
 @stop
 
 @role('analista|supervisor|administrador')
@@ -473,7 +471,6 @@
 @role('analista|supervisor|administrador')
 @include('layouts.notificajs')
 @endrole
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
     function toggleTicketList(listId, event) {

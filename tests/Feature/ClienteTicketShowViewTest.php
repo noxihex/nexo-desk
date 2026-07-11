@@ -13,7 +13,8 @@ class ClienteTicketShowViewTest extends TestCase
         $this->assertStringContainsString("@extends('adminlte::page')", $view);
         $this->assertStringContainsString('btn btn-primary btn-sm d-none', $view);
         $this->assertStringContainsString("$('#finalizeModal').on('show.bs.modal'", $view);
-        $this->assertStringContainsString('function addAttachmentField()', $view);
+        $this->assertStringContainsString('<x-attachment-uploader name="attachments[]" />', $view);
+        $this->assertStringNotContainsString('function addAttachmentField()', $view);
         $this->assertStringContainsString('toastr.min.js', $view);
         $this->assertStringNotContainsString('cdnjs.cloudflare.com/ajax/libs/jquery', $view);
         $this->assertStringNotContainsString('stackpath.bootstrapcdn.com/bootstrap', $view);

@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Tickets do Cliente')
 
 @section('content_header')
-    <p style="font-size: 1.2em;">
-        Tickets <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Meus tickets
-    </p>
+    <x-page-header title="Meus tickets" :breadcrumbs="['Tickets', 'Meus tickets']" />
 @endsection
 
 @section('content')

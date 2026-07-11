@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Detalhes do Ticket')
 
 @section('content_header')
-<p style="font-size: 1.2em;">
-    Tickets <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Detalhes
-</p>
+<x-page-header title="Detalhes do ticket" :breadcrumbs="['Tickets', 'Detalhes']" />
 @endsection
 
 @section('content')
@@ -151,11 +149,8 @@
                 <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
             </div>
             <div class="form-group">
-                <button type="button" class="btn btn-info btn-sm" onclick="addAttachmentField()">
-                    <i class="fas fa-paperclip"></i> Inserir Anexo
-                </button>
-                <small class="form-text text-muted">Você pode adicionar até 5 anexos, máximo 5MB cada.</small>
-                <div id="attachmentFields" style="margin-top: 10px;"></div>
+                <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
+                <x-attachment-uploader name="attachments[]" />
             </div>
             <button type="submit" class="btn btn-success btn-sm">
                 <i class="fas fa-paper-plane"></i> Enviar Mensagem
@@ -303,16 +298,5 @@
             }
         });
 
-        let attachmentCount = 0;
-        function addAttachmentField() {
-            if (attachmentCount < 5) {
-                attachmentCount++;
-                $('#attachmentFields').append(
-                    `<input type="file" name="attachments[]" class="form-control-file mt-1" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.kmz,.kml,.zip">`
-                );
-            } else {
-                alert('Máximo de 5 anexos permitidos.');
-            }
-        }
 </script>
 @endsection

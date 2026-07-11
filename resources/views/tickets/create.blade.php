@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Criar Ticket')
 
 @section('content_header')
-    <p style="font-size: 1.2em;">
-        Tickets <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Criar
-    </p>
+    <x-page-header title="Criar ticket" :breadcrumbs="['Tickets', 'Criar']" />
 @endsection
 
 
@@ -111,33 +109,11 @@
 </div>
 
 
-            <!-- Botão para mostrar os campos de anexos -->
             <div class="form-group">
-                <button type="button" class="btn btn-info" onclick="mostrarAnexos()">
-                    <i class="fas fa-paperclip"></i> Enviar Anexos
-                </button>
-                <small class="form-text text-muted">Você pode adicionar até 5 anexos, máximo 5MB cada.</small>
+                <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
+                <x-attachment-uploader name="anexos[]" />
             </div>
-
-            <!-- Campos de Anexos (inicialmente ocultos) -->
-            <div class="form-group d-none" id="anexosFields">
-                <label for="anexos"><i class="fas fa-paperclip"></i> Selecionar Anexos:</label>
-                <div class="d-flex">
-                    @for ($i = 1; $i <= 5; $i++)
-                        <input type="file" name="anexos[]" class="form-control-file mr-2" style="width: 20%;" accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx,.txt,.mp4,.kmz,.kml,.zip">
-                    @endfor
-                </div>
-            </div>
-
-            <!-- Botões de Ação -->
-            <div class="form-group d-flex justify-content-start mt-3">
-                <button type="submit" class="btn btn-success mr-2">
-                    <i class="fas fa-save"></i> Criar Ticket
-                </button>
-                <a href="{{ route('tickets.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Voltar
-                </a>
-            </div>
+            <x-form-actions :cancel-url="route('tickets.index')" submit-label="Criar Ticket" />
         </form>
     </div>
 </div>
@@ -233,10 +209,6 @@ $(document).ready(function() {
         });
     });
 
-    // Função para exibir ou ocultar os campos de anexos
-    function mostrarAnexos() {
-        document.getElementById('anexosFields').classList.toggle('d-none');
-    }
 </script>
 
 

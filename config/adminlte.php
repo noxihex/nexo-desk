@@ -280,6 +280,8 @@ return [
     |
     */
 
+    // Keep AdminLTE's own Bootstrap, Font Awesome, jQuery and layout assets.
+    // The BTX bundle is appended through the BtxTheme plugin below.
     'enabled_laravel_mix' => false,
     'laravel_mix_css_path' => 'css/app.css',
     'laravel_mix_js_path' => 'js/app.js',
@@ -509,6 +511,21 @@ return [
     */
 
     'plugins' => [
+        'BtxTheme' => [
+            'active' => true,
+            'files' => [
+                [
+                    'type' => 'css',
+                    'asset' => true,
+                    'location' => 'css/app.css',
+                ],
+                [
+                    'type' => 'js',
+                    'asset' => true,
+                    'location' => 'js/app.js',
+                ],
+            ],
+        ],
         'Datatables' => [
             'active' => false,
             'files' => [

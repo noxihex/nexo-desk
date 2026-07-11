@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Meus Tickets')
 
 @section('content_header')
-<p style="font-size: 1.2em;">
-    Tickets <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Meus tickets
-</p>
+<x-page-header title="Meus tickets" :breadcrumbs="['Tickets', 'Meus tickets']" />
 
     <!-- Linha com o botão de ocultar/mostrar fechados -->
     <div class="d-flex justify-content-end align-items-center mt-2">

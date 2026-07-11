@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AttachmentRules;
+
 use App\Models\Mensagem;
 use App\Models\Ticket;
 use Illuminate\Http\Request;
@@ -15,10 +17,9 @@ class MensagemController extends Controller
      */
     public function store(Request $request, $ticketId)
     {
-        $request->validate([
+        $request->validate(array_merge([
             'descricao' => 'required|string',
-            'attachments.*' => 'file|max:5120', // Valida até 5MB
-        ]);
+        ], AttachmentRules::for('attachments')));
 
         // Cria a mensagem
         $mensagem = Mensagem::create([

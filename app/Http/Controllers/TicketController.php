@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AttachmentRules;
+
 use App\Models\Ticket;
 use App\Models\Categoria;
 use App\Models\Empresa;
@@ -145,7 +147,7 @@ class TicketController extends Controller
     public function store(Request $request)
     {
         // Valida os campos do formulário e os arquivos
-        $request->validate([
+        $request->validate(array_merge([
             'assunto' => 'required|string|max:255',
             'descricao' => 'required|string',
             'categoria_id' => 'required|exists:categorias,id',
@@ -154,8 +156,7 @@ class TicketController extends Controller
             'grupo_id' => 'nullable|exists:grupos,id',
             'setor_id' => 'nullable|exists:setores,id',
             'atribuido_ao_analista_id' => 'nullable|exists:users,id',
-            'anexos.*' => 'file|max:5120'
-        ]);
+        ], AttachmentRules::for('anexos')));
 
         // Criação do ticket
         $ticket = Ticket::create([

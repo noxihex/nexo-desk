@@ -114,7 +114,6 @@
 
 @section('js')
     {{-- Incluindo o jQuery --}}
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     {{-- Incluindo o JS do Toastr --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>

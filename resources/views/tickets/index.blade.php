@@ -3,7 +3,7 @@
     @section('title', config('app.name') . ' - Tickets')
 
     @section('content_header')
-        <p style="font-size: 1.2em;">Tickets</p>
+        <x-page-header title="Tickets" :breadcrumbs="['Tickets']" />
 
       <!-- Linha com os botões de ação, filtros de setor e grupo, e seleção de ordenação -->
 <div class="row mt-2">
@@ -300,7 +300,6 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
 
     @section('js')
     @include('layouts.notificajs')
-        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script>
             $(document).ready(function() {

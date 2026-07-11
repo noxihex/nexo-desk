@@ -3,9 +3,7 @@
 @section('title', config('app.name') . ' - Tickets Pendentes')
 
 @section('content_header')
-<p style="font-size: 1.2em;">
-    Tickets <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Pendentes
-</p>
+<x-page-header title="Tickets pendentes" :breadcrumbs="['Tickets', 'Pendentes']" />
 @endsection
 
 @include('layouts.notificahtml')

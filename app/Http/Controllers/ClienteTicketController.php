@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\AttachmentRules;
+
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -93,10 +95,9 @@ class ClienteTicketController extends Controller
 
 public function storeMessage(Request $request, $id)
 {
-    $request->validate([
+    $request->validate(array_merge([
         'descricao' => 'required|string',
-        'attachments.*' => 'file|max:5120', // Valida até 5MB
-    ]);
+    ], AttachmentRules::for('attachments')));
 
     // Busca o ticket e verifica permissões
     $ticket = Ticket::findOrFail($id);
@@ -163,14 +164,13 @@ public function create()
 public function store(Request $request)
 {
     // Valida os campos do formulário, incluindo os novos
-    $request->validate([
+    $request->validate(array_merge([
         'assunto' => 'required|string|max:255',
         'descricao' => 'required|string',
         'setor_id' => 'nullable|exists:setores,id', // Setor agora pode ser nulo
         'servico_id' => 'nullable|exists:servicos,id',
         'questionario_respostas' => 'nullable|array',
-        'anexos.*' => 'file|max:5120',
-    ]);
+    ], AttachmentRules::for('anexos')));
 
     // Prepara a descrição do ticket
     $descricaoOriginal = $request->input('descricao');

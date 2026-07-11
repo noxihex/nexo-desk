@@ -42,7 +42,6 @@
 
 @section('js')
     {{-- Importa a biblioteca jQuery Mask Plugin via CDN --}}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
 
 @section('js')
     {{-- Importa a biblioteca jQuery Mask Plugin via CDN --}}
