@@ -61,6 +61,22 @@
         });
     }
 
+    function initSidebarTransitions() {
+        const body = document.body;
+        const toggles = document.querySelectorAll('[data-widget="pushmenu"]');
+        let expansionTimer;
+
+        toggles.forEach(toggle => toggle.addEventListener('click', () => {
+            if (!body.classList.contains('sidebar-collapse')) return;
+
+            window.clearTimeout(expansionTimer);
+            body.classList.add('btx-sidebar-expanding');
+            expansionTimer = window.setTimeout(() => {
+                body.classList.remove('btx-sidebar-expanding');
+            }, 320);
+        }));
+    }
+
     function chartThemeColors() {
         const styles = getComputedStyle(document.body);
         return {
@@ -213,6 +229,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         initThemeToggle();
+        initSidebarTransitions();
         document.querySelectorAll('[data-btx-uploader]').forEach(initUploader);
         document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
             const submit = form.querySelector('button[type="submit"]');

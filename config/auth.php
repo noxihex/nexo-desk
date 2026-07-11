@@ -102,6 +102,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Recuperação automática de senha
+    |--------------------------------------------------------------------------
+    |
+    | Enquanto estiver desativada, a solicitação não envia e-mails e orienta o
+    | usuário a entrar em contato com o administrador. Para reativar o fluxo,
+    | defina PASSWORD_RESET_ENABLED=true no ambiente.
+    |
+    */
+
+    'password_reset_enabled' => env('PASSWORD_RESET_ENABLED', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

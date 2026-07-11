@@ -85,6 +85,7 @@ body { color: var(--btx-text); -webkit-font-smoothing: antialiased; }
 .brand-link { border-bottom-color: rgba(255, 255, 255, .08) !important; }
 .nav-sidebar { padding-right: 0; padding-left: 0; }
 .nav-sidebar .nav-link { width: 100%; margin: 0; padding: .7rem 1rem; border-radius: 0; transition: background var(--btx-transition), color var(--btx-transition); }
+.nav-sidebar .nav-link p, .brand-text { white-space: nowrap; }
 .nav-sidebar .nav-link:focus-visible, .navbar .nav-link:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .sidebar-dark-primary .nav-sidebar > .nav-item.menu-open > .nav-link.active,
 .sidebar-dark-primary .nav-sidebar > .nav-item > .nav-link.active {
@@ -107,6 +108,32 @@ body { color: var(--btx-text); -webkit-font-smoothing: antialiased; }
 }
 .sidebar-dark-primary .nav-sidebar .nav-treeview > .nav-item > .nav-link.active:hover {
     background: rgba(255, 255, 255, .14);
+}
+
+// AdminLTE fades an open treeview while its Treeview plugin is also sliding it.
+// Keeping a single animation avoids the brief opacity flash on submenu toggles.
+.nav-collapse-hide-child .menu-open > .nav-treeview,
+.sidebar-collapse .sidebar:not(:hover) .nav-collapse-hide-child .menu-open > .nav-treeview {
+    animation: none;
+}
+
+// An expanded tree keeps its menu-open state when the whole sidebar collapses.
+// Remove it from the compact layout so child icons cannot leak beside the parent.
+.sidebar-collapse .sidebar:not(:hover) .nav-collapse-hide-child .menu-open > .nav-treeview {
+    display: none !important;
+}
+
+@media (min-width: 992px) {
+    // The collapse class is removed before the 300 ms width transition finishes.
+    // Reserve the final text width and reveal labels only once they can fit.
+    .sidebar-mini .nav-sidebar .nav-link p { min-width: 184px; }
+    .btx-sidebar-expanding .main-sidebar { overflow-x: hidden; }
+    .btx-sidebar-expanding .main-sidebar .brand-text,
+    .btx-sidebar-expanding .main-sidebar .nav-sidebar .nav-link p,
+    .btx-sidebar-expanding .main-sidebar .nav-treeview {
+        opacity: 0;
+        visibility: hidden;
+    }
 }
 
 a, button, input, select, textarea { transition: border-color var(--btx-transition), box-shadow var(--btx-transition), background-color var(--btx-transition), color var(--btx-transition); }
