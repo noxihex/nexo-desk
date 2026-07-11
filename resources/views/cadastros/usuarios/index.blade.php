@@ -45,7 +45,6 @@
                         <th>Nome</th>
                         <th class="d-none d-md-table-cell">Email</th> <!-- Oculto em telas pequenas -->
                         <th>Permissão</th>
-                        <th>Grupo</th>
                         <th>Setor</th>
                         <th class="d-none d-md-table-cell">Status</th> <!-- Oculto em telas pequenas -->
                         <th class="text-center">Ações</th>
@@ -61,13 +60,6 @@
                             <td>
                                 <span class="badge badge-info" style="font-size: 0.9em;">
                                     {{ ucfirst($user->roles->pluck('name')->first()) }}
-                                </span>
-                            </td>
-
-                            <!-- Exibe o grupo -->
-                            <td>
-                                <span class="badge badge-primary" style="font-size: 0.9em;">
-                                    {{ optional($user->grupo)->nome ?? 'Sem Grupo' }}
                                 </span>
                             </td>
 

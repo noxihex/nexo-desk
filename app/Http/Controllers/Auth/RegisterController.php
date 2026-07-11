@@ -49,12 +49,11 @@ class RegisterController extends Controller
      */
     public function showRegistrationForm()
     {
-        // Exemplo de dados dinâmicos para dropdowns de grupo, setor e empresa
-        $grupos = ['Grupo 1', 'Grupo 2', 'Grupo 3']; // Exemplo de grupos
+        // Exemplo de dados dinâmicos para dropdowns de setor e empresa
         $setores = ['NOC', 'Projetos', 'Infra']; // Exemplo de setores
         $empresas = ['Empresa A', 'Empresa B', 'Empresa C']; // Exemplo de empresas
 
-        return view('auth.register', compact('grupos', 'setores', 'empresas'));
+        return view('auth.register', compact('setores', 'empresas'));
     }
 
     /**
@@ -69,7 +68,6 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'grupo' => ['required', 'string'], // Validação do grupo
             'setor' => ['required', 'string'], // Validação do setor
             'empresa' => ['required', 'string', 'max:255'], // Validação do campo empresa
         ]);
@@ -88,7 +86,6 @@ class RegisterController extends Controller
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
-            'grupo' => $data['grupo'],  // Salvando o campo grupo
             'setor' => $data['setor'],  // Salvando o campo setor
             'empresa' => $data['empresa'],  // Salvando o campo empresa
         ]);

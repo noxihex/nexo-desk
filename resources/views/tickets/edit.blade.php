@@ -68,21 +68,9 @@
                 </div>
             </div>
 
-            <!-- Campo Grupo e Setor (mesma linha) -->
+            <!-- Campo Setor -->
             <div class="form-row">
-                <div class="form-group col-md-6">
-                    <label for="grupo_id"><i class="fas fa-users"></i> Grupo</label>
-                    <select name="grupo_id" class="form-control">
-                        <option value="">Selecione um grupo</option>
-                        @foreach($grupos as $grupo)
-                            <option value="{{ $grupo->id }}" {{ $ticket->grupo_id == $grupo->id ? 'selected' : '' }}>
-                                {{ $grupo->nome }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="form-group col-md-6">
+                <div class="form-group col-md-12">
                     <label for="setor_id"><i class="fas fa-sitemap"></i> Setor</label>
                     <select name="setor_id" id="setor_id" class="form-control">
                         <option value="">Selecione um setor</option>
@@ -95,7 +83,7 @@
                 </div>
             </div>
 
-            <!-- Campo Categoria e Atribuído ao Analista (mesma linha, abaixo de Grupo e Setor) -->
+            <!-- Campo Categoria e Atribuído ao Analista -->
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label for="categoria_id"><i class="fas fa-list"></i> Categoria</label>

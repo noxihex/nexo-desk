@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
-use App\Http\Controllers\GrupoController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SetorController;
 use App\Http\Controllers\EmpresaController;
@@ -95,7 +94,6 @@ Route::middleware(['auth', 'verifica.status', 'role:supervisor|administrador'])-
     // Prefixa todas as rotas de cadastros
     Route::prefix('cadastros')->group(function () {
         Route::resource('categorias', CategoriaController::class);
-        Route::resource('grupos', GrupoController::class);
         Route::resource('empresas', EmpresaController::class);
         Route::resource('setores', SetorController::class)->parameters(['setores' => 'setor']);
 

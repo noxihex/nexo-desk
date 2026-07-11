@@ -13,7 +13,6 @@ use App\Models\Ticket;
 use App\Models\Categoria;
 use App\Models\Empresa;
 use App\Models\User;
-use App\Models\Grupo;
 use App\Models\Setor;
 use App\Models\Mensagem;
 use App\Models\Notificacao;

@@ -9,7 +9,6 @@ use App\Models\Ticket;
 use App\Models\Categoria;
 use App\Models\Empresa;
 use App\Models\User;
-use App\Models\Grupo;
 use App\Models\Setor;
 use App\Models\Mensagem;
 use App\Models\Notificacao;
@@ -37,12 +36,11 @@ class TicketController extends Controller
     // Define o valor de 'showClosed' baseado no parâmetro explícito ou no estado padrão
     $showClosed = $request->has('showClosed') ? $request->input('showClosed') : ($search ? '1' : '0');
 
-    // Obtém os filtros de setor e grupo da requisição
+    // Obtém o filtro de setor da requisição
     $setorId = $request->input('setor_id');
-    $grupoId = $request->input('grupo_id');
 
     // Query base com os relacionamentos necessários
-    $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'grupo', 'setor', 'analista');
+    $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista');
 
     if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
         $ticketsQuery->where('setor_id', $user->setor_id);
@@ -64,11 +62,6 @@ class TicketController extends Controller
     // Filtro por setor
     if ($setorId) {
         $ticketsQuery->where('setor_id', $setorId);
-    }
-
-    // Filtro por grupo
-    if ($grupoId) {
-        $ticketsQuery->where('grupo_id', $grupoId);
     }
 
     // Ordenação por SLA
@@ -106,16 +99,14 @@ class TicketController extends Controller
         $tickets = $ticketsQuery->orderBy($sort, 'desc')->paginate(10)->withQueryString();
     }
 
-    // Carrega setores e grupos para os filtros
+    // Carrega setores para os filtros
     if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
         $setores = Setor::where('id', $user->setor_id)->get();
     } else {
         $setores = Setor::all();
     }
-    $grupos = Grupo::all();
-
     // Se o usuário for um analista, ele só poderá ver e filtrar seu próprio setor.
-    return view('tickets.index', compact('tickets', 'showClosed', 'setores', 'grupos', 'setorId', 'grupoId'));
+    return view('tickets.index', compact('tickets', 'showClosed', 'setores', 'setorId'));
 }
 
 
@@ -135,13 +126,12 @@ class TicketController extends Controller
         $categorias = Categoria::all();
         $clientes = User::role(['cliente', 'clientedc'])->get();
         $empresas = Empresa::all();
-        $grupos = Grupo::all();
         $setores = Setor::all();
         $analistas = User::role(['analista', 'supervisor', 'administrador'])->get();
 
         $returnUrl = TicketReturnUrl::resolve($request);
 
-        return view('tickets.create', compact('categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas', 'returnUrl'));
+        return view('tickets.create', compact('categorias', 'clientes', 'empresas', 'setores', 'analistas', 'returnUrl'));
     }
 
     /**
@@ -156,7 +146,6 @@ class TicketController extends Controller
             'categoria_id' => 'required|exists:categorias,id',
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
-            'grupo_id' => 'nullable|exists:grupos,id',
             'setor_id' => 'nullable|exists:setores,id',
             'atribuido_ao_analista_id' => 'nullable|exists:users,id',
         ], AttachmentRules::for('anexos')));
@@ -169,7 +158,6 @@ class TicketController extends Controller
             'user_id' => Auth::id(),
             'cliente_id' => $request->cliente_id,
             'empresa_id' => $request->empresa_id,
-            'grupo_id' => $request->grupo_id,
             'setor_id' => $request->setor_id,
             'atribuido_ao_analista_id' => $request->atribuido_ao_analista_id ?: null, // Define como null se estiver vazio
             'status' => 'aberto',
@@ -233,24 +221,21 @@ class TicketController extends Controller
         // Obter setores disponíveis
         $setores = Setor::all();
 
-        // Obter grupos disponíveis
-        $grupos = Grupo::all();
-
         // Obter categorias associadas ao setor do ticket (ou uma coleção vazia caso o setor não esteja definido)
         $categoriasAssociadas = $ticket->setor_id
             ? Categoria::where('setor_id', $ticket->setor_id)->get()
             : collect(); // Retorna coleção vazia se não houver setor associado
 
-        // Obter analistas associados ao grupo do ticket (ou todos os analistas se o grupo não estiver definido)
+        // Obter analistas associados ao setor do ticket (ou todos se o setor não estiver definido)
         $analistas = $ticket->setor_id
             ? User::where('setor_id', $ticket->setor_id)->get()
-            : User::all(); // Retorna todos os analistas se não houver grupo associado
+            : User::all();
 
 
         $setorSelecionado = $ticket->setor_id;
 
         // Retorna os dados para a view
-        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'grupos', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl'));
+        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl'));
     }
 
 
@@ -261,7 +246,6 @@ class TicketController extends Controller
         $categorias = Categoria::all();
         $clientes = User::role(['cliente', 'clientedc'])->get();
         $empresas = Empresa::all();
-        $grupos = Grupo::all();
         $setores = Setor::all();
 
         // Filtrando usuários com os papéis de analista, supervisor ou administrador
@@ -269,7 +253,7 @@ class TicketController extends Controller
 
         $returnUrl = TicketReturnUrl::resolve($request);
 
-        return view('tickets.edit', compact('ticket', 'categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas', 'returnUrl'));
+        return view('tickets.edit', compact('ticket', 'categorias', 'clientes', 'empresas', 'setores', 'analistas', 'returnUrl'));
     }
 
 
@@ -281,7 +265,6 @@ class TicketController extends Controller
             'categoria_id' => 'required|exists:categorias,id',
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
-            'grupo_id' => 'nullable|exists:grupos,id',
             'setor_id' => 'nullable|exists:setores,id',
             'atribuido_ao_analista_id' => 'nullable|exists:users,id',
             'status' => 'required|in:aberto,pendente cliente,pendente analista,fechado',
@@ -293,7 +276,6 @@ class TicketController extends Controller
             'categoria_id' => $request->categoria_id,
             'cliente_id' => $request->cliente_id,
             'empresa_id' => $request->empresa_id,
-            'grupo_id' => $request->grupo_id,
             'setor_id' => $request->setor_id,
             'atribuido_ao_analista_id' => $request->atribuido_ao_analista_id,
             'status' => $request->status,
@@ -323,7 +305,7 @@ class TicketController extends Controller
         $showClosed = $request->input('showClosed', '0');
         $userId = Auth::id();
 
-        $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'grupo', 'setor', 'analista')
+        $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista')
             ->where('atribuido_ao_analista_id', $userId)
             ->orderBy($sort, 'desc');
 
@@ -467,9 +449,6 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         // Atribui o ticket ao analista atual
         $ticket->atribuido_ao_analista_id = $user->id;
 
-        // Atribui o grupo do usuário ao ticket, se ele tiver um grupo, caso contrário, define como nulo
-        $ticket->grupo_id = $user->grupo_id ?? null;
-
         // Preenche os campos de auditoria para indicar quem assumiu e quando
         $ticket->assumido_por_usuario_id = $user->id;
         $ticket->data_hora_assumido = now(); // Define a data e hora atual
@@ -500,12 +479,9 @@ public function transferirTicket(Request $request, $id)
     $ticket = Ticket::findOrFail($id);
     $user = Auth::user(); // Recupera o usuário autenticado (quem está fazendo a transferência)
 
-    // Atualiza o setor, grupo e analista, se fornecidos
+    // Atualiza o setor e o analista, se fornecidos
     if ($request->setor) {
         $ticket->setor_id = $request->setor;
-    }
-    if ($request->grupo) {
-        $ticket->grupo_id = $request->grupo;
     }
     if ($request->has('analista')) { // Verifica se a chave 'analista' existe na requisição, mesmo que o valor seja null
         $ticket->atribuido_ao_analista_id = $request->analista; // Define como null se nenhum analista for selecionado
@@ -520,13 +496,12 @@ public function transferirTicket(Request $request, $id)
     // Recupera os nomes do usuário que transferiu e do novo analista atribuído
     $novoAnalista = User::find($request->analista); // Busca o novo analista pelo ID
 
-    $grupo = Grupo::find($request->grupo);
-
     // Cria a mensagem indicando a transferência
     $mensagem = new Mensagem();
     $mensagem->ticket_id = $ticket->id;
     $mensagem->user_id = $user->id; // ID do usuário que fez a transferência
-    $mensagem->descricao = "{$user->name} transferiu o ticket para " . ($novoAnalista ? $novoAnalista->name : ($grupo ? $grupo->nome : 'Sem grupo'));
+    $destino = $novoAnalista ? $novoAnalista->name : ($ticket->setor ? $ticket->setor->nome : 'sem setor');
+    $mensagem->descricao = "{$user->name} transferiu o ticket para {$destino}";
     $mensagem->save();
 
     $returnUrl = TicketReturnUrl::resolve($request);
@@ -543,11 +518,10 @@ public function transferirTicket(Request $request, $id)
 
 public function showWithTransferOptions($id)
 {
-    $ticket = Ticket::with(['categoria', 'cliente', 'empresa', 'grupo', 'setor', 'analista'])->findOrFail($id);
+    $ticket = Ticket::with(['categoria', 'cliente', 'empresa', 'setor', 'analista'])->findOrFail($id);
 
     // Dados para os dropdowns do modal de transferência
     $setores = Setor::all();  // Carrega todos os setores
-    $grupos = Grupo::all();    // Carrega todos os grupos
     $analistas = User::whereHas('roles', function ($query) {
         $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
     })->get(); // Carrega usuários com papéis específicos
@@ -555,7 +529,6 @@ public function showWithTransferOptions($id)
     // Retorna os dados como JSON para a requisição AJAX
     return response()->json([
         'setores' => $setores,
-        'grupos' => $grupos,
         'analistas' => $analistas,
         'ticket' => $ticket
     ]);
@@ -568,18 +541,14 @@ public function obterDadosTransferencia($ticketId)
     // Obter setores disponíveis
     $setores = Setor::all();
 
-    // Obter todos os grupos
-    $grupos = Grupo::all();
-
-    // Obter todos os analistas disponíveis no grupo atual do ticket
-    $analistas = $ticket->grupo_id
-        ? User::where('grupo_id', $ticket->grupo_id)->get()
+    // Obter os analistas disponíveis no setor atual do ticket
+    $analistas = $ticket->setor_id
+        ? User::where('setor_id', $ticket->setor_id)->get()
         : collect();
 
     // Retornar os dados como JSON
     return response()->json([
         'setores' => $setores,
-        'grupos' => $grupos,
         'analistas' => $analistas,
         'ticket' => $ticket, // Incluindo os dados do ticket para preenchimento automático
     ]);
@@ -609,21 +578,18 @@ public function carregarAssumir($id, Request $request)
 public function carregarTransferir($id)
 {
     // Busca o ticket pelo ID com os relacionamentos necessários
-    $ticket = Ticket::with(['setor', 'grupo', 'analista'])->findOrFail($id);
+    $ticket = Ticket::with(['setor', 'analista'])->findOrFail($id);
 
     // Carregar todos os setores
     $setores = Setor::all();
 
-    // Carregar todos os grupos
-    $grupos = Grupo::all();
-
-    // Carregar analistas associados ao grupo atual do ticket ou lista todos
+    // Carregar analistas associados ao setor atual do ticket
     $analistas = $ticket->setor_id
     ? User::where('setor_id', $ticket->setor_id)->get()
     : collect(); // Retorna uma coleção vazia se o setor não estiver definido
 
     // Retorna os dados para a view do modal (no caso `tickets.show`)
-    return view('tickets.show', compact('ticket', 'setores', 'grupos', 'analistas'));
+    return view('tickets.show', compact('ticket', 'setores', 'analistas'));
 }
 
 public function carregarCategorias($setor_id)

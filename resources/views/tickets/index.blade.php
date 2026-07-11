@@ -6,9 +6,8 @@
         <x-page-header title="Tickets" :breadcrumbs="['Tickets']" />
 
 @php
-    $activeFilterCount = collect([$setorId, $grupoId])->filter()->count() + ($showClosed == '1' ? 1 : 0);
+    $activeFilterCount = collect([$setorId])->filter()->count() + ($showClosed == '1' ? 1 : 0);
     $selectedSetor = $setores->firstWhere('id', $setorId);
-    $selectedGrupo = $grupos->firstWhere('id', $grupoId);
 @endphp
 
 <div class="ticket-toolbar mt-3">
@@ -61,16 +60,6 @@
                     </select>
                 </div>
 
-                <div class="ticket-filter-field">
-                    <label for="filterGrupo">Grupo</label>
-                    <select id="filterGrupo" name="grupo_id" class="form-control">
-                        <option value="">Todos os grupos</option>
-                        @foreach($grupos as $grupo)
-                            <option value="{{ $grupo->id }}" {{ $grupoId == $grupo->id ? 'selected' : '' }}>{{ $grupo->nome }}</option>
-                        @endforeach
-                    </select>
-                </div>
-
                 <div class="ticket-closed-filter">
                     <span class="ticket-closed-filter__label">Tickets fechados</span>
                     <div class="custom-control custom-switch">
@@ -97,11 +86,6 @@
             @if($selectedSetor)
                 <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['setor_id', 'page']))) }}">
                     Setor: {{ $selectedSetor->nome }} <i class="fas fa-times" aria-hidden="true"></i>
-                </a>
-            @endif
-            @if($selectedGrupo)
-                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['grupo_id', 'page']))) }}">
-                    Grupo: {{ $selectedGrupo->nome }} <i class="fas fa-times" aria-hidden="true"></i>
                 </a>
             @endif
             @if($showClosed == '1')
@@ -242,8 +226,7 @@
             'search' => request('search'), // Preserva o termo pesquisado
             'sort' => request('sort'), // Preserva a ordenação
             'showClosed' => request('showClosed'), // Preserva o filtro "Mostrar Fechados"
-            'setor_id' => request('setor_id'), // Preserva o filtro de setor
-            'grupo_id' => request('grupo_id') // Preserva o filtro de grupo
+            'setor_id' => request('setor_id') // Preserva o filtro de setor
         ])->links() }}
     </div>
     @endsection

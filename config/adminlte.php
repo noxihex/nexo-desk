@@ -369,12 +369,6 @@ return [
                 'can' => ['acesso admin', 'acesso supervisor'],
             ],
             [
-                'text' => 'Grupos',
-                'url' => 'cadastros/grupos',
-                'icon' => 'fas fa-fw fa-users',
-                'can' => ['acesso admin', 'acesso supervisor'],
-            ],
-            [
                 'text' => 'Setores',
                 'url' => 'cadastros/setores',
                 'icon' => 'fas fa-fw fa-sitemap',
@@ -410,12 +404,6 @@ return [
                 'can' => ['acesso admin', 'acesso supervisor'],
             ],
             /*
-            [
-                'text' => 'Grupo',
-                'url' => 'relatorios/grupo',
-                'icon' => 'fas fa-fw fa-users',
-                'can' => ['acesso admin', 'acesso supervisor'],
-            ],
             [
                 'text' => 'Empresa',
                 'url' => 'relatorios/empresa',

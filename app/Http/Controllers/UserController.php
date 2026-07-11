@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Grupo;
 use App\Models\Setor;
 use App\Models\Empresa; // Importando o modelo Empresa
 use App\Models\User;
@@ -20,7 +19,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $users = User::role(['analista', 'supervisor', 'administrador'])
-            ->with(['grupo', 'setor', 'empresa', 'roles'])
+            ->with(['setor', 'empresa', 'roles'])
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->input('search') . '%');
             })
@@ -36,12 +35,11 @@ class UserController extends Controller
      */
     public function create()
     {
-        $grupos = Grupo::all(); // Busca todos os grupos do banco
         $setores = Setor::all(); // Busca todos os setores do banco
         $empresas = Empresa::all(); // Busca todas as empresas do banco
         $roles = Role::all(); // Carrega todas as permissões (roles)
 
-        return view('cadastros.usuarios.create', compact('grupos', 'setores', 'empresas', 'roles'));
+        return view('cadastros.usuarios.create', compact('setores', 'empresas', 'roles'));
     }
 
     /**
@@ -53,18 +51,16 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
-            'grupo_id' => 'nullable|exists:grupos,id', // Grupo é opcional (nullable)
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional (nullable)
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional (nullable)
             'role' => 'required|string',
         ]);
 
-        // Cria o usuário, salvando o grupo, setor e empresa pelo ID se existir
+        // Cria o usuário, salvando setor e empresa pelo ID se existir
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'grupo_id' => $request->grupo_id, // Armazena o ID do grupo, null se não for selecionado
             'setor_id' => $request->setor_id, // Armazena o ID do setor, null se não for selecionado
             'empresa_id' => $request->empresa_id, // Armazena o ID da empresa, null se não for selecionado
             'status' => true, // Ativo por padrão
@@ -81,12 +77,11 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
-        $grupos = Grupo::all(); // Busca todos os grupos do banco de dados
         $setores = Setor::all(); // Busca todos os setores do banco
         $empresas = Empresa::all(); // Busca todas as empresas do banco
         $roles = Role::all(); // Carrega todas as permissões (roles)
 
-        return view('cadastros.usuarios.edit', compact('user', 'grupos', 'setores', 'empresas', 'roles'));
+        return view('cadastros.usuarios.edit', compact('user', 'setores', 'empresas', 'roles'));
     }
 
     /**
@@ -97,7 +92,6 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'grupo_id' => 'nullable|exists:grupos,id', // Grupo é opcional
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
             'role' => 'required|string', // Valida a permissão
@@ -108,7 +102,6 @@ class UserController extends Controller
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
-            'grupo_id' => $request->grupo_id, // Permite que o campo seja nulo
             'setor_id' => $request->setor_id, // Permite que o campo seja nulo
             'empresa_id' => $request->empresa_id, // Permite que o campo seja nulo
         ]);

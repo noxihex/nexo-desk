@@ -149,23 +149,23 @@
         </div>
     </div>
 
-    <!-- Tickets Abertos em Meu Grupo -->
+    <!-- Tickets Abertos em Meu Setor -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-info">
             <div class="inner">
-                <h3>{{ app('App\Http\Controllers\VisaoGeralController')->contarTicketsAbertosGrupo() }}</h3>
-                <p>Tickets abertos em meu grupo</p>
+                <h3>{{ app('App\Http\Controllers\VisaoGeralController')->contarTicketsAbertosSetor() }}</h3>
+                <p>Tickets abertos em meu setor</p>
             </div>
             <div class="icon">
                 <i class="fas fa-users"></i>
             </div>
-            <a href="{{ url('/tickets?sort=created_at&setor_id=&grupo_id=' . Auth::user()->grupo_id) }}" class="small-box-footer">
+            <a href="{{ url('/tickets?sort=created_at&setor_id=' . Auth::user()->setor_id) }}" class="small-box-footer">
                 Mais informações <i class="fas fa-arrow-circle-right"></i>
             </a>
         </div>
     </div>
 
-    <!-- Tickets Abertos em Meu Grupo sem Analista -->
+    <!-- Tickets Abertos em Meu Setor sem Analista -->
     <div class="col-lg-3 col-6">
         <div class="small-box bg-warning">
             <div class="inner">
@@ -173,7 +173,7 @@
                     $ticketsSemAnalista = app('App\Http\Controllers\VisaoGeralController')->obterTicketsSemAnalista();
                 @endphp
                 <h3>{{ count($ticketsSemAnalista) }}</h3>
-                <p>Tickets não assumidos em meu grupo</p>
+                <p>Tickets não assumidos em meu setor</p>
             </div>
             <div class="icon">
                 <i class="fas fa-user-times"></i>
@@ -227,7 +227,7 @@
 
 @role('supervisor|administrador')
 
-<!-- Filtro de Ordenação e Seleção de Analista, Grupo, Setor -->
+<!-- Filtro de Ordenação e Seleção de Analista e Setor -->
 <div class="form-group">
     <form method="GET" action="{{ route('home') }}" class="row">
         <div class="col-md-3 col-12 d-flex align-items-center mb-2">
@@ -245,16 +245,6 @@
                 <option value="">Todos</option>
                 @foreach($analistas as $analista)
                     <option value="{{ $analista->id }}" {{ request('analista') == $analista->id ? 'selected' : '' }}>{{ $analista->name }}</option>
-                @endforeach
-            </select>
-        </div>
-
-        <div class="col-md-3 col-12 d-flex align-items-center mb-2">
-            <label for="grupo" class="mr-2">Filtrar Grupo:</label>
-            <select name="grupo" id="grupo" class="form-control form-control-sm" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                @foreach($grupos as $grupo)
-                    <option value="{{ $grupo->id }}" {{ request('grupo') == $grupo->id ? 'selected' : '' }}>{{ $grupo->nome }}</option>
                 @endforeach
             </select>
         </div>

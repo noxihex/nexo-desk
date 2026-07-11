@@ -63,7 +63,6 @@
             </div>
 
             <div class="col-md-4">
-                <p class="mb-1"><strong>Grupo:</strong> {{ $ticket->grupo ? $ticket->grupo->nome : 'N/A' }}</p>
                 <p class="mb-1"><strong>Setor:</strong> {{ $ticket->setor ? $ticket->setor->nome : 'N/A' }}</p>
                 <p class="mb-1"><strong>Atribuído ao Analista:</strong> {{ $ticket->analista ? $ticket->analista->name : 'N/A' }}</p>
                 <p class="mb-1"><strong>Status:</strong>
@@ -306,7 +305,7 @@
                 @csrf
                 <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
-                    <p>Selecione o setor, grupo e analista:</p>
+                    <p>Selecione o setor e o analista:</p>
 
                     <!-- Seleção de Setor -->
                     <div class="form-group">
@@ -316,19 +315,6 @@
                             @foreach ($setores as $setor)
                                 <option value="{{ $setor->id }}" {{ $ticket->setor_id == $setor->id ? 'selected' : '' }}>
                                     {{ $setor->nome }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <!-- Seleção de Grupo -->
-                    <div class="form-group">
-                        <label for="grupo-transfer">Grupo:</label>
-                        <select name="grupo" id="grupo-transfer" class="form-control" required>
-                            <option value="" disabled selected>Selecione um grupo</option>
-                            @foreach ($grupos as $grupo)
-                                <option value="{{ $grupo->id }}" {{ $ticket->grupo_id == $grupo->id ? 'selected' : '' }}>
-                                    {{ $grupo->nome }}
                                 </option>
                             @endforeach
                         </select>

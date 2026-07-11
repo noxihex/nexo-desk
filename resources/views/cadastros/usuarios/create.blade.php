@@ -63,22 +63,6 @@
                     @enderror
                 </div>
 
-                {{-- Grupo --}}
-                <div class="form-group">
-                    <label for="grupo"><i class="fas fa-users"></i> Grupo</label>
-                    <select name="grupo_id" id="grupo" class="form-control @error('grupo_id') is-invalid @enderror">
-                        <option value="">Sem Grupo</option> {{-- Permite a opção "Sem Grupo" --}}
-                        @foreach($grupos as $grupo)
-                            <option value="{{ $grupo->id }}">{{ $grupo->nome }}</option>
-                        @endforeach
-                    </select>
-                    @error('grupo_id')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
                 {{-- Setor --}}
                 <div class="form-group">
                     <label for="setor_id"><i class="fas fa-briefcase"></i> Setor</label>

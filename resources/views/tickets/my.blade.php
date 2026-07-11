@@ -29,12 +29,12 @@
             $totalTicketsSemAnalista = count($ticketsSemAnalista);
         @endphp
 
-        <!-- Alerta Amarelo - Tickets em Meu Grupo Aguardando Atendimento -->
+        <!-- Alerta Amarelo - Tickets em Meu Setor Aguardando Atendimento -->
         @if ($totalTicketsSemAnalista > 0)
             <li class="nav-item">
                 <a href="#" class="nav-link" data-toggle="modal" data-target="#ticketsSemAnalistaModal">
                     <span class="badge badge-warning">
-                        <span class="badge-text-full">{{ $totalTicketsSemAnalista }} Tickets em seu grupo aguardando atendimento</span>
+                        <span class="badge-text-full">{{ $totalTicketsSemAnalista }} Tickets em seu setor aguardando atendimento</span>
                         <span class="badge-text-compact">({{ $totalTicketsSemAnalista }}) Aguardando atendimento</span>
                     </span>
                 </a>
@@ -89,7 +89,7 @@
     @endif
 
     @if ($totalTicketsSemAnalista > 0)
-        <!-- Modal para Tickets em Meu Grupo Aguardando Atendimento -->
+        <!-- Modal para Tickets em Meu Setor Aguardando Atendimento -->
         <div class="modal fade" id="ticketsSemAnalistaModal" tabindex="-1" role="dialog" aria-labelledby="ticketsSemAnalistaLabel" aria-hidden="true">
             <div class="modal-dialog modal-sm" role="document">
                 <div class="modal-content">

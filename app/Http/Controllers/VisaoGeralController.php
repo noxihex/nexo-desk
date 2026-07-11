@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Grupo;
 use App\Models\Setor;
 
 use Carbon\Carbon;
@@ -23,7 +22,6 @@ class VisaoGeralController extends Controller
         // Captura os parâmetros de ordenação e filtros
         $order = $request->input('order', 'desc');
         $analista = $request->input('analista');
-        $grupo = $request->input('grupo');
         $setor = $request->input('setor');
 
         // Consulta base para tickets
@@ -32,11 +30,6 @@ class VisaoGeralController extends Controller
         // Aplica filtro por analista atribuído, se selecionado
         if ($analista) {
             $query->where('atribuido_ao_analista_id', $analista);
-        }
-
-        // Aplica filtro por grupo se selecionado
-        if ($grupo) {
-            $query->where('grupo_id', $grupo);
         }
 
         // Aplica filtro por setor se selecionado
@@ -53,17 +46,16 @@ class VisaoGeralController extends Controller
         $ticketsPendenteAnalista = (clone $query)->where('status', 'pendente analista')->get();
         $ticketsFechados = (clone $query)->where('status', 'fechado')->take(100)->get();
 
-        // Carrega listas de analistas (com papéis específicos), grupos e setores para os filtros
+        // Carrega listas de analistas e setores para os filtros
         $analistas = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
         })->get();
 
-        $grupos = Grupo::all();
         $setores = Setor::all();
 
         return view('home', compact(
             'ticketsAbertos', 'ticketsPendenteCliente', 'ticketsPendenteAnalista', 'ticketsFechados',
-            'analistas', 'grupos', 'setores'
+            'analistas', 'setores'
         ));
     }
 
@@ -74,34 +66,32 @@ class VisaoGeralController extends Controller
             ->count();
     }
 
-    public function contarTicketsAbertosGrupo()
+    public function contarTicketsAbertosSetor()
     {
         return Ticket::whereIn('status', ['aberto', 'pendente analista', 'pendente cliente'])
-            ->where('grupo_id', Auth::user()->grupo_id)
+            ->where('setor_id', Auth::user()->setor_id)
             ->count();
     }
 
-    public function contarTicketsAbertosGrupoSemAnalista()
+    public function contarTicketsAbertosSetorSemAnalista()
     {
         return Ticket::where('status', 'aberto')
-            ->where('grupo_id', Auth::user()->grupo_id)
+            ->where('setor_id', Auth::user()->setor_id)
             ->whereNull('atribuido_ao_analista_id')
             ->count();
     }
 
-    // Nova função para obter IDs dos Tickets Abertos em Meu Grupo sem Analista
+    // Obtém os tickets não atribuídos do setor do usuário.
     public function obterTicketsSemAnalista()
     {
         $user = Auth::user();
 
-        // 1. Garante que o usuário está logado e realmente pertence a um grupo.
-        if (!$user || !$user->grupo_id) {
+        if (!$user || !$user->setor_id) {
             return [];
         }
 
-        // 2. Busca os tickets usando a nova lógica.
-        return Ticket::where('grupo_id', $user->grupo_id)
-            ->where('status', '!=', 'fechado') // <- MUDANÇA PRINCIPAL AQUI
+        return Ticket::where('setor_id', $user->setor_id)
+            ->where('status', '!=', 'fechado')
             ->whereNull('atribuido_ao_analista_id')
             ->pluck('id')
             ->toArray();
