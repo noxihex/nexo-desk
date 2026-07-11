@@ -21,18 +21,29 @@
         </script>
     @endif
 
-    <div class="mb-3 d-flex justify-content-between">
-        <!-- Botão para alternar entre os tickets -->
-        <a href="{{ route('tickets.cliente.index', ['viewCompanyTickets' => !$viewCompanyTickets]) }}"
-           class="btn {{ $viewCompanyTickets ? 'btn-success' : 'btn-primary' }}">
-            <i class="fas {{ $viewCompanyTickets ? 'fa-user' : 'fa-building' }}"></i>
-            {{ $viewCompanyTickets ? 'Ver somente Meus Tickets' : 'Ver Tickets de minha empresa' }}
-        </a>
+    <div class="mb-3 d-flex justify-content-between flex-wrap">
+        <div class="mb-2">
+            <!-- Botão para alternar entre os tickets -->
+            <a href="{{ route('tickets.cliente.index', ['viewCompanyTickets' => !$viewCompanyTickets, 'search' => request('search')]) }}"
+               class="btn {{ $viewCompanyTickets ? 'btn-success' : 'btn-primary' }}">
+                <i class="fas {{ $viewCompanyTickets ? 'fa-user' : 'fa-building' }}"></i>
+                {{ $viewCompanyTickets ? 'Ver somente Meus Tickets' : 'Ver Tickets de minha empresa' }}
+            </a>
 
-        <!-- Botão para criar um novo ticket -->
-        <a href="{{ route('tickets.cliente.create') }}" class="btn btn-success">
-            <i class="fas fa-plus-circle"></i> Criar Novo Ticket
-        </a>
+            <!-- Botão para criar um novo ticket -->
+            <a href="{{ route('tickets.cliente.create') }}" class="btn btn-success">
+                <i class="fas fa-plus-circle"></i> Criar Novo Ticket
+            </a>
+        </div>
+
+        <!-- Campo de Pesquisa -->
+        <form action="{{ route('tickets.cliente.index') }}" method="GET" class="d-flex mb-2">
+            <input type="text" name="search" class="form-control" placeholder="ID ou Assunto" value="{{ request('search') }}">
+            <input type="hidden" name="viewCompanyTickets" value="{{ $viewCompanyTickets ? '1' : '0' }}">
+            <button type="submit" class="btn btn-primary ml-2">
+                <i class="fas fa-search"></i>
+            </button>
+        </form>
     </div>
 
     @forelse ($tickets as $ticket)
@@ -83,13 +94,13 @@
 
     <div class="d-flex justify-content-center mt-3">
         <!-- Paginação -->
-        {{ $tickets->appends(['viewCompanyTickets' => $viewCompanyTickets])->links() }}
+        {{ $tickets->appends(['viewCompanyTickets' => $viewCompanyTickets, 'search' => request('search')])->links() }}
     </div>
 @endsection
 
 @section('css')
     <style>
-        a {
+        .content a {
             margin: 2px;
         }
         .card {

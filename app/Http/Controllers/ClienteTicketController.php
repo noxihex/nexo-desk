@@ -31,28 +31,40 @@ class ClienteTicketController extends Controller
         $user = auth()->user(); // Usuário autenticado
         $empresaId = $user->empresa_id; // Empresa vinculada ao usuário
         $userId = $user->id; // ID do usuário autenticado
+        $search = $request->input('search');
 
         // Define se a visualização será dos tickets da empresa ou apenas dos tickets do cliente
         $viewCompanyTickets = filter_var($request->get('viewCompanyTickets', false), FILTER_VALIDATE_BOOLEAN);
 
         $query = Ticket::query();
 
-        if ($viewCompanyTickets && $empresaId) {
-            // Busca tickets de todos os usuários da mesma empresa OU onde o cliente_id é o usuário atual
-            $query->where(function ($q) use ($empresaId, $userId) {
-                $q->where('empresa_id', $empresaId)
-                  ->orWhere('cliente_id', $userId);
-            });
+        if ($empresaId) {
+            // Todo ticket exibido ao cliente precisa pertencer à empresa dele.
+            $query->where('empresa_id', $empresaId);
+
+            if (!$viewCompanyTickets) {
+                // Na visão pessoal, limita também ao cliente autenticado.
+                $query->where('cliente_id', $userId);
+            }
         } else {
-            // Busca apenas os tickets criados pelo próprio usuário (cliente_id)
-            $query->where('cliente_id', $userId);
+            // Usuários sem empresa só podem acessar os próprios tickets sem empresa.
+            $query->where('cliente_id', $userId)
+                  ->whereNull('empresa_id');
+        }
+
+        // Pesquisa por ID ou assunto dentro do escopo de tickets já autorizado.
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "%{$search}%")
+                  ->orWhere('assunto', 'like', "%{$search}%");
+            });
         }
 
         // Ordena do mais recente para o mais antigo
         $query->orderBy('created_at', 'desc');
 
         // Paginação de tickets
-        $tickets = $query->paginate(10);
+        $tickets = $query->paginate(10)->withQueryString();
 
         // Retorna a view com os dados de tickets e a flag de visualização
         return view('tickets.cliente.index', compact('tickets', 'viewCompanyTickets'));

@@ -86,7 +86,8 @@
 
         <div class="d-flex justify-content-end">
             @if($ticket->status !== 'fechado' && $ticket->categoria) <!-- Só exibe o botão se o ticket não estiver fechado e tiver categoria -->
-                <button type="button" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#finalizeModal">
+                {{-- Temporariamente oculto para clientes; remova `d-none` para voltar a exibi-lo. --}}
+                <button type="button" class="btn btn-primary btn-sm d-none" data-toggle="modal" data-target="#finalizeModal">
                     <i class="fas fa-check-circle"></i> Finalizar
                 </button>
             @elseif(!$ticket->categoria)
@@ -231,9 +232,7 @@
 @endsection
 
 @section('js')
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Ao abrir o modal
