@@ -51,22 +51,6 @@
                 </select>
             </div>
             
-            {{-- NOVO: Campo de Serviço --}}
-            <div class="form-group">
-                <label for="servico_id"><i class="fas fa-concierge-bell"></i> Serviço:</label>
-                <select name="servico_id" id="servico_id" class="form-control">
-                    <option value="">Nenhum serviço específico</option>
-                    @foreach($servicos as $servico)
-                        <option value="{{ $servico->id }}">{{ $servico->nome }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- NOVO: Container para o questionário dinâmico --}}
-            <div id="questionario-container">
-                </div>
-
-
             <div class="form-group">
                 <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
                 <x-attachment-uploader name="anexos[]" />
@@ -76,59 +60,4 @@
     </div>
 </div>
 
-@endsection
-
-@section('js')
-<script>
-    // NOVO: Lógica para carregar o questionário dinamicamente
-    document.addEventListener('DOMContentLoaded', function () {
-        const servicoSelect = document.getElementById('servico_id');
-        const questionarioContainer = document.getElementById('questionario-container');
-
-        servicoSelect.addEventListener('change', function () {
-            const servicoId = this.value;
-            // Limpa o container de perguntas anteriores
-            questionarioContainer.innerHTML = '';
-
-            if (servicoId) {
-                // Faz a chamada AJAX para buscar o questionário
-                fetch(`/servicos/${servicoId}/questionario`)
-                    .then(response => response.json())
-                    .then(perguntas => {
-                        if (perguntas && perguntas.length > 0) {
-                            
-                            // Cria um cabeçalho para a seção
-                            const header = document.createElement('h5');
-                            header.className = 'mt-3';
-                            header.innerText = '';
-                            questionarioContainer.appendChild(header);
-
-                            // Itera sobre as perguntas e cria os inputs
-                            perguntas.forEach(pergunta => {
-                                // Só cria o campo se a pergunta não for vazia
-                                if (pergunta.trim() !== '') {
-                                    const formGroup = document.createElement('div');
-                                    formGroup.className = 'form-group';
-
-                                    const label = document.createElement('label');
-                                    label.innerText = pergunta;
-
-                                    const input = document.createElement('input');
-                                    input.type = 'text';
-                                    input.name = 'questionario_respostas[]';
-                                    input.className = 'form-control';
-                                    input.required = true; // Torna a resposta obrigatória se a pergunta existe
-
-                                    formGroup.appendChild(label);
-                                    formGroup.appendChild(input);
-                                    questionarioContainer.appendChild(formGroup);
-                                }
-                            });
-                        }
-                    })
-                    .catch(error => console.error('Erro ao buscar o questionário:', error));
-            }
-        });
-    });
-</script>
 @endsection

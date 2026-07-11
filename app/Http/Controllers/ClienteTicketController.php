@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Ticket;
 use App\Models\Categoria;
 use App\Models\Empresa;
-use App\Models\Servico;
 use App\Models\User;
 use App\Models\Grupo;
 use App\Models\Setor;
@@ -156,85 +155,28 @@ public function storeMessage(Request $request, $id)
 
 public function create(Request $request)
 {
-    $user = auth()->user();
-    $empresa = $user->empresa;
-    
-    // Busca os setores e os serviços da empresa do usuário
     $setores = Setor::all();
-    $servicos = $empresa ? $empresa->servicos()->get() : collect();
 
-    // Retorna a view com os dados necessários
     $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
 
-    return view('tickets.cliente.create', compact('setores', 'servicos', 'returnUrl'));
+    return view('tickets.cliente.create', compact('setores', 'returnUrl'));
 }
 
 public function store(Request $request)
 {
-    // Valida os campos do formulário, incluindo os novos
     $request->validate(array_merge([
         'assunto' => 'required|string|max:255',
         'descricao' => 'required|string',
         'setor_id' => 'nullable|exists:setores,id', // Setor agora pode ser nulo
-        'servico_id' => 'nullable|exists:servicos,id',
-        'questionario_respostas' => 'nullable|array',
     ], AttachmentRules::for('anexos')));
 
-    // Prepara a descrição do ticket
-    $descricaoOriginal = $request->input('descricao');
-    $prependText = '';
-
-    // Se um serviço foi selecionado, busca os dados e monta o texto
-    if ($request->filled('servico_id')) {
-        $servico = Servico::find($request->input('servico_id'));
-        
-        if ($servico) {
-            // Monta o texto do questionário
-            $respostas = $request->input('questionario_respostas', []);
-            $perguntas = $servico->questionario ?? [];
-            
-            $questionarioText = '';
-            foreach ($perguntas as $index => $pergunta) {
-                if (!empty($pergunta) && isset($respostas[$index]) && !empty($respostas[$index])) {
-                    $questionarioText .= "-> {$pergunta}\n";
-                    $questionarioText .= "R: {$respostas[$index]}\n\n";
-                }
-            }
-            
-            if (!empty($questionarioText)) {
-                 $prependText .= "--- QUESTIONÁRIO DO SERVIÇO: {$servico->nome} ---\n";
-                 $prependText .= $questionarioText;
-            }
-
-            // Monta o texto das informações do serviço
-            $informacoes = $servico->informacoes ?? [];
-            $informacoesText = '';
-            foreach ($informacoes as $info) {
-                if (!empty($info['campo']) && !empty($info['valor'])) {
-                    $informacoesText .= "- {$info['campo']}: {$info['valor']}\n";
-                }
-            }
-            
-            if (!empty($informacoesText)) {
-                $prependText .= "--- INFORMAÇÕES DO SERVIÇO ---\n";
-                $prependText .= $informacoesText . "\n";
-            }
-        }
-    }
-    
-    if(!empty($prependText)){
-        $prependText .= "--------------------------------------------------\n\n";
-    }
-
-    $descricaoFinal = $prependText . $descricaoOriginal;
-    
     // Obtém o usuário autenticado
     $user = auth()->user();
 
     // Cria o ticket com a descrição modificada
     $ticket = Ticket::create([
         'assunto' => $request->assunto,
-        'descricao' => $descricaoFinal, // Usa a descrição final
+        'descricao' => $request->input('descricao'),
         'setor_id' => $request->setor_id,
         'user_id' => $user->id,
         'cliente_id' => $user->id,
@@ -395,12 +337,6 @@ public function calcularHorasSugeridas($id)
     } catch (\Exception $e) {
         return response()->json(['error' => 'Erro ao calcular horas sugeridas.'], 500);
     }
-}
-
-public function getQuestionario(Servico $servico)
-{
-    // Garante que a resposta seja sempre um array, mesmo se o campo for nulo no BD
-    return response()->json($servico->questionario ?? []);
 }
 
 }

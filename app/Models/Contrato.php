@@ -22,9 +22,4 @@ class Contrato extends Model implements Auditable
         'horas_contratadas',
     ];
 
-        public function empresas()
-    {
-        return $this->belongsToMany(Empresa::class, 'contrato_empresa');
-    }
-    
 }

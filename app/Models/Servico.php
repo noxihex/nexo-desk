@@ -35,11 +35,4 @@ class Servico extends Model implements Auditable
         'questionario' => 'array',
     ];
 
-    /**
-     * Define o relacionamento: um Serviço pertence a uma Empresa.
-     */
-    public function empresa()
-    {
-        return $this->belongsTo(Empresa::class);
-    }
 }

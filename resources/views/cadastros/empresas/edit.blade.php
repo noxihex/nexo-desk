@@ -106,79 +106,12 @@
                     @error('horas_contratadas')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- CONTRATOS ASSOCIADOS --}}
-                <div class="form-group">
-                    <label for="contratos"><i class="fas fa-file-contract"></i> Contratos Associados</label>
-                    <select name="contratos[]" id="contratos" class="form-control select2" multiple="multiple">
-                        @foreach($contratos as $contrato)
-                            <option value="{{ $contrato->id }}"
-                                @if(in_array($contrato->id, old('contratos', $empresa->contratos->pluck('id')->toArray()))) selected @endif >
-                                {{ $contrato->nome }} - R$ {{ number_format($contrato->valor, 2, ',', '.') }} - {{ $contrato->horas_contratadas }} Horas
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
                 <div class="form-group d-flex justify-content-start mt-4">
                     <button type="submit" class="btn btn-success mr-2"><i class="fas fa-save"></i> Atualizar Empresa</button>
                     <a href="{{ route('empresas.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
                 </div>
             </form>
             {{-- O formulário da empresa termina aqui --}}
-        </div>
-    </div>
-
-
-{{-- ========================================================================= --}}
-    {{-- ========= SEÇÃO DE SERVIÇOS (COM ESTILO IDÊNTICO AO DE CONTATOS) ========= --}}
-    {{-- ========================================================================= --}}
-    <div class="card mt-4">
-        <div class="card-header d-flex flex-column flex-md-row align-items-md-center">
-            <h3 class="card-title mb-2 mb-md-0">
-                 Serviços Contratados
-            </h3>
-            {{-- BOTÃO "ADICIONAR" COM ESTILO IDÊNTICO AO DE CONTATOS --}}
-            <a href="{{ route('servicos.create', $empresa) }}" class="btn btn-success ml-md-auto">
-                <i class="fas fa-plus-circle"></i> Adicionar Serviço
-            </a>
-        </div>
-        <div class="card-body p-0 table-responsive">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        {{-- COLUNA DE ID RESPONSIVA IDÊNTICA À DE CONTATOS --}}
-                        <th class="d-none d-md-table-cell" style="width: 10%;">ID</th>
-                        <th>Nome do Serviço</th>
-                        <th class="text-center" style="width: 25%;">Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($empresa->servicos as $servico)
-                        <tr>
-                            <td class="d-none d-md-table-cell">{{ $servico->id }}</td>
-                            <td>{{ $servico->nome }}</td>
-                            <td class="text-center">
-                                {{-- BOTÕES DE AÇÃO COM ESTILO IDÊNTICO AO DE CONTATOS --}}
-                                <a href="{{ route('servicos.edit', $servico) }}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i> Editar
-                                </a>
-                                
-                                <form action="{{ route('servicos.destroy', $servico) }}" method="POST" class="d-inline" onsubmit="return confirm('Tem certeza que deseja excluir este serviço?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">
-                                        <i class="fas fa-trash"></i> Excluir
-                                    </button>
-                                </form>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="text-center text-muted">Nenhum serviço cadastrado.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
         </div>
     </div>
 
@@ -242,20 +175,8 @@
 @endsection
 
 @section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .form-group label { font-weight: 600; }
-        .select2-container .select2-selection--multiple {
-            height: auto !important;
-            min-height: calc(2.25rem + 2px);
-            padding: .375rem .75rem;
-            border: 1px solid #ced4da;
-        }
-        .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #d1e7ff;
-            border-color: #b6d4fe;
-            color: #0c5460;
-        }
         /* Estilo para botões de ação pequenos */
         .btn-xs {
             padding: 0.1rem 0.4rem;
@@ -267,7 +188,6 @@
 @push('js')
     {{-- O JavaScript complexo de AJAX foi removido, mantendo apenas o essencial --}}
     <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
             // Toastr para notificações de sucesso/erro vindas do redirect
@@ -277,13 +197,6 @@
             @if(session('error'))
                 toastr.error('{{ session('error') }}', 'Erro', { closeButton: true, progressBar: true });
             @endif
-
-            // Inicializa o Select2 para os contratos
-            $('#contratos').select2({
-                placeholder: "Selecione um ou mais contratos",
-                allowClear: true,
-                width: '100%'
-            });
 
             // Máscara de CNPJ e submit do form principal
             $('#cnpj').on('input', function() {

@@ -17,8 +17,6 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClienteTicketController;
 use App\Http\Controllers\NotificacaoController;
-use App\Http\Controllers\ContratoController;
-use App\Http\Controllers\Cadastros\ServicoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -96,7 +94,6 @@ Route::middleware(['auth', 'verifica.status', 'role:supervisor|administrador'])-
 
     // Prefixa todas as rotas de cadastros
     Route::prefix('cadastros')->group(function () {
-        Route::resource('contratos', ContratoController::class);
         Route::resource('categorias', CategoriaController::class);
         Route::resource('grupos', GrupoController::class);
         Route::resource('empresas', EmpresaController::class);
@@ -117,12 +114,6 @@ Route::middleware(['auth', 'verifica.status', 'role:supervisor|administrador'])-
         Route::put('/usuarios/{user}', [UserController::class, 'update'])->name('usuarios.update');
         Route::post('/usuarios/{user}/deactivate', [UserController::class, 'deactivate'])->name('usuarios.deactivate');
 
-        // Serviços
-        Route::get('/empresas/{empresa}/servicos/create', [ServicoController::class, 'create'])->name('servicos.create');
-        Route::post('/empresas/{empresa}/servicos', [ServicoController::class, 'store'])->name('servicos.store');
-        Route::get('/servicos/{servico}/edit', [ServicoController::class, 'edit'])->name('servicos.edit');
-        Route::put('/servicos/{servico}', [ServicoController::class, 'update'])->name('servicos.update');
-        Route::delete('/servicos/{servico}', [ServicoController::class, 'destroy'])->name('servicos.destroy');
     });
 });
 
@@ -143,7 +134,5 @@ Route::middleware(['auth', 'verifica.status'])->group(function () {
     Route::get('/minhaconta', [UserController::class, 'editMinhaConta'])->name('minhaconta.edit');
     Route::put('/minhaconta', [UserController::class, 'updateMinhaConta'])->name('minhaconta.update');
     Route::put('/minhaconta/password', [UserController::class, 'updateMinhaSenha'])->name('minhaconta.password');
-    Route::get('/servicos/{servico}/questionario', [ClienteTicketController::class, 'getQuestionario'])->name('servicos.questionario');
     Route::get('/clientes/{id}/empresa', [UserController::class, 'getEmpresa'])->name('clientes.empresa');
 });
-

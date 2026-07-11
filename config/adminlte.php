@@ -368,12 +368,6 @@ return [
                 'icon' => 'fas fa-fw fa-building',
                 'can' => ['acesso admin', 'acesso supervisor'],
             ],
-            [ 
-                'text' => 'Contratos',
-                'url' => 'cadastros/contratos',
-                'icon' => 'fas fa-fw fa-file-contract',
-                'can' => ['acesso admin', 'acesso supervisor'],
-            ],
             [
                 'text' => 'Grupos',
                 'url' => 'cadastros/grupos',

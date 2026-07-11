@@ -30,13 +30,4 @@ class Empresa extends Model implements Auditable
         return $this->hasMany(User::class);
     }
 
-        public function contratos()
-    {
-        return $this->belongsToMany(Contrato::class, 'contrato_empresa');
-    }
-
-        public function servicos()
-    {
-        return $this->hasMany(Servico::class);
-    }
 }

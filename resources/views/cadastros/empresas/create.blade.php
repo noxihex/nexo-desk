@@ -103,21 +103,6 @@
                     @error('horas_contratadas')<span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>@enderror
                 </div>
 
-                {{-- NOVO CAMPO DE CONTRATOS --}}
-                <div class="form-group">
-                    <label for="contratos"><i class="fas fa-file-contract"></i> Contratos Associados</label>
-                    <select name="contratos[]" id="contratos" class="form-control select2" multiple="multiple">
-                        @foreach($contratos as $contrato)
-                            <option value="{{ $contrato->id }}" {{ (is_array(old('contratos')) && in_array($contrato->id, old('contratos'))) ? 'selected' : '' }}>
-                                {{ $contrato->nome }} - R$ {{ number_format($contrato->valor, 2, ',', '.') }} - {{ $contrato->horas_contratadas }} Horas
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('contratos')
-                        <span class="invalid-feedback d-block" role="alert"><strong>{{ $message }}</strong></span>
-                    @enderror
-                </div>
-
                 <div class="form-group d-flex justify-content-start">
                     <button type="submit" class="btn btn-success mr-2"><i class="fas fa-save"></i> Criar Empresa</button>
                     <a href="{{ route('empresas.index') }}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Voltar</a>
@@ -128,37 +113,14 @@
 @endsection
 
 @section('css')
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         .form-group label { font-weight: 600; }
-        .select2-container .select2-selection--multiple {
-            height: auto !important;
-            min-height: calc(2.25rem + 2px);
-            padding: .375rem .75rem;
-            border: 1px solid #ced4da;
-        }
-
-        /* --- COLOQUE O NOVO CÓDIGO AQUI --- */
-        /* Altera a cor de fundo do item selecionado */
-        .select2-container--default .select2-selection--multiple .select2-selection__choice {
-            background-color: #d1e7ff; /* Azul claro suave (cor de alerta 'info' do Bootstrap) */
-            border-color: #b6d4fe;     /* Borda azul um pouco mais escura */
-            color: #0c5460;            /* Cor do texto para bom contraste */
-        }
     </style>
 @endsection
 
 @push('js')
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Inicializa o Select2
-            $('#contratos').select2({
-            placeholder: "Selecione um ou mais contratos",
-            allowClear: true,
-            width: '100%' // <-- Adicione esta linha
-            });
-
             // Máscara de CNPJ
             $('#cnpj').on('input', function() {
                 let cnpj = $(this).val().replace(/\D/g, '').slice(0, 14);
