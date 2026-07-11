@@ -46,7 +46,7 @@
 
     @forelse ($tickets as $ticket)
         <div class="card mb-3" style="width: 100%;">
-            <div class="card-header" style="background-color: #f8f9fa; color: #333; font-weight: bold;">
+            <div class="card-header btx-client-ticket-header">
                 Ticket #{{ $ticket->id }}
             </div>
             <div class="card-body">

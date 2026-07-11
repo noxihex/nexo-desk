@@ -204,7 +204,8 @@
             }
         };
 
-        new Chart(document.getElementById('donutChart').getContext('2d'), donutConfig);
+        const donutChart = new Chart(document.getElementById('donutChart').getContext('2d'), donutConfig);
+        window.BtxTheme?.registerChart(donutChart);
 
         // Dados para o gráfico de linhas
         const lineData = {
@@ -299,11 +300,11 @@
             }
         };
 
-        new Chart(document.getElementById('lineChart').getContext('2d'), lineConfig);
+        const lineChart = new Chart(document.getElementById('lineChart').getContext('2d'), lineConfig);
+        window.BtxTheme?.registerChart(lineChart);
     });
 </script>
 @endsection
-
 
 
 

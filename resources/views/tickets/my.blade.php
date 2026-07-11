@@ -53,6 +53,7 @@
             </li>
         @endif
     @endrole
+    @parent
 @endsection
 
 

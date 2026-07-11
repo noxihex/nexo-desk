@@ -3,6 +3,103 @@
     'use strict';
 
     const allowedExtensions = ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt', 'mp4', 'kmz', 'kml', 'zip'];
+    const themeStorageKey = 'btx-theme';
+
+    function readTheme() {
+        try {
+            return window.localStorage.getItem(themeStorageKey) === 'dark' ? 'dark' : 'light';
+        } catch (error) {
+            return 'light';
+        }
+    }
+
+    function storeTheme(theme) {
+        try {
+            window.localStorage.setItem(themeStorageKey, theme);
+        } catch (error) {
+            // Storage may be unavailable in private or restricted browsing.
+        }
+    }
+
+    function applyTheme(theme, persist) {
+        const dark = theme === 'dark';
+        const navbar = document.querySelector('.main-header.navbar');
+        const toggle = document.getElementById('btxThemeToggle');
+
+        document.documentElement.dataset.btxTheme = dark ? 'dark' : 'light';
+        document.body.classList.toggle('dark-mode', dark);
+
+        if (navbar) {
+            navbar.classList.toggle('navbar-dark', dark);
+            navbar.classList.toggle('navbar-light', !dark);
+            navbar.classList.toggle('navbar-white', !dark);
+        }
+
+        if (toggle) {
+            const label = dark ? 'Ativar modo claro' : 'Ativar modo escuro';
+            const icon = toggle.querySelector('i');
+            toggle.setAttribute('aria-label', label);
+            toggle.setAttribute('aria-pressed', String(dark));
+            toggle.setAttribute('title', label);
+            if (icon) icon.className = dark ? 'fas fa-sun' : 'fas fa-moon';
+        }
+
+        if (persist) storeTheme(dark ? 'dark' : 'light');
+
+        window.dispatchEvent(new CustomEvent('btx:theme-changed', {
+            detail: { theme: dark ? 'dark' : 'light' }
+        }));
+    }
+
+    function initThemeToggle() {
+        const toggle = document.getElementById('btxThemeToggle');
+        if (!toggle) return;
+
+        applyTheme(readTheme(), false);
+        toggle.addEventListener('click', () => {
+            applyTheme(document.body.classList.contains('dark-mode') ? 'light' : 'dark', true);
+        });
+    }
+
+    function chartThemeColors() {
+        const styles = getComputedStyle(document.body);
+        return {
+            text: styles.getPropertyValue('--btx-text').trim() || '#273444',
+            muted: styles.getPropertyValue('--btx-text-muted').trim() || '#667085',
+            border: styles.getPropertyValue('--btx-border').trim() || '#dfe5ec',
+            surface: styles.getPropertyValue('--btx-surface').trim() || '#ffffff'
+        };
+    }
+
+    function themeChart(chart) {
+        if (!chart) return;
+        const colors = chartThemeColors();
+        const options = chart.options || {};
+        const plugins = options.plugins || (options.plugins = {});
+        const legend = plugins.legend || (plugins.legend = {});
+        legend.labels = Object.assign({}, legend.labels, { color: colors.text });
+
+        Object.values(options.scales || {}).forEach(scale => {
+            scale.ticks = Object.assign({}, scale.ticks, { color: colors.muted });
+            scale.grid = Object.assign({}, scale.grid, { color: colors.border });
+            if (scale.title) scale.title.color = colors.text;
+        });
+
+        if (chart.config && chart.config.type === 'doughnut') {
+            chart.data.datasets.forEach(dataset => { dataset.borderColor = colors.surface; });
+        }
+
+        chart.update();
+    }
+
+    window.BtxTheme = {
+        current: readTheme,
+        registerChart(chart) {
+            themeChart(chart);
+            window.addEventListener('btx:theme-changed', () => themeChart(chart));
+            return chart;
+        }
+    };
 
     function formatBytes(bytes) {
         if (!bytes) return '0 B';
@@ -115,6 +212,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
+        initThemeToggle();
         document.querySelectorAll('[data-btx-uploader]').forEach(initUploader);
         document.querySelectorAll('form').forEach(form => form.addEventListener('submit', () => {
             const submit = form.querySelector('button[type="submit"]');

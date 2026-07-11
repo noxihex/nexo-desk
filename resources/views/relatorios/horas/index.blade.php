@@ -251,6 +251,7 @@
                 }
             }
         });
+        window.BtxTheme?.registerChart(ticketsChart);
     });
 </script>
 @endsection
