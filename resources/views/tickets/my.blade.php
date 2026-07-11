@@ -76,7 +76,7 @@
                     <div class="modal-body">
                         <ul>
                             @foreach ($ticketsAtencao as $ticketId)
-                                <li><a href="{{ url('/tickets/' . $ticketId) }}">Ticket #{{ $ticketId }}</a></li>
+                                <li><a href="{{ route('tickets.show', ['ticket' => $ticketId, 'return_to' => url()->full()]) }}">Ticket #{{ $ticketId }}</a></li>
                             @endforeach
                         </ul>
                     </div>
@@ -102,7 +102,7 @@
                     <div class="modal-body">
                         <ul>
                             @foreach ($ticketsSemAnalista as $ticketId)
-                                <li><a href="{{ url('/tickets/' . $ticketId) }}">Ticket #{{ $ticketId }}</a></li>
+                                <li><a href="{{ route('tickets.show', ['ticket' => $ticketId, 'return_to' => url()->full()]) }}">Ticket #{{ $ticketId }}</a></li>
                             @endforeach
                         </ul>
                     </div>
@@ -210,11 +210,11 @@ $barraPercentual = min(100, $slaPercentual); // Limita a largura da barra a 100%
 
                             <!-- Botões de ação alinhados à direita -->
                             <div class="d-flex flex-column button-container ml-3">
-                                <a href="{{ route('tickets.show', $ticket->id) }}" class="btn btn-sm btn-info mb-1">
+                                <a href="{{ route('tickets.show', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-sm btn-info mb-1">
                                     <i class="fas fa-eye"></i> Detalhes
                                 </a>
                                 @role('supervisor|administrador')
-                                <a href="{{ route('tickets.edit', $ticket->id) }}" class="btn btn-sm btn-warning mb-1">
+                                <a href="{{ route('tickets.edit', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-sm btn-warning mb-1">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
                                 @endrole
@@ -252,6 +252,7 @@ $barraPercentual = min(100, $slaPercentual); // Limita a largura da barra a 100%
                     <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" style="display:inline;">
                         @csrf
                         @method('DELETE')
+                        <input type="hidden" name="return_to" value="{{ url()->full() }}">
                         <button type="submit" class="btn btn-danger">Sim, Excluir</button>
                     </form>
                 </div>

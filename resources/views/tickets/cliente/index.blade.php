@@ -29,7 +29,7 @@
             </a>
 
             <!-- Botão para criar um novo ticket -->
-            <a href="{{ route('tickets.cliente.create') }}" class="btn btn-success">
+            <a href="{{ route('tickets.cliente.create', ['return_to' => url()->full()]) }}" class="btn btn-success">
                 <i class="fas fa-plus-circle"></i> Criar Novo Ticket
             </a>
         </div>
@@ -79,7 +79,7 @@
                 </div>
             </div>
             <div class="card-footer text-right">
-                <a href="{{ route('tickets.cliente.show', $ticket->id) }}" class="btn btn-info btn-sm">
+                <a href="{{ route('tickets.cliente.show', ['id' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-info btn-sm">
                     <i class="fas fa-eye"></i> Detalhes
                 </a>
             </div>

@@ -10,9 +10,15 @@ class GrupoController extends Controller
     /**
      * Exibe a lista de grupos.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $grupos = Grupo::paginate(10); // Define 10 itens por página
+        $grupos = Grupo::when($request->filled('search'), function ($query) use ($request) {
+                $query->where('nome', 'like', '%' . $request->input('search') . '%');
+            })
+            ->orderBy('nome')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('cadastros.grupos.index', compact('grupos'));
     }
 

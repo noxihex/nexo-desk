@@ -107,7 +107,7 @@
 
     <div class="card-footer d-flex justify-content-between" style="padding: 8px 15px;">
         <div class="col-md-6">
-            <a href="{{ route('tickets.index') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ $returnUrl ?? route('tickets.index') }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
         </div>
@@ -138,7 +138,7 @@
 
             @role('supervisor|administrador')
                 <!-- Botão para Editar Ticket -->
-                <a href="{{ route('tickets.edit', $ticket->id) }}" class="btn btn-warning btn-sm mr-2">
+                <a href="{{ route('tickets.edit', ['ticket' => $ticket->id, 'return_to' => $returnUrl]) }}" class="btn btn-warning btn-sm mr-2">
                     <i class="fas fa-edit"></i> Editar
                 </a>
                 @endrole
@@ -210,6 +210,7 @@
     <div class="card-footer" style="padding: 8px 15px;">
         <form action="{{ route('mensagens.store', $ticket->id) }}" method="POST" enctype="multipart/form-data" id="messageForm">
             @csrf
+            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
             <input type="hidden" name="status" id="status" value=""> <!-- Campo oculto para definir o status -->
 
             <div class="form-group" style="margin-bottom: 5px;">
@@ -244,6 +245,7 @@
             <!-- Formulário de Assumir Ticket -->
             <form action="{{ route('tickets.assumir', $ticket->id) }}" method="POST">
                 @csrf <!-- Token de segurança obrigatório para métodos POST -->
+                <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
                     <p>Deseja assumir o Ticket <strong>#{{ $ticket->id }} - {{ $ticket->assunto }}</strong>?</p>
 
@@ -302,6 +304,7 @@
             </div>
             <form action="{{ route('tickets.transferir', $ticket->id) }}" method="POST">
                 @csrf
+                <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
                     <p>Selecione o setor, grupo e analista:</p>
 
@@ -370,6 +373,7 @@
             <form action="{{ route('tickets.finalize', $ticket->id) }}" method="POST">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
                     <!-- Relato Final -->
                     <div class="form-group">
@@ -425,6 +429,7 @@
                 <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST">
                     @csrf
                     @method('DELETE')
+                    <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                     <button type="submit" class="btn btn-danger">Excluir</button>
                 </form>
             </div>

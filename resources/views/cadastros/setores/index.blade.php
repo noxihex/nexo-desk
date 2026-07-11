@@ -15,6 +15,15 @@
 
 @section('content')
 
+    <form action="{{ route('setores.index') }}" method="GET" class="mb-3">
+        <div class="d-flex">
+            <input type="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="{{ request('search') }}" style="max-width: 300px;">
+            <button type="submit" class="btn btn-primary ml-2" aria-label="Pesquisar">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Lista de Setores</h3>
@@ -24,7 +33,6 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nome</th>
                         <th class="text-center">Ações</th>
                     </tr>
@@ -32,7 +40,6 @@
                 <tbody>
                     @foreach($setores as $setor)
                         <tr>
-                            <td>{{ $setor->id }}</td>
                             <td>{{ $setor->nome }}</td>
                             <td class="text-center">
                                 <a href="{{ route('setores.edit', $setor->id) }}" class="btn btn-sm btn-warning">

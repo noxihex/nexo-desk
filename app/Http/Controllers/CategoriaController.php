@@ -13,25 +13,15 @@ class CategoriaController extends Controller
      */
     public function index(Request $request)
 {
-    // Obtém o termo de busca enviado pelo formulário
-    $search = $request->input('search');
+    $categorias = Categoria::with('setor')
+        ->when($request->filled('search'), function ($query) use ($request) {
+            $query->where('nome', 'like', '%' . $request->input('search') . '%');
+        })
+        ->orderBy('nome')
+        ->paginate(10)
+        ->withQueryString();
 
-    // Query base: Carrega as categorias com o setor relacionado
-    $query = Categoria::with('setor');
-
-    // Se houver busca, aplica o filtro
-    if (!empty($search)) {
-        $query->where('nome', 'like', '%' . $search . '%') // Busca pelo nome da categoria
-              ->orWhereHas('setor', function ($q) use ($search) {
-                  $q->where('nome', 'like', '%' . $search . '%'); // Busca pelo nome do setor
-              });
-    }
-
-    // Paginação
-    $categorias = $query->paginate(10);
-
-    // Retorna a view com as categorias e o termo de busca (para manter o valor no campo)
-    return view('cadastros.categorias.index', compact('categorias', 'search'));
+    return view('cadastros.categorias.index', compact('categorias'));
 }
 
 

@@ -71,11 +71,11 @@
                         </div>
                         <!-- Botões -->
                         <div class="col-md-3 text-right">
-                            <a href="{{ route('tickets.show', $ticket->id) }}" class="btn btn-info btn-sm botao">
+                            <a href="{{ route('tickets.show', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-info btn-sm botao">
                                 <i class="fas fa-eye"></i> Detalhes
                             </a>
                             @role('supervisor|administrador')
-                            <a href="{{ route('tickets.edit', $ticket->id) }}" class="btn btn-warning btn-sm botao">
+                            <a href="{{ route('tickets.edit', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-warning btn-sm botao">
                                 <i class="fas fa-edit"></i> Editar
                             </a>
                             @endrole

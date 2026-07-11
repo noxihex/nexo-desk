@@ -5,84 +5,112 @@
     @section('content_header')
         <x-page-header title="Tickets" :breadcrumbs="['Tickets']" />
 
-      <!-- Linha com os botões de ação, filtros de setor e grupo, e seleção de ordenação -->
-<div class="row mt-2">
-    <!-- Botão de Novo Ticket -->
-    <div class="col-lg-auto col-md-12 mb-2">
-        <a href="{{ route('tickets.create') }}" class="btn btn-success">
-            <i class="fas fa-plus-circle"></i> Novo Ticket
-        </a>
-    </div>
+@php
+    $activeFilterCount = collect([$setorId, $grupoId])->filter()->count() + ($showClosed == '1' ? 1 : 0);
+    $selectedSetor = $setores->firstWhere('id', $setorId);
+    $selectedGrupo = $grupos->firstWhere('id', $grupoId);
+@endphp
 
-    <!-- Filtros, pesquisa e ordenação alinhados à direita -->
-    <div class="col-lg d-flex justify-content-end flex-wrap">
-        <!-- Campo de Pesquisa -->
-        <div class="col-lg-auto col-md-6 mb-2">
-            <form action="{{ route('tickets.index') }}" method="GET" class="d-flex">
-                <input type="text" name="search" class="form-control" placeholder="ID ou Assunto" value="{{ request('search') }}">
-                <input type="hidden" name="showClosed" value="1"> <!-- Preserva o filtro -->
-                <input type="hidden" name="sort" value="{{ request('sort') }}"> <!-- Preserva a ordenação -->
-                <input type="hidden" name="setor_id" value="{{ request('setor_id') }}"> <!-- Preserva o filtro de setor -->
-                <input type="hidden" name="grupo_id" value="{{ request('grupo_id') }}"> <!-- Preserva o filtro de grupo -->
-                <button type="submit" class="btn btn-primary ml-2">
-                    <i class="fas fa-search"></i>
+<div class="ticket-toolbar mt-3">
+    <form action="{{ route('tickets.index') }}" method="GET" id="ticketFiltersForm">
+        <div class="ticket-toolbar__main">
+            <div class="ticket-search">
+                <label for="ticketSearch" class="sr-only">Buscar por ID ou assunto</label>
+                <i class="fas fa-search ticket-search__icon" aria-hidden="true"></i>
+                <input id="ticketSearch" type="search" name="search" class="form-control"
+                    placeholder="Buscar por ID ou assunto..." value="{{ request('search') }}">
+                <button type="submit" class="btn btn-primary ticket-search__submit">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <span class="ticket-search__submit-label">Buscar</span>
                 </button>
-            </form>
-        </div>
+            </div>
 
-        <!-- Filtro de Setor -->
-        <div class="col-lg-auto col-md-6 mb-2">
-            <div class="d-flex align-items-center">
-                <label for="filterSetor" class="mr-2">Setor:</label>
-                <select id="filterSetor" class="form-control">
-                    <option value="">Todos os Setores</option>
-                    @foreach($setores as $setor)
-                        <option value="{{ $setor->id }}" {{ $setorId == $setor->id ? 'selected' : '' }}>{{ $setor->nome }}</option>
-                    @endforeach
+            <button class="btn btn-outline-secondary ticket-filter-toggle" type="button" data-toggle="collapse"
+                data-target="#ticketAdvancedFilters" aria-expanded="{{ $activeFilterCount ? 'true' : 'false' }}"
+                aria-controls="ticketAdvancedFilters">
+                <i class="fas fa-sliders-h mr-1" aria-hidden="true"></i> Filtros
+                @if($activeFilterCount)
+                    <span class="badge badge-primary ml-1">{{ $activeFilterCount }}</span>
+                @endif
+                <i class="fas fa-chevron-down ticket-filter-toggle__chevron ml-2" aria-hidden="true"></i>
+            </button>
+
+            <div class="ticket-sort">
+                <label for="sortOrder" class="sr-only">Ordenar tickets</label>
+                <select id="sortOrder" name="sort" class="form-control" aria-label="Ordenar tickets">
+                    <option value="created_at" {{ request('sort', 'created_at') == 'created_at' ? 'selected' : '' }}>Criados recentemente</option>
+                    <option value="updated_at" {{ request('sort') == 'updated_at' ? 'selected' : '' }}>Modificados recentemente</option>
+                    <option value="sla" {{ request('sort') == 'sla' ? 'selected' : '' }}>SLA mais atrasado</option>
                 </select>
             </div>
+
+            <a href="{{ route('tickets.create', ['return_to' => url()->full()]) }}" class="btn btn-success ticket-new-button">
+                <i class="fas fa-plus-circle mr-1" aria-hidden="true"></i> Novo Ticket
+            </a>
         </div>
 
-        <!-- Filtro de Grupo -->
-        <div class="col-lg-auto col-md-6 mb-2">
-            <div class="d-flex align-items-center">
-                <label for="filterGrupo" class="mr-2">Grupo:</label>
-                <select id="filterGrupo" class="form-control">
-                    <option value="">Todos os Grupos</option>
-                    @foreach($grupos as $grupo)
-                        <option value="{{ $grupo->id }}" {{ $grupoId == $grupo->id ? 'selected' : '' }}>{{ $grupo->nome }}</option>
-                    @endforeach
-                </select>
+        <div class="collapse {{ $activeFilterCount ? 'show' : '' }}" id="ticketAdvancedFilters">
+            <div class="ticket-toolbar__advanced">
+                <div class="ticket-filter-field">
+                    <label for="filterSetor">Setor</label>
+                    <select id="filterSetor" name="setor_id" class="form-control">
+                        <option value="">Todos os setores</option>
+                        @foreach($setores as $setor)
+                            <option value="{{ $setor->id }}" {{ $setorId == $setor->id ? 'selected' : '' }}>{{ $setor->nome }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="ticket-filter-field">
+                    <label for="filterGrupo">Grupo</label>
+                    <select id="filterGrupo" name="grupo_id" class="form-control">
+                        <option value="">Todos os grupos</option>
+                        @foreach($grupos as $grupo)
+                            <option value="{{ $grupo->id }}" {{ $grupoId == $grupo->id ? 'selected' : '' }}>{{ $grupo->nome }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="ticket-closed-filter">
+                    <span class="ticket-closed-filter__label">Tickets fechados</span>
+                    <div class="custom-control custom-switch">
+                        <input type="hidden" name="showClosed" value="0">
+                        <input type="checkbox" class="custom-control-input" id="showClosed" name="showClosed" value="1"
+                            {{ $showClosed == '1' ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="showClosed">Incluir fechados</label>
+                    </div>
+                </div>
+
+                <div class="ticket-filter-actions">
+                    @if($activeFilterCount || request('search'))
+                        <a href="{{ route('tickets.index') }}" class="btn btn-link">Limpar filtros</a>
+                    @endif
+                    <button type="submit" class="btn btn-primary">Aplicar filtros</button>
+                </div>
             </div>
         </div>
+    </form>
 
-        <!-- Ordenação -->
-        <div class="col-lg-auto col-md-6 mb-2">
-            <div class="d-flex align-items-center">
-                <label for="sortOrder" class="mr-2">Ordenar:</label>
-                <select id="sortOrder" class="form-control">
-                    <option value="created_at" {{ request('sort') == 'created_at' ? 'selected' : '' }}>Criado recente</option>
-                    <option value="updated_at" {{ request('sort') == 'updated_at' ? 'selected' : '' }}>Modificado recente</option>
-                    <option value="sla" {{ request('sort') == 'sla' ? 'selected' : '' }}>SLA atrasado</option>
-                </select>
-            </div>
+    @if($activeFilterCount)
+        <div class="ticket-filter-chips" aria-label="Filtros ativos">
+            <span class="ticket-filter-chips__title">Filtros ativos:</span>
+            @if($selectedSetor)
+                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['setor_id', 'page']))) }}">
+                    Setor: {{ $selectedSetor->nome }} <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+            @endif
+            @if($selectedGrupo)
+                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['grupo_id', 'page']))) }}">
+                    Grupo: {{ $selectedGrupo->nome }} <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+            @endif
+            @if($showClosed == '1')
+                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except('page'), ['showClosed' => 0])) }}">
+                    Incluindo fechados <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+            @endif
         </div>
-
-        <!-- Botão Ocultar/Mostrar Fechados -->
-        <div class="col-lg-auto col-md-6 mb-2">
-            <a href="{{ route('tickets.index', [
-    'showClosed' => $showClosed == '1' ? '0' : '1', // Alterna entre 1 e 0
-    'search' => request('search'), // Preserva o termo pesquisado
-    'sort' => request('sort') ?: 'created_at', // Define um valor padrão
-    'setor_id' => request('setor_id'), // Preserva o filtro de setor
-    'grupo_id' => request('grupo_id') // Preserva o filtro de grupo
-]) }}"
-class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
-    <i class="fas {{ $showClosed == '1' ? 'fa-eye-slash' : 'fa-eye' }}"></i>
-    {{ $showClosed == '1' ? 'Ocultar Fechados' : 'Mostrar Fechados' }}
-</a>
-        </div>
-    </div>
+    @endif
 </div>
 
 
@@ -202,11 +230,11 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
 
                                 <!-- Botões de ação alinhados à direita -->
                                 <div class="d-flex flex-column button-container ml-3">
-                                    <a href="{{ route('tickets.show', $ticket->id) }}" class="btn btn-sm btn-info mb-1">
+                                    <a href="{{ route('tickets.show', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-sm btn-info mb-1">
                                         <i class="fas fa-eye"></i> Detalhes
                                     </a>
                                     @role('supervisor|administrador')
-                                    <a href="{{ route('tickets.edit', $ticket->id) }}" class="btn btn-sm btn-warning mb-1">
+                                    <a href="{{ route('tickets.edit', ['ticket' => $ticket->id, 'return_to' => url()->full()]) }}" class="btn btn-sm btn-warning mb-1">
                                         <i class="fas fa-edit"></i> Editar
                                     </a>
                                     @endrole
@@ -244,6 +272,7 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
                         <form action="{{ route('tickets.destroy', $ticket->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('DELETE')
+                            <input type="hidden" name="return_to" value="{{ url()->full() }}">
                             <button type="submit" class="btn btn-danger">Sim, Excluir</button>
                         </form>
                     </div>
@@ -268,6 +297,136 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
     @include('layouts.notificacss')
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <style>
+            .ticket-toolbar {
+                background: var(--btx-surface);
+                border: 1px solid var(--btx-border);
+                border-radius: var(--btx-radius);
+                box-shadow: var(--btx-shadow-sm);
+                padding: .85rem;
+            }
+            .ticket-toolbar__main {
+                align-items: center;
+                display: grid;
+                gap: .75rem;
+                grid-template-columns: minmax(260px, 1fr) auto minmax(210px, auto) auto;
+            }
+            .ticket-search {
+                display: flex;
+                min-width: 0;
+                position: relative;
+            }
+            .ticket-search__icon {
+                color: var(--btx-text-muted);
+                left: .9rem;
+                pointer-events: none;
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                z-index: 2;
+            }
+            .ticket-search .form-control {
+                border-bottom-right-radius: 0;
+                border-top-right-radius: 0;
+                padding-left: 2.5rem;
+            }
+            .ticket-search__submit {
+                border-bottom-left-radius: 0;
+                border-top-left-radius: 0;
+            }
+            .ticket-search__submit i { display: none; }
+            .ticket-filter-toggle[aria-expanded="true"] .ticket-filter-toggle__chevron {
+                transform: rotate(180deg);
+            }
+            .ticket-filter-toggle__chevron { transition: transform var(--btx-transition); }
+            .ticket-toolbar__advanced {
+                align-items: end;
+                border-top: 1px solid var(--btx-border);
+                display: grid;
+                gap: 1rem;
+                grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+                margin-top: .85rem;
+                padding-top: .85rem;
+            }
+            .ticket-filter-field label,
+            .ticket-closed-filter__label {
+                display: block;
+                font-size: .78rem;
+                margin-bottom: .35rem;
+                text-transform: uppercase;
+            }
+            .ticket-closed-filter { padding-bottom: .45rem; }
+            .ticket-filter-actions {
+                display: flex;
+                gap: .4rem;
+                justify-content: flex-end;
+            }
+            .ticket-filter-chips {
+                align-items: center;
+                border-top: 1px solid var(--btx-border);
+                display: flex;
+                flex-wrap: wrap;
+                gap: .45rem;
+                margin-top: .85rem;
+                padding-top: .75rem;
+            }
+            .ticket-filter-chips__title {
+                color: var(--btx-text-muted);
+                font-size: .82rem;
+                font-weight: 600;
+            }
+            .ticket-filter-chip {
+                align-items: center;
+                background: var(--btx-primary-soft);
+                border: 1px solid var(--btx-border);
+                border-radius: 999px;
+                color: var(--btx-primary);
+                display: inline-flex;
+                font-size: .82rem;
+                font-weight: 600;
+                gap: .45rem;
+                padding: .35rem .65rem;
+            }
+            .ticket-filter-chip:hover { text-decoration: none; }
+            body.dark-mode .btn-outline-secondary {
+                border-color: var(--btx-border-input);
+                color: var(--btx-text);
+            }
+            @media (max-width: 991.98px) {
+                .ticket-toolbar__main {
+                    grid-template-columns: minmax(0, 1fr) auto auto;
+                }
+                .ticket-search { grid-column: 1 / -1; }
+                .ticket-sort { min-width: 210px; }
+                .ticket-toolbar__advanced { grid-template-columns: 1fr 1fr; }
+                .ticket-filter-actions { align-self: end; }
+            }
+            @media (max-width: 575.98px) {
+                .ticket-toolbar { padding: .75rem; }
+                .ticket-toolbar__main {
+                    grid-template-columns: 1fr 1fr;
+                    gap: .6rem;
+                }
+                .ticket-search { grid-column: 1 / -1; }
+                .ticket-search__submit {
+                    min-width: 44px;
+                }
+                .ticket-search__submit i { display: inline-block; }
+                .ticket-search__submit-label { display: none; }
+                .ticket-filter-toggle,
+                .ticket-new-button { width: 100%; }
+                .ticket-sort { grid-column: 1 / -1; min-width: 0; }
+                .ticket-toolbar__advanced { display: block; }
+                .ticket-filter-field,
+                .ticket-closed-filter { margin-bottom: 1rem; }
+                .ticket-filter-actions {
+                    border-top: 1px solid var(--btx-border);
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    padding-top: .75rem;
+                }
+                .ticket-filter-actions .btn { width: 100%; }
+                .ticket-filter-chips__title { flex-basis: 100%; }
+            }
              /* Exibe texto completo em telas maiores */
  .badge-text-full {
         display: inline;
@@ -311,26 +470,9 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
                 @endif
             });
 
-            // Redirecionamento com filtros e ordenação selecionados
+            // Ordenação é frequente e continua com aplicação imediata no desktop e no mobile.
             document.getElementById('sortOrder').addEventListener('change', function () {
-                updateFilters();
+                document.getElementById('ticketFiltersForm').submit();
             });
-            document.getElementById('filterSetor').addEventListener('change', function () {
-                updateFilters();
-            });
-            document.getElementById('filterGrupo').addEventListener('change', function () {
-                updateFilters();
-            });
-
-            function updateFilters() {
-                const selectedSort = document.getElementById('sortOrder').value;
-                const selectedSetor = document.getElementById('filterSetor').value;
-                const selectedGrupo = document.getElementById('filterGrupo').value;
-                const url = new URL(window.location.href);
-                url.searchParams.set('sort', selectedSort);
-                url.searchParams.set('setor_id', selectedSetor);
-                url.searchParams.set('grupo_id', selectedGrupo);
-                window.location.href = url;
-            }
         </script>
     @endsection

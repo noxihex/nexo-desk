@@ -77,7 +77,7 @@
     </div>
     <div class="card-footer">
         <div class="d-flex">
-            <a href="{{ route('tickets.cliente.index') }}" class="btn btn-secondary btn-sm">
+            <a href="{{ $returnUrl }}" class="btn btn-secondary btn-sm">
                 <i class="fas fa-arrow-left"></i> Voltar
             </a>
         </div>
@@ -144,6 +144,7 @@
     <div class="card-footer">
         <form action="{{ route('tickets.cliente.mensagens.store', $ticket->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
             <div class="form-group">
                 <label for="descricao">Enviar nova mensagem:</label>
                 <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
@@ -174,6 +175,7 @@
             <form id="finalizeForm" action="{{ route('tickets.cliente.finalize', $ticket->id) }}" method="POST">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
                     <!-- Relato Final -->
                     <div class="form-group">

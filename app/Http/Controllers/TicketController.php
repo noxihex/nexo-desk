@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
+use App\Support\TicketReturnUrl;
 
 use App\Models\Ticket;
 use App\Models\Categoria;
@@ -129,7 +130,7 @@ class TicketController extends Controller
     /**
      * Exibe o formulário de criação de ticket.
      */
-    public function create()
+    public function create(Request $request)
     {
         $categorias = Categoria::all();
         $clientes = User::role(['cliente', 'clientedc'])->get();
@@ -138,7 +139,9 @@ class TicketController extends Controller
         $setores = Setor::all();
         $analistas = User::role(['analista', 'supervisor', 'administrador'])->get();
 
-        return view('tickets.create', compact('categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas'));
+        $returnUrl = TicketReturnUrl::resolve($request);
+
+        return view('tickets.create', compact('categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas', 'returnUrl'));
     }
 
     /**
@@ -200,7 +203,7 @@ class TicketController extends Controller
             Log::warning("Nenhum anexo encontrado na requisição.");
         }
 
-        return redirect()->route('tickets.index')->with('success', 'Ticket criado com sucesso!');
+        return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket criado com sucesso!');
     }
 
 
@@ -211,9 +214,12 @@ class TicketController extends Controller
     /**
      * Exibe um ticket específico.
      */
-    public function show(Ticket $ticket)
+    public function show(Request $request, Ticket $ticket)
     {
-            $user = Auth::user();
+        $user = Auth::user();
+
+        $returnUrl = TicketReturnUrl::resolve($request);
+
     if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
         if ($ticket->setor_id !== $user->setor_id) {
             // Se o setor do ticket for diferente do setor do analista, nega o acesso.
@@ -244,13 +250,13 @@ class TicketController extends Controller
         $setorSelecionado = $ticket->setor_id;
 
         // Retorna os dados para a view
-        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'grupos', 'categoriasAssociadas', 'analistas', 'setorSelecionado'));
+        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'grupos', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl'));
     }
 
 
 
 
-    public function edit(Ticket $ticket)
+    public function edit(Request $request, Ticket $ticket)
     {
         $categorias = Categoria::all();
         $clientes = User::role(['cliente', 'clientedc'])->get();
@@ -261,7 +267,9 @@ class TicketController extends Controller
         // Filtrando usuários com os papéis de analista, supervisor ou administrador
         $analistas = User::role(['analista', 'supervisor', 'administrador'])->get();
 
-        return view('tickets.edit', compact('ticket', 'categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas'));
+        $returnUrl = TicketReturnUrl::resolve($request);
+
+        return view('tickets.edit', compact('ticket', 'categorias', 'clientes', 'empresas', 'grupos', 'setores', 'analistas', 'returnUrl'));
     }
 
 
@@ -291,13 +299,13 @@ class TicketController extends Controller
             'status' => $request->status,
         ]);
 
-        return redirect()->route('tickets.index')->with('success', 'Ticket atualizado com sucesso!');
+        return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket atualizado com sucesso!');
     }
 
     /**
      * Exclui um ticket e seus anexos.
      */
-    public function destroy(Ticket $ticket)
+    public function destroy(Request $request, Ticket $ticket)
     {
         // Exclui anexos do storage e do banco de dados
         foreach ($ticket->attachments as $anexo) {
@@ -306,7 +314,7 @@ class TicketController extends Controller
         }
 
         $ticket->delete();
-        return redirect()->route('tickets.index')->with('success', 'Ticket excluído com sucesso!');
+        return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket excluído com sucesso!');
     }
 
     public function myTickets(Request $request)
@@ -338,7 +346,7 @@ class TicketController extends Controller
 
         // Verifica se o ticket possui uma categoria
         if (!$ticket->categoria) {
-            return redirect()->route('tickets.show', $ticket->id)
+            return redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => TicketReturnUrl::resolve($request)])
                 ->with('error', 'O ticket precisa estar vinculado a uma categoria para ser finalizado.');
         }
 
@@ -391,7 +399,7 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
         $mensagem->save();
 
-        return redirect()->route('tickets.show', $ticket->id)
+        return redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => TicketReturnUrl::resolve($request)])
             ->with('success', 'Ticket finalizado com sucesso!');
     }
 
@@ -475,7 +483,14 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
             'user_id' => $user->id, // Registra o ID do usuário que assumiu
         ]);
 
-        return redirect()->route('tickets.show', $ticket->id)->with('success', 'Ticket assumido com sucesso!');
+        $returnUrl = TicketReturnUrl::resolve($request);
+        $canStillView = !$user->hasRole('analista')
+            || $user->hasRole(['supervisor', 'administrador'])
+            || $ticket->setor_id === $user->setor_id;
+
+        return $canStillView
+            ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket assumido com sucesso!')
+            : redirect()->to($returnUrl)->with('success', 'Ticket assumido com sucesso!');
     }
 
 
@@ -514,7 +529,14 @@ public function transferirTicket(Request $request, $id)
     $mensagem->descricao = "{$user->name} transferiu o ticket para " . ($novoAnalista ? $novoAnalista->name : ($grupo ? $grupo->nome : 'Sem grupo'));
     $mensagem->save();
 
-    return redirect()->route('tickets.show', $ticket->id)->with('success', 'Ticket transferido com sucesso!');
+    $returnUrl = TicketReturnUrl::resolve($request);
+    $canStillView = !$user->hasRole('analista')
+        || $user->hasRole(['supervisor', 'administrador'])
+        || $ticket->setor_id === $user->setor_id;
+
+    return $canStillView
+        ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket transferido com sucesso!')
+        : redirect()->to($returnUrl)->with('success', 'Ticket transferido com sucesso!');
 }
 
 

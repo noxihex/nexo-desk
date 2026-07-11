@@ -23,6 +23,15 @@
         </script>
     @endif
 
+    <form action="{{ route('usuarios.index') }}" method="GET" class="mb-3">
+        <div class="d-flex">
+            <input type="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="{{ request('search') }}" style="max-width: 300px;">
+            <button type="submit" class="btn btn-primary ml-2" aria-label="Pesquisar">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Lista de Usuários</h3>
@@ -33,7 +42,6 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th class="d-none d-md-table-cell">ID</th> <!-- Oculto em telas pequenas -->
                         <th>Nome</th>
                         <th class="d-none d-md-table-cell">Email</th> <!-- Oculto em telas pequenas -->
                         <th>Permissão</th>
@@ -46,7 +54,6 @@
                 <tbody>
                     @foreach($users as $user)
                         <tr>
-                            <td class="d-none d-md-table-cell">{{ $user->id }}</td> <!-- Oculto em telas pequenas -->
                             <td>{{ $user->name }}</td>
                             <td class="d-none d-md-table-cell">{{ $user->email }}</td> <!-- Oculto em telas pequenas -->
 

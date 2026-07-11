@@ -19,6 +19,15 @@
 
 @section('content')
 
+    <form action="{{ route('grupos.index') }}" method="GET" class="mb-3">
+        <div class="d-flex">
+            <input type="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="{{ request('search') }}" style="max-width: 300px;">
+            <button type="submit" class="btn btn-primary ml-2" aria-label="Pesquisar">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </form>
+
     <div class="card">
         <div class="card-header">
             <h3 class="card-title">Lista de Grupos</h3>
@@ -28,7 +37,6 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nome</th>
                         <th class="text-center">Ações</th>
                     </tr>
@@ -36,7 +44,6 @@
                 <tbody>
                     @foreach($grupos as $grupo)
                         <tr>
-                            <td>{{ $grupo->id }}</td>
                             <td>{{ $grupo->nome }}</td>
                             <td class="text-center">
                                 <a href="{{ route('grupos.edit', $grupo->id) }}" class="btn btn-warning btn-sm">

@@ -17,15 +17,19 @@ class UserController extends Controller
     /**
      * Exibe a lista de usuários.
      */
-    public function index()
-{
-    // Filtra usuários com as permissões desejadas e aplica paginação
-    $users = User::role(['analista', 'supervisor', 'administrador'])
-                 ->with(['grupo', 'setor', 'empresa']) // Relacionamentos opcionais
-                 ->paginate(10);
+    public function index(Request $request)
+    {
+        $users = User::role(['analista', 'supervisor', 'administrador'])
+            ->with(['grupo', 'setor', 'empresa', 'roles'])
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $query->where('name', 'like', '%' . $request->input('search') . '%');
+            })
+            ->orderBy('name')
+            ->paginate(10)
+            ->withQueryString();
 
-    return view('cadastros.usuarios.index', compact('users'));
-}
+        return view('cadastros.usuarios.index', compact('users'));
+    }
 
     /**
      * Exibe o formulário de criação de um novo usuário.

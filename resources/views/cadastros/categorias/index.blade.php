@@ -29,7 +29,7 @@
     <!-- Campo de busca -->
     <form action="{{ route('categorias.index') }}" method="GET">
         <div class="d-flex justify-content-start mb-3">
-            <input type="text" name="search" class="form-control" placeholder="Pesquisar categoria..." value="{{ request('search') }}" style="max-width: 300px;">
+            <input type="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="{{ request('search') }}" style="max-width: 300px;">
             <button type="submit" class="btn btn-primary ml-2">
                 <i class="fas fa-search"></i>
             </button>
@@ -46,7 +46,6 @@
             <table class="table table-striped" id="categoriaTable">
                 <thead>
                     <tr>
-                        <th>ID</th>
                         <th>Nome da Categoria</th>
                         <th>Setor</th>
                         <th class="text-center">Ações</th>
@@ -55,7 +54,6 @@
                 <tbody>
                     @foreach($categorias as $categoria)
                         <tr>
-                            <td>{{ $categoria->id }}</td>
                             <td>{{ $categoria->nome }}</td>
                             <td>{{ $categoria->setor->nome ?? 'Sem setor' }}</td>
                             <td class="text-center">
@@ -99,29 +97,8 @@
 
         <div class="card-footer">
             <div class="d-flex justify-content-end">
-                {{ $categorias->appends(['search' => request('search')])->links() }}
+                {{ $categorias->links() }}
             </div>
         </div>
     </div>
-@endsection
-
-@section('js')
-    <script>
-        // Filtro dinâmico da tabela
-        document.getElementById('searchInput').addEventListener('keyup', function() {
-            const searchValue = this.value.toLowerCase();
-            const tableRows = document.querySelectorAll('#categoriaTable tbody tr');
-
-            tableRows.forEach(row => {
-                const cells = row.querySelectorAll('td');
-                const rowText = Array.from(cells).map(cell => cell.textContent.toLowerCase()).join(' ');
-
-                if (rowText.includes(searchValue)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-    </script>
 @endsection

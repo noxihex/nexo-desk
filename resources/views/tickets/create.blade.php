@@ -21,6 +21,7 @@
     <div class="card-body">
         <form action="{{ route('tickets.store') }}" method="POST" enctype="multipart/form-data">
             @csrf
+            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
 
             <!-- Campo de Assunto -->
             <div class="form-group">
@@ -113,7 +114,7 @@
                 <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
                 <x-attachment-uploader name="anexos[]" />
             </div>
-            <x-form-actions :cancel-url="route('tickets.index')" submit-label="Criar Ticket" />
+            <x-form-actions :cancel-url="$returnUrl" submit-label="Criar Ticket" />
         </form>
     </div>
 </div>

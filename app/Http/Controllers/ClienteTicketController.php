@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
+use App\Support\TicketReturnUrl;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -74,7 +75,7 @@ class ClienteTicketController extends Controller
 
 
 
-    public function show($id)
+    public function show(Request $request, $id)
 {
     // Obtém o usuário autenticado
     $user = auth()->user();
@@ -88,7 +89,9 @@ class ClienteTicketController extends Controller
         ->findOrFail($id); // Lança 404 se não encontrar o ticket
 
     // Retorna a view com o ticket
-    return view('tickets.cliente.show', compact('ticket'));
+    $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
+
+    return view('tickets.cliente.show', compact('ticket', 'returnUrl'));
 }
 
 
@@ -143,12 +146,15 @@ public function storeMessage(Request $request, $id)
 
     // Redireciona de volta para a página do ticket com mensagem de sucesso
     return redirect()
-        ->route('tickets.cliente.show', $ticket->id)
+        ->route('tickets.cliente.show', [
+            'id' => $ticket->id,
+            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+        ])
         ->with('success', 'Mensagem enviada com sucesso!');
 }
 
 
-public function create()
+public function create(Request $request)
 {
     $user = auth()->user();
     $empresa = $user->empresa;
@@ -158,7 +164,9 @@ public function create()
     $servicos = $empresa ? $empresa->servicos()->get() : collect();
 
     // Retorna a view com os dados necessários
-    return view('tickets.cliente.create', compact('setores', 'servicos'));
+    $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
+
+    return view('tickets.cliente.create', compact('setores', 'servicos', 'returnUrl'));
 }
 
 public function store(Request $request)
@@ -257,7 +265,7 @@ public function store(Request $request)
         $this->criarNotificacao($ticket);
 
     // Redireciona para a página de listagem de tickets com uma mensagem de sucesso
-    return redirect()->route('tickets.cliente.index')->with('success', 'Ticket criado com sucesso!');
+    return redirect()->to(TicketReturnUrl::resolve($request, 'tickets.cliente.index'))->with('success', 'Ticket criado com sucesso!');
 }
 
 
@@ -287,7 +295,10 @@ public function finalize(Request $request, $id)
 
     // Verifica se o ticket possui uma categoria
     if (!$ticket->categoria) {
-        return redirect()->route('tickets.show', $ticket->id)
+        return redirect()->route('tickets.cliente.show', [
+            'id' => $ticket->id,
+            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+        ])
             ->with('error', 'O ticket precisa estar vinculado a uma categoria para ser finalizado.');
     }
 
@@ -337,7 +348,10 @@ public function finalize(Request $request, $id)
     $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
     $mensagem->save();
 
-    return redirect()->route('tickets.cliente.show', $ticket->id)
+    return redirect()->route('tickets.cliente.show', [
+        'id' => $ticket->id,
+        'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+    ])
         ->with('success', 'Ticket finalizado com sucesso!');
 }
 

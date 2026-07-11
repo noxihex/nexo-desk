@@ -11,9 +11,15 @@ class EmpresaController extends Controller
     /**
      * Exibe a lista de empresas.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $empresas = Empresa::paginate(10); // Pagina 10 resultados por página
+        $empresas = Empresa::when($request->filled('search'), function ($query) use ($request) {
+                $query->where('nome', 'like', '%' . $request->input('search') . '%');
+            })
+            ->orderBy('nome')
+            ->paginate(10)
+            ->withQueryString();
+
         return view('cadastros.empresas.index', compact('empresas'));
     }
 

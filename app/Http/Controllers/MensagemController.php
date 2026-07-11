@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
+use App\Support\TicketReturnUrl;
 
 use App\Models\Mensagem;
 use App\Models\Ticket;
@@ -59,7 +60,10 @@ class MensagemController extends Controller
         $ticket->touch(); // Atualiza o campo updated_at para a data e hora atuais
         $ticket->save(); // Salva o ticket com as alterações, se houver
 
-        return redirect()->route('tickets.show', $ticketId)->with('success', 'Mensagem enviada com sucesso!');
+        return redirect()->route('tickets.show', [
+            'ticket' => $ticketId,
+            'return_to' => TicketReturnUrl::resolve($request),
+        ])->with('success', 'Mensagem enviada com sucesso!');
     }
 
 

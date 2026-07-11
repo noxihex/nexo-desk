@@ -10,9 +10,14 @@ class SetorController extends Controller
     /**
      * Exibe a lista de setores.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $setores = Setor::all();
+        $setores = Setor::when($request->filled('search'), function ($query) use ($request) {
+                $query->where('nome', 'like', '%' . $request->input('search') . '%');
+            })
+            ->orderBy('nome')
+            ->get();
+
         return view('cadastros.setores.index', compact('setores'));
     }
 

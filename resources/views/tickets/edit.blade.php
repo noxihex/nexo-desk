@@ -27,6 +27,7 @@
         <form action="{{ route('tickets.update', $ticket->id) }}" method="POST">
             @csrf
             @method('PUT')
+            <input type="hidden" name="return_to" value="{{ $returnUrl }}">
 
             <!-- Campo Assunto -->
             <div class="form-group">
@@ -137,7 +138,7 @@
                 <button type="submit" class="btn btn-success mr-2">
                     <i class="fas fa-save"></i> Salvar Alterações
                 </button>
-                <a href="{{ route('tickets.index') }}" class="btn btn-secondary">
+                <a href="{{ $returnUrl }}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
             </div>
@@ -268,4 +269,3 @@
 @section('css')
 @include('layouts.notificacss')
 @endsection
-
