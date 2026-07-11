@@ -59,6 +59,7 @@
                 <p class="mb-1"><strong>Contato:</strong> {{ $ticket->cliente ? $ticket->cliente->name : 'N/A' }}</p>
                 <p class="mb-1"><strong>Empresa:</strong> {{ $ticket->empresa ? $ticket->empresa->nome : 'N/A' }}</p>
                 <p class="mb-1"><strong>Data de Criação:</strong> {{ $ticket->created_at->format('d/m/Y H:i') }}</p>
+                <p class="mb-1"><strong>Modificado:</strong> {{ $ticket->updated_at ? $ticket->updated_at->format('d/m/Y H:i') : '-' }}</p>
             </div>
 
             <div class="col-md-4">
