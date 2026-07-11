@@ -99,7 +99,7 @@ class ClienteTicketController extends Controller
 public function storeMessage(Request $request, $id)
 {
     $request->validate(array_merge([
-        'descricao' => 'required|string',
+        'descricao' => 'nullable|string|required_without:attachments',
     ], AttachmentRules::for('attachments')));
 
     // Busca o ticket e verifica permissões
@@ -114,7 +114,7 @@ public function storeMessage(Request $request, $id)
     $mensagem = Mensagem::create([
         'user_id' => $user->id,
         'ticket_id' => $id,
-        'descricao' => $request->descricao,
+        'descricao' => $request->filled('descricao') ? $request->descricao : 'Anexo enviado.',
     ]);
 
     // Processa os anexos enviados, se houver

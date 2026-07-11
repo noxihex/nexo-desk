@@ -216,12 +216,11 @@
 
             <div class="form-group" style="margin-bottom: 5px;">
                 <label for="descricao" style="margin-bottom: 0.3rem;">Enviar nova mensagem:</label>
-                <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+                <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..."></textarea>
             </div>
 
             <div class="form-group">
-                <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
-                <x-attachment-uploader name="attachments[]" />
+                <x-attachment-uploader name="attachments[]" :max-size-mb="10" collapsible />
             </div>
 
             <!-- Botões de Envio -->

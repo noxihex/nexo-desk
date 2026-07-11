@@ -147,11 +147,10 @@
             <input type="hidden" name="return_to" value="{{ $returnUrl }}">
             <div class="form-group">
                 <label for="descricao">Enviar nova mensagem:</label>
-                <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..." required></textarea>
+                <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..."></textarea>
             </div>
             <div class="form-group">
-                <label><i class="fas fa-paperclip" aria-hidden="true"></i> Anexos</label>
-                <x-attachment-uploader name="attachments[]" />
+                <x-attachment-uploader name="attachments[]" :max-size-mb="10" collapsible />
             </div>
             <button type="submit" class="btn btn-success btn-sm">
                 <i class="fas fa-paper-plane"></i> Enviar Mensagem

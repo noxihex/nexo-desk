@@ -145,6 +145,9 @@
         const list = root.querySelector('.btx-uploader__files');
         const counter = root.querySelector('.btx-uploader__counter');
         const errors = root.querySelector('.btx-uploader__errors');
+        const toggle = root.querySelector('.btx-uploader__toggle');
+        const toggleCount = root.querySelector('.btx-uploader__toggle-count');
+        const panel = root.querySelector('.btx-uploader__panel');
         const maxFiles = Number(root.dataset.maxFiles || 5);
         const maxBytes = Number(root.dataset.maxSizeMb || 5) * 1024 * 1024;
         const accepted = (root.dataset.extensions || allowedExtensions.join(',')).split(',').map(value => value.trim().toLowerCase());
@@ -153,6 +156,11 @@
 
         function identity(file) { return `${file.name}:${file.size}:${file.lastModified}`; }
         function clearPreviews() { previewUrls.forEach(url => URL.revokeObjectURL(url)); previewUrls = []; }
+        function setExpanded(expanded) {
+            if (!toggle || !panel) return;
+            panel.hidden = !expanded;
+            toggle.setAttribute('aria-expanded', String(expanded));
+        }
         function syncInput() {
             const transfer = new DataTransfer();
             files.forEach(file => transfer.items.add(file));
@@ -200,6 +208,11 @@
                 list.appendChild(item);
             });
             counter.textContent = `${files.length} de ${maxFiles} arquivo${files.length === 1 ? '' : 's'}`;
+            if (toggleCount) {
+                toggleCount.textContent = files.length === 0
+                    ? 'Nenhum arquivo selecionado'
+                    : `${files.length} arquivo${files.length === 1 ? '' : 's'} selecionado${files.length === 1 ? '' : 's'}`;
+            }
         }
         function addFiles(candidates) {
             const messages = [];
@@ -213,8 +226,10 @@
                 files.push(file); existing.add(identity(file));
             });
             syncInput(); render(); announce([...new Set(messages)]);
+            if (files.length > 0 || messages.length > 0) setExpanded(true);
         }
 
+        if (toggle) toggle.addEventListener('click', () => setExpanded(panel.hidden));
         dropzone.addEventListener('click', () => input.click());
         dropzone.addEventListener('keydown', event => {
             if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); input.click(); }

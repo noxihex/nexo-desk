@@ -209,6 +209,10 @@ label { color: var(--btx-label); font-weight: 600; }
 .btx-message--own { margin-left: auto; background: var(--btx-primary-soft); border-color: #b8d7ff; }
 
 .btx-uploader { margin-top: .5rem; }
+.btx-uploader__toggle { display: inline-flex; align-items: center; gap: .45rem; }
+.btx-uploader__toggle-count { color: var(--btx-text-muted); font-size: .8rem; font-weight: 400; }
+.btx-uploader__panel { margin-top: .65rem; }
+.btx-uploader__panel[hidden] { display: none; }
 .btx-uploader__dropzone { position: relative; display: flex; min-height: 150px; align-items: center; justify-content: center; padding: 1.25rem; text-align: center; background: var(--btx-surface-subtle); border: 2px dashed var(--btx-border-input); border-radius: var(--btx-radius); cursor: pointer; }
 .btx-uploader__dropzone:hover, .btx-uploader__dropzone.is-dragging { background: var(--btx-primary-soft); border-color: var(--btx-primary); }
 .btx-uploader__dropzone:focus-visible { outline: none; box-shadow: var(--btx-focus); border-color: var(--btx-primary); }

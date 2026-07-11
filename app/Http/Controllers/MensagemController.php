@@ -19,14 +19,14 @@ class MensagemController extends Controller
     public function store(Request $request, $ticketId)
     {
         $request->validate(array_merge([
-            'descricao' => 'required|string',
+            'descricao' => 'nullable|string|required_without:attachments',
         ], AttachmentRules::for('attachments')));
 
         // Cria a mensagem
         $mensagem = Mensagem::create([
             'user_id' => auth()->id(),
             'ticket_id' => $ticketId,
-            'descricao' => $request->input('descricao'),
+            'descricao' => $request->filled('descricao') ? $request->input('descricao') : 'Anexo enviado.',
         ]);
 
         // Processa os anexos enviados
