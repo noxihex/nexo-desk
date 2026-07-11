@@ -168,7 +168,7 @@ class="btn {{ $showClosed == '1' ? 'btn-success' : 'btn-secondary' }}">
                                             {{ ucfirst($ticket->status) }}
                                         </span>
                                     </p>
-                                    <p class="mb-1"><strong>Origem:</strong> {{ $ticket->origem ?? '-' }}</p>
+                                    <p class="mb-1"><strong>Prazo:</strong> {{ $ticket->prazo ? $ticket->prazo->format('d/m/Y') : '-' }}</p>
 
 
             <!-- Cálculo de SLA -->

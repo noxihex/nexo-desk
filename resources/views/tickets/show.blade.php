@@ -49,6 +49,7 @@
                         {{ $horas > 0 ? $horas . ' horas' : '' }}{{ $horas > 0 && $minutos > 0 ? ' e ' : '' }}{{ $minutos > 0 ? $minutos . ' minutos' : '' }}
                     @endif
                 </p>
+                <p class="mb-1"><strong>Prazo:</strong> {{ $ticket->prazo ? $ticket->prazo->format('d/m/Y') : '-' }}</p>
             </div>
 
             <div class="col-md-4">

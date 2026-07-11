@@ -23,12 +23,17 @@ class Ticket extends Model implements Auditable
         'atribuido_ao_analista_id',
         'horas_gastas',
         'origem',
+        'prazo',
         'assumido_por_usuario_id',
         'data_hora_assumido',
         'transferido_por_usuario_id',
         'data_hora_transferido',
         'finalizado_por_usuario_id',
         'data_hora_finalizado'
+    ];
+
+    protected $casts = [
+        'prazo' => 'date:Y-m-d',
     ];
 
     /**

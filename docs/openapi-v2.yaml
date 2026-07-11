@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: BTXDesk API V2
+  version: 2.0.0
+  description: API V2 isolada, autenticada com Laravel Sanctum.
+servers:
+  - url: /api/v2
+security:
+  - sanctum: []
+paths:
+  /tickets:
+    get:
+      summary: Lista tickets
+      parameters: [{ $ref: '#/components/parameters/Page' }]
+      responses:
+        '200': { $ref: '#/components/responses/TicketPage' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      summary: Cria um ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TicketCreate' }
+            example: { assunto: Falha no acesso, descricao: O sistema não abre, categoria_id: 1, cliente_id: 5, prazo: '2026-07-31' }
+      responses:
+        '201': { description: Ticket criado, content: { application/json: { schema: { $ref: '#/components/schemas/TicketResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /tickets/search:
+    get:
+      summary: Pesquisa tickets
+      parameters:
+        - { $ref: '#/components/parameters/Page' }
+        - { name: assunto, in: query, schema: { type: string } }
+        - { name: setor_id, in: query, schema: { type: integer } }
+        - { name: grupo_id, in: query, schema: { type: integer } }
+        - { name: status, in: query, schema: { type: string, enum: [aberto, fechado] } }
+      responses:
+        '200': { $ref: '#/components/responses/TicketPage' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /tickets/{id}:
+    parameters: [{ $ref: '#/components/parameters/Id' }]
+    get:
+      summary: Detalha um ticket
+      responses:
+        '200': { description: Ticket, content: { application/json: { schema: { $ref: '#/components/schemas/TicketResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /tickets/{id}/finalizar:
+    post:
+      summary: Finaliza um ticket
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [descricao_fechamento, horas, minutos], properties: { descricao_fechamento: { type: string }, horas: { type: integer, minimum: 0 }, minutos: { type: integer, minimum: 0, maximum: 59 } } } } } }
+      responses: { '200': { description: Finalizado }, '400': { description: Ticket sem categoria }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/messages:
+    post:
+      summary: Adiciona mensagem
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [descricao], properties: { descricao: { type: string } } } } } }
+      responses: { '201': { description: Mensagem criada }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/status:
+    patch:
+      summary: Altera o status
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [status], properties: { status: { type: string, enum: [aberto, pendente cliente, pendente analista, fechado] } } } } } }
+      responses: { '200': { description: Atualizado }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/assumir:
+    post:
+      summary: Assume um ticket
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [analista_id, setor_id, categoria_id], properties: { analista_id: { type: integer }, setor_id: { type: integer }, categoria_id: { type: integer } } } } } }
+      responses: { '200': { description: Assumido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/transferir:
+    post:
+      summary: Transfere um ticket
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [setor_id, grupo_id]
+              properties: { setor_id: { type: integer }, grupo_id: { type: integer }, analista_id: { type: integer, nullable: true } }
+            example: { setor_id: 1, grupo_id: 2, analista_id: null }
+      responses: { '200': { description: Transferido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/prazo:
+    patch:
+      summary: Define ou remove o prazo
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [prazo], properties: { prazo: { type: string, format: date, nullable: true } } }, examples: { definir: { value: { prazo: '2026-07-31' } }, remover: { value: { prazo: null } } } } } }
+      responses: { '200': { description: Prazo atualizado }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /usuarios: { get: { summary: Lista usuários seguros para integração, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de usuários }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /empresas: { get: { summary: Lista empresas, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de empresas }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /setores: { get: { summary: Lista setores, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de setores }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /categorias: { get: { summary: Lista categorias com setor_id, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de categorias }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /grupos: { get: { summary: Lista grupos, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de grupos }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /me:
+    get:
+      summary: Retorna o usuário do token
+      responses:
+        '200': { description: Usuário, papéis, permissões e vínculos, content: { application/json: { schema: { $ref: '#/components/schemas/MeResponse' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+components:
+  securitySchemes:
+    sanctum: { type: http, scheme: bearer, bearerFormat: Sanctum }
+  parameters:
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1 } }
+    Id: { name: id, in: path, required: true, schema: { type: integer } }
+  schemas:
+    Ticket:
+      type: object
+      properties:
+        id: { type: integer }
+        assunto: { type: string }
+        descricao: { type: string }
+        categoria_id: { type: integer, nullable: true }
+        user_id: { type: integer }
+        cliente_id: { type: integer, nullable: true }
+        empresa_id: { type: integer, nullable: true }
+        status: { type: string }
+        grupo_id: { type: integer, nullable: true }
+        setor_id: { type: integer, nullable: true }
+        atribuido_ao_analista_id: { type: integer, nullable: true }
+        origem: { type: string, nullable: true }
+        prazo: { type: string, format: date, nullable: true, example: '2026-07-31' }
+    TicketCreate:
+      type: object
+      required: [assunto, descricao, categoria_id, cliente_id]
+      properties:
+        assunto: { type: string, maxLength: 255 }
+        descricao: { type: string }
+        categoria_id: { type: integer }
+        cliente_id: { type: integer }
+        empresa_id: { type: integer, nullable: true }
+        grupo_id: { type: integer, nullable: true }
+        setor_id: { type: integer, nullable: true }
+        atribuido_ao_analista_id: { type: integer, nullable: true }
+        prazo: { type: string, format: date, nullable: true }
+    TicketResponse: { type: object, properties: { data: { $ref: '#/components/schemas/Ticket' }, message: { type: string } } }
+    MeResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string, format: email }
+            status: { type: boolean }
+            roles: { type: array, items: { type: string } }
+            permissions: { type: array, items: { type: string } }
+            empresa: { type: object, nullable: true }
+            setor: { type: object, nullable: true }
+            grupo: { type: object, nullable: true }
+  responses:
+    TicketPage: { description: Página Laravel com 100 tickets, content: { application/json: { schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Ticket' } }, meta: { type: object }, links: { type: object } } } } } }
+    Unauthenticated: { description: Não autenticado }
+    NotFound: { description: Recurso não encontrado }
+    ValidationError: { description: Dados inválidos }
