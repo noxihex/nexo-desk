@@ -200,7 +200,8 @@ return [
     'classes_content_header' => '',
     'classes_content' => '',
     'classes_sidebar' => 'sidebar-dark-primary elevation-4',
-    'classes_sidebar_nav' => '',
+    // Keep open submenus from leaking into the compact icon-only sidebar.
+    'classes_sidebar_nav' => 'nav-collapse-hide-child',
     'classes_topnav' => 'navbar-white navbar-light',
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
