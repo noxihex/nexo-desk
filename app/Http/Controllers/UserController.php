@@ -213,11 +213,10 @@ class UserController extends Controller
 
     public function createCliente(Request $request)
     {
-        $empresas = Empresa::all(); // Carrega todas as empresas disponíveis
-        $roles = Role::whereIn('name', ['cliente', 'clientedc'])->get(); // Permissões para clientes
         $empresaId = $request->query('empresa_id'); // Recupera o ID da empresa da query string (ex: ?empresa_id=1)
+        $empresa = $empresaId ? Empresa::find($empresaId) : null;
 
-        return view('cadastros.clientes.create', compact('empresas', 'roles', 'empresaId'));
+        return view('cadastros.clientes.create', compact('empresa', 'empresaId'));
     }
 
     public function storeCliente(Request $request)
@@ -227,7 +226,6 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-            'role' => 'required|string', // Valida a permissão (deve ser cliente ou clientedc)
         ]);
 
         // Cria o cliente
@@ -239,8 +237,8 @@ class UserController extends Controller
             'status' => true, // Ativo por padrão
         ]);
 
-        // Atribui o papel ao cliente
-        $user->assignRole($request->role);
+        // Todo contato criado por este fluxo pertence à Central HelpDesk.
+        $user->assignRole('cliente');
 
         // Define a mensagem de sucesso
         $message = 'Contato criado com sucesso!';

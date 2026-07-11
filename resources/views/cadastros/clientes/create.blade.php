@@ -63,37 +63,10 @@
                     @enderror
                 </div>
 
-                {{-- Tipo de Cliente (Permissão) --}}
                 <div class="form-group">
-                    <label for="role"><i class="fas fa-shield-alt"></i> Tipo de Central do Cliente</label>
-                    <select name="role" id="role" class="form-control @error('role') is-invalid @enderror" @role('analista|supervisor') disabled @endrole >
-                        @foreach($roles as $role)
-                            <option value="{{ $role->name }}">
-                                {{ $role->name == 'cliente' ? 'Cliente HelpDesk' : 'Cliente DataCenter' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('role')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="empresa_id"><i class="fas fa-building"></i> Empresa</label>
-                    <select name="empresa_id_disabled" id="empresa_id_disabled" class="form-control" @role('analista|supervisor') disabled @endrole >
-                        <option value="">Sem Empresa</option> {{-- Permite a opção "Sem Empresa" --}}
-                        @foreach($empresas as $empresa)
-                            <option value="{{ $empresa->id }}" {{ $empresa->id == $empresaId ? 'selected' : '' }}>
-                                {{ $empresa->nome }}
-                            </option>
-                        @endforeach
-                    </select>
-                    {{-- Campo oculto para garantir envio do valor ao backend --}}
-
+                    <label><i class="fas fa-building"></i> Empresa</label>
+                    <p class="form-control-plaintext mb-0 empresa-selecionada">{{ $empresa ? $empresa->nome : 'Sem empresa' }}</p>
                     <input type="hidden" name="empresa_id" value="{{ $empresaId }}">
-
                 </div>
 
 
@@ -115,4 +88,12 @@
             </form>
         </div>
     </div>
+@endsection
+
+@section('css')
+    <style>
+        .empresa-selecionada {
+            color: inherit;
+        }
+    </style>
 @endsection
