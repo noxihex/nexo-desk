@@ -73,11 +73,6 @@ class User extends Authenticatable implements Auditable
         return $this->belongsTo(Empresa::class);
     }
 
-    public function notificacoes()
-    {
-        return $this->hasMany(Notificacao::class);
-    }
-
     /**
      * Atributos para serem ignorados pela auditoria.
      *

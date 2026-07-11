@@ -15,7 +15,6 @@ use App\Models\Empresa;
 use App\Models\User;
 use App\Models\Setor;
 use App\Models\Mensagem;
-use App\Models\Notificacao;
 use App\Models\TicketAttachment;
 use App\Models\MessageAttachment;
 
@@ -201,31 +200,8 @@ public function store(Request $request)
         }
     }
 
-
-        // Criação de notificação
-        $this->criarNotificacao($ticket);
-
     // Redireciona para a página de listagem de tickets com uma mensagem de sucesso
     return redirect()->to(TicketReturnUrl::resolve($request, 'tickets.cliente.index'))->with('success', 'Ticket criado com sucesso!');
-}
-
-
-private function criarNotificacao(Ticket $ticket)
-{
-    // Obtém todos os analistas que pertencem ao mesmo setor do ticket
-    $analistas = User::whereHas('roles', function ($query) {
-        $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
-    })->where('setor_id', $ticket->setor_id)->get();
-
-    // Cria a notificação para cada analista do setor
-    foreach ($analistas as $analista) {
-        \App\Models\Notificacao::create([
-            'user_id' => $analista->id,
-            'titulo' => "Novo ticket criado: #{$ticket->id}",
-            'mensagem' => "Um novo ticket foi criado por {$ticket->user->name} no seu setor {$ticket->setor->nome}.",
-            'lida' => false, // Indica que a notificação ainda não foi lida
-        ]);
-    }
 }
 
 

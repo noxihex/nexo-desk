@@ -3,11 +3,13 @@
     @section('title', config('app.name') . ' - Tickets')
 
     @section('content_header')
-        <x-page-header title="Tickets" :breadcrumbs="['Tickets']" />
+        <x-page-header title="Tickets" :breadcrumbs="['Tickets', 'Todos os tickets']" />
 
 @php
-    $activeFilterCount = collect([$setorId])->filter()->count() + ($showClosed == '1' ? 1 : 0);
+    $activeFilterCount = collect([$setorId, $categoriaId, $empresaId])->filter()->count() + ($showClosed == '1' ? 1 : 0);
     $selectedSetor = $setores->firstWhere('id', $setorId);
+    $selectedCategoria = $categorias->firstWhere('id', $categoriaId);
+    $selectedEmpresa = $empresas->firstWhere('id', $empresaId);
 @endphp
 
 <div class="ticket-toolbar mt-3">
@@ -60,6 +62,26 @@
                     </select>
                 </div>
 
+                <div class="ticket-filter-field">
+                    <label for="filterCategoria">Categoria</label>
+                    <select id="filterCategoria" name="categoria_id" class="form-control">
+                        <option value="">Todas as categorias</option>
+                        @foreach($categorias as $categoria)
+                            <option value="{{ $categoria->id }}" {{ $categoriaId == $categoria->id ? 'selected' : '' }}>{{ $categoria->nome }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="ticket-filter-field">
+                    <label for="filterEmpresa">Empresa</label>
+                    <select id="filterEmpresa" name="empresa_id" class="form-control">
+                        <option value="">Todas as empresas</option>
+                        @foreach($empresas as $empresa)
+                            <option value="{{ $empresa->id }}" {{ $empresaId == $empresa->id ? 'selected' : '' }}>{{ $empresa->nome }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div class="ticket-closed-filter">
                     <span class="ticket-closed-filter__label">Tickets fechados</span>
                     <div class="custom-control custom-switch">
@@ -88,6 +110,16 @@
                     Setor: {{ $selectedSetor->nome }} <i class="fas fa-times" aria-hidden="true"></i>
                 </a>
             @endif
+            @if($selectedCategoria)
+                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['categoria_id', 'page']))) }}">
+                    Categoria: {{ $selectedCategoria->nome }} <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+            @endif
+            @if($selectedEmpresa)
+                <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except(['empresa_id', 'page']))) }}">
+                    Empresa: {{ $selectedEmpresa->nome }} <i class="fas fa-times" aria-hidden="true"></i>
+                </a>
+            @endif
             @if($showClosed == '1')
                 <a class="ticket-filter-chip" href="{{ route('tickets.index', array_merge(request()->except('page'), ['showClosed' => 0])) }}">
                     Incluindo fechados <i class="fas fa-times" aria-hidden="true"></i>
@@ -106,7 +138,6 @@
 
 
 
-    @include('layouts.notificahtml')
 
 
 
@@ -226,13 +257,15 @@
             'search' => request('search'), // Preserva o termo pesquisado
             'sort' => request('sort'), // Preserva a ordenação
             'showClosed' => request('showClosed'), // Preserva o filtro "Mostrar Fechados"
-            'setor_id' => request('setor_id') // Preserva o filtro de setor
+            'setor_id' => request('setor_id'), // Preserva o filtro de setor
+            'categoria_id' => request('categoria_id'),
+            'empresa_id' => request('empresa_id')
         ])->links() }}
     </div>
     @endsection
 
     @section('css')
-    @include('layouts.notificacss')
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <style>
             .ticket-toolbar {
@@ -281,7 +314,7 @@
                 border-top: 1px solid var(--btx-border);
                 display: grid;
                 gap: 1rem;
-                grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+                grid-template-columns: repeat(3, minmax(180px, 1fr)) auto auto;
                 margin-top: .85rem;
                 padding-top: .85rem;
             }
@@ -421,10 +454,34 @@
     @endsection
 
     @section('js')
-    @include('layouts.notificajs')
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
         <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script>
             $(document).ready(function() {
+                $.fn.select2.defaults.set('language', {
+                    noResults: function () {
+                        return 'Nenhum resultado encontrado';
+                    }
+                });
+
+                $('#filterSetor').select2({
+                    allowClear: true,
+                    placeholder: 'Todos os setores',
+                    width: '100%'
+                });
+
+                $('#filterCategoria').select2({
+                    allowClear: true,
+                    placeholder: 'Todas as categorias',
+                    width: '100%'
+                });
+
+                $('#filterEmpresa').select2({
+                    allowClear: true,
+                    placeholder: 'Todas as empresas',
+                    width: '100%'
+                });
+
                 @if(session('success'))
                     toastr.success('{{ session('success') }}', 'Sucesso', {
                         closeButton: true,

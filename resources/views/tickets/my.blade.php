@@ -17,7 +17,6 @@
     </div>
 @endsection
 
-@include('layouts.notificahtml')
 
 @section('content_top_nav_right')
     @role('analista|supervisor|administrador')
@@ -231,7 +230,6 @@
 @endsection
 
 @section('css')
-@include('layouts.notificacss')
     <style>
          /* Exibe texto completo em telas maiores */
  .badge-text-full {
@@ -287,5 +285,4 @@
 
 
 @section('js')
-@include('layouts.notificajs')
 @endsection

@@ -25,16 +25,23 @@
 
     <form action="{{ route('usuarios.index') }}" method="GET" class="mb-3">
         <div class="d-flex">
+            @if($showAll)
+                <input type="hidden" name="todos" value="1">
+            @endif
             <input type="search" name="search" class="form-control" placeholder="Pesquisar por nome..." value="{{ request('search') }}" style="max-width: 300px;">
             <button type="submit" class="btn btn-primary ml-2" aria-label="Pesquisar">
                 <i class="fas fa-search"></i>
             </button>
+            <a href="{{ route('usuarios.index', array_filter(['todos' => $showAll ? null : 1, 'search' => request('search')])) }}" class="btn {{ $showAll ? 'btn-secondary' : 'btn-outline-secondary' }} ml-2">
+                <i class="fas fa-users"></i>
+                {{ $showAll ? 'Exibir somente ativos' : 'Exibir todos' }}
+            </a>
         </div>
     </form>
 
     <div class="card">
         <div class="card-header">
-            <h3 class="card-title">Lista de Usuários</h3>
+            <h3 class="card-title">{{ $showAll ? 'Todos os Usuários' : 'Usuários Ativos' }}</h3>
         </div>
 
         <!-- Adicionando a classe table-responsive -->
@@ -51,7 +58,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($users as $user)
+                    @forelse($users as $user)
                         <tr>
                             <td>{{ $user->name }}</td>
                             <td class="d-none d-md-table-cell">{{ $user->email }}</td> <!-- Oculto em telas pequenas -->
@@ -97,7 +104,11 @@
                                 </div>
                             </td>
                         </tr>
-                    @endforeach
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center">{{ $showAll ? 'Nenhum usuário encontrado.' : 'Nenhum usuário ativo encontrado.' }}</td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>

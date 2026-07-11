@@ -181,17 +181,6 @@ label { color: var(--btx-label); font-weight: 600; }
 .btx-theme-toggle:hover { color: var(--btx-primary); }
 .btx-theme-toggle:focus { outline: 0; box-shadow: var(--btx-focus); }
 
-.notification-icon { position: relative; min-width: 40px; min-height: 40px; cursor: pointer; font-size: 18px; }
-.notification-badge { position: absolute; top: -2px; right: -2px; display: flex; min-width: 20px; height: 20px; align-items: center; justify-content: center; padding: 4px 6px; color: #fff; background: var(--btx-danger); border-radius: 50%; font-size: 12px; font-weight: 700; line-height: 1; }
-.notification-item { display: flex; align-items: center; justify-content: space-between; padding: .75rem; border-bottom: 1px solid var(--btx-border); }
-.notification-item:last-child { border-bottom: 0; }
-.notification-item.unread { background: var(--btx-primary-soft); font-weight: 700; }
-.notification-item.read { color: var(--btx-text-muted); background: var(--btx-surface); }
-.notification-item:hover { background: var(--btx-surface-hover); cursor: pointer; }
-.notification-text { flex-grow: 1; }
-.notification-actions { margin-left: .625rem; }
-.notification-actions .mark-as-read { min-width: 40px; min-height: 40px; padding: 0; color: var(--btx-primary); background: none; border: 0; }
-
 .btx-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .btx-page-header__title { margin: 0; font-size: 1.35rem; font-weight: 700; line-height: 1.25; }
 .btx-breadcrumb { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; margin-top: .15rem; color: var(--btx-text-muted); font-size: .8rem; line-height: 1.25; }

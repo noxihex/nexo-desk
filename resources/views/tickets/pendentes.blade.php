@@ -6,7 +6,6 @@
 <x-page-header title="Tickets pendentes" :breadcrumbs="['Tickets', 'Pendentes']" />
 @endsection
 
-@include('layouts.notificahtml')
 
 @section('content')
 
@@ -99,7 +98,6 @@
 @endsection
 
 @section('css')
-@include('layouts.notificacss')
 <style>
     .card {
         font-size: 0.9em;
@@ -124,5 +122,4 @@
 @endsection
 
 @section('js')
-@include('layouts.notificajs')
 @endsection

@@ -7,7 +7,6 @@
 @endsection
 
 
-@include('layouts.notificahtml')
 
 @section('content')
 
@@ -105,7 +104,6 @@
 @endsection
 
 @section('js')
-@include('layouts.notificajs')
 <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 <script>
@@ -264,5 +262,4 @@ $(document).ready(function() {
 
 
 @section('css')
-@include('layouts.notificacss')
 @endsection

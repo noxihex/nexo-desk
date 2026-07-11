@@ -6,10 +6,6 @@
 <x-page-header title="Visão Geral" :breadcrumbs="[config('app.name'), 'Visão Geral']" />
 @stop
 
-@role('analista|supervisor|administrador')
-@include('layouts.notificahtml')
-@endrole
-
 
 
 
@@ -376,9 +372,6 @@
 
 
 @section('css')
-@role('analista|supervisor|administrador')
-@include('layouts.notificacss')
-@endrole
 <style>
  /* Exibe texto completo em telas maiores */
  .badge-text-full {
@@ -458,10 +451,6 @@
 @stop
 
 @section('js')
-@role('analista|supervisor|administrador')
-@include('layouts.notificajs')
-@endrole
-
 <script>
     function toggleTicketList(listId, event) {
         event.preventDefault();

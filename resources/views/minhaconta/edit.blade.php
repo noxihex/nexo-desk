@@ -6,10 +6,6 @@
     <h1>Minha Conta</h1>
 @endsection
 
-@role('analista|supervisor|administrador')
-@include('layouts.notificahtml')
-@endrole
-
 
 @section('content')
 
@@ -95,9 +91,6 @@
 @endsection
 
 @section('js')
-@role('analista|supervisor|administrador')
-@include('layouts.notificajs')
-@endrole
     <!-- Incluindo JS do Toastr via CDN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
@@ -141,9 +134,6 @@
 
 
 @section('css')
-@role('analista|supervisor|administrador')
-@include('layouts.notificacss')
-@endrole
 <style>
      /* Exibe texto completo em telas maiores */
  .badge-text-full {
@@ -166,7 +156,6 @@
     <!-- Incluindo CSS do Toastr via CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 @endsection
-
 
 
 

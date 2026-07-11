@@ -6,7 +6,6 @@
 <x-page-header title="Detalhes do ticket" :breadcrumbs="['Tickets', 'Detalhes']" />
 @endsection
 
-@include('layouts.notificahtml')
 
 
 @section('content')
@@ -421,7 +420,6 @@
 @endsection
 
 @section('css')
-@include('layouts.notificacss')
     <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
     <style>
         /* Exibe texto completo em telas maiores */
@@ -457,7 +455,6 @@
     </style>
 @endsection
 @section('js')
-@include('layouts.notificajs')
 <script src="//cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
 <script>

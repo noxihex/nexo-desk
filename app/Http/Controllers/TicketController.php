@@ -11,7 +11,6 @@ use App\Models\Empresa;
 use App\Models\User;
 use App\Models\Setor;
 use App\Models\Mensagem;
-use App\Models\Notificacao;
 use App\Models\TicketAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -36,8 +35,10 @@ class TicketController extends Controller
     // Define o valor de 'showClosed' baseado no parâmetro explícito ou no estado padrão
     $showClosed = $request->has('showClosed') ? $request->input('showClosed') : ($search ? '1' : '0');
 
-    // Obtém o filtro de setor da requisição
+    // Obtém os filtros da requisição
     $setorId = $request->input('setor_id');
+    $categoriaId = $request->input('categoria_id');
+    $empresaId = $request->input('empresa_id');
 
     // Query base com os relacionamentos necessários
     $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista');
@@ -62,6 +63,14 @@ class TicketController extends Controller
     // Filtro por setor
     if ($setorId) {
         $ticketsQuery->where('setor_id', $setorId);
+    }
+
+    if ($categoriaId) {
+        $ticketsQuery->where('categoria_id', $categoriaId);
+    }
+
+    if ($empresaId) {
+        $ticketsQuery->where('empresa_id', $empresaId);
     }
 
     // Ordenação por SLA
@@ -105,8 +114,17 @@ class TicketController extends Controller
     } else {
         $setores = Setor::all();
     }
+
+    $categorias = Categoria::when(
+        $user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador']),
+        fn ($query) => $query->where('setor_id', $user->setor_id)
+    )->orderBy('nome')->get();
+    $empresas = Empresa::orderBy('nome')->get();
+
     // Se o usuário for um analista, ele só poderá ver e filtrar seu próprio setor.
-    return view('tickets.index', compact('tickets', 'showClosed', 'setores', 'setorId'));
+    return view('tickets.index', compact(
+        'tickets', 'showClosed', 'setores', 'setorId', 'categorias', 'categoriaId', 'empresas', 'empresaId'
+    ));
 }
 
 

@@ -18,8 +18,13 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $showAll = $request->boolean('todos');
+
         $users = User::role(['analista', 'supervisor', 'administrador'])
             ->with(['setor', 'empresa', 'roles'])
+            ->when(! $showAll, function ($query) {
+                $query->where('status', true);
+            })
             ->when($request->filled('search'), function ($query) use ($request) {
                 $query->where('name', 'like', '%' . $request->input('search') . '%');
             })
@@ -27,7 +32,7 @@ class UserController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('cadastros.usuarios.index', compact('users'));
+        return view('cadastros.usuarios.index', compact('users', 'showAll'));
     }
 
     /**

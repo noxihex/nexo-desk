@@ -15,7 +15,6 @@ use App\Http\Controllers\AdministracaoController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClienteTicketController;
-use App\Http\Controllers\NotificacaoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -127,8 +126,6 @@ Route::middleware(['auth', 'verifica.status', 'role:administrador'])->group(func
 // --- ROTAS COMPARTILHADAS (Qualquer usuário logado) ---
 Route::middleware(['auth', 'verifica.status'])->group(function () {
     Route::get('/home', [VisaoGeralController::class, 'index'])->name('home');
-    Route::get('/notificacoes', [NotificacaoController::class, 'index'])->name('notificacoes.index');
-    Route::post('/notificacoes/marcar-como-lida/{id}', [NotificacaoController::class, 'marcarComoLida'])->name('notificacoes.marcarComoLida');
     Route::get('/minhaconta', [UserController::class, 'editMinhaConta'])->name('minhaconta.edit');
     Route::put('/minhaconta', [UserController::class, 'updateMinhaConta'])->name('minhaconta.update');
     Route::put('/minhaconta/password', [UserController::class, 'updateMinhaSenha'])->name('minhaconta.password');
