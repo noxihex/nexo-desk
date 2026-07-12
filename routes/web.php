@@ -81,6 +81,10 @@ Route::middleware(['auth', 'verifica.status', 'role:analista|supervisor|administ
     // Utilitários de carregamento dinâmico
     Route::get('/setores/{setorId}/categorias', [CategoriaController::class, 'categoriasPorSetor']);
     Route::get('/categorias/{setor_id}', [TicketController::class, 'carregarCategorias'])->name('categorias.porSetor');
+
+    // Usado nos formulários de tickets do staff para preencher a empresa do contato.
+    // Não deve ficar disponível para clientes, pois permite consultar dados por ID.
+    Route::get('/clientes/{id}/empresa', [UserController::class, 'getEmpresa'])->name('clientes.empresa');
 });
 
 // --- ROTAS DE GESTÃO (Apenas Supervisores e Administradores) ---
@@ -129,5 +133,4 @@ Route::middleware(['auth', 'verifica.status'])->group(function () {
     Route::get('/minhaconta', [UserController::class, 'editMinhaConta'])->name('minhaconta.edit');
     Route::put('/minhaconta', [UserController::class, 'updateMinhaConta'])->name('minhaconta.update');
     Route::put('/minhaconta/password', [UserController::class, 'updateMinhaSenha'])->name('minhaconta.password');
-    Route::get('/clientes/{id}/empresa', [UserController::class, 'getEmpresa'])->name('clientes.empresa');
 });

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Ticket;
+use App\Models\Empresa;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
@@ -57,6 +58,38 @@ class UserAndClientAuthorizationTest extends TestCase
         $this->actingAs($administrator)
             ->get(route('usuarios.edit', $client))
             ->assertNotFound();
+    }
+
+    public function test_client_cannot_discover_another_users_company(): void
+    {
+        $empresa = Empresa::create([
+            'nome' => 'Empresa privada',
+            'cnpj' => '12345678000199',
+        ]);
+        $client = $this->userWithRole('cliente');
+        $otherClient = $this->userWithRole('cliente', ['empresa_id' => $empresa->id]);
+
+        $this->actingAs($client)
+            ->get(route('clientes.empresa', $otherClient->id))
+            ->assertForbidden();
+    }
+
+    public function test_staff_can_still_get_clients_company_for_ticket_forms(): void
+    {
+        $empresa = Empresa::create([
+            'nome' => 'Empresa do contato',
+            'cnpj' => '98765432000188',
+        ]);
+        $analyst = $this->userWithRole('analista');
+        $client = $this->userWithRole('cliente', ['empresa_id' => $empresa->id]);
+
+        $this->actingAs($analyst)
+            ->getJson(route('clientes.empresa', $client->id))
+            ->assertOk()
+            ->assertExactJson([
+                'empresa_id' => $empresa->id,
+                'empresa_nome' => 'Empresa do contato',
+            ]);
     }
 
     public function test_client_without_company_cannot_access_or_change_another_clients_ticket(): void
