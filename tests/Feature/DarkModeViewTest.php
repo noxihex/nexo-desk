@@ -58,6 +58,20 @@ class DarkModeViewTest extends TestCase
         $this->assertStringContainsString("localStorage.getItem('btx-theme') === 'dark'", $earlyInitializer);
     }
 
+    public function test_dark_mode_pagination_uses_readable_text_color(): void
+    {
+        $stylesheet = file_get_contents(resource_path('sass/app.scss'));
+
+        $this->assertStringContainsString(
+            '.page-item:not(.active):not(.disabled) .page-link { color: var(--btx-text); background: var(--btx-surface); border-color: var(--btx-border); }',
+            $stylesheet
+        );
+        $this->assertStringContainsString(
+            '.page-item.disabled .page-link { color: var(--btx-text-muted);',
+            $stylesheet
+        );
+    }
+
     public function test_my_tickets_keeps_parent_navigation_items(): void
     {
         $view = file_get_contents(resource_path('views/tickets/my.blade.php'));

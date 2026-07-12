@@ -251,7 +251,9 @@ body.dark-mode {
     .dropdown-item { color: var(--btx-text); }
     .dropdown-item:hover, .dropdown-item:focus { color: var(--btx-text); background: var(--btx-surface-hover); }
     .dropdown-divider, hr, .simple-divider { border-color: var(--btx-border); }
-    .page-link { color: var(--btx-primary); background: var(--btx-surface); border-color: var(--btx-border); }
+    .page-item:not(.active):not(.disabled) .page-link { color: var(--btx-text); background: var(--btx-surface); border-color: var(--btx-border); }
+    .page-item:not(.active):not(.disabled) .page-link:hover,
+    .page-item:not(.active):not(.disabled) .page-link:focus { color: var(--btx-text); background: var(--btx-surface-hover); }
     .page-item.disabled .page-link { color: var(--btx-text-muted); background: var(--btx-surface-subtle); border-color: var(--btx-border); }
     .timeline > div > .timeline-item, .timeline > div > .timeline-item > .timeline-header,
     .timeline > div > .timeline-item > .timeline-body, .timeline > div > .timeline-item > .timeline-footer { color: var(--btx-text); background: var(--btx-surface); border-color: var(--btx-border); }
