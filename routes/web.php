@@ -36,7 +36,7 @@ Route::get('/', function () {
 
 
 // Rotas de autenticação
-Auth::routes();
+Auth::routes(['register' => false]);
 
 
 

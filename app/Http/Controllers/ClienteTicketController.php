@@ -74,16 +74,15 @@ class ClienteTicketController extends Controller
 
     public function show(Request $request, $id)
 {
-    // Obtém o usuário autenticado
-    $user = auth()->user();
-
     // Busca o ticket pelo ID, garantindo que seja do mesmo usuário ou empresa
-    $ticket = Ticket::with(['mensagens.user', 'mensagens.attachments', 'attachments', 'categoria', 'user', 'empresa'])
-        ->where(function ($query) use ($user) {
-            $query->where('user_id', $user->id) // Tickets criados pelo usuário
-                  ->orWhere('empresa_id', $user->empresa_id); // Ou da mesma empresa
-        })
-        ->findOrFail($id); // Lança 404 se não encontrar o ticket
+    $ticket = $this->ticketPermitidoAoCliente($id, [
+        'mensagens.user',
+        'mensagens.attachments',
+        'attachments',
+        'categoria',
+        'user',
+        'empresa',
+    ]);
 
     // Retorna a view com o ticket
     $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
@@ -100,12 +99,8 @@ public function storeMessage(Request $request, $id)
     ], AttachmentRules::for('attachments')));
 
     // Busca o ticket e verifica permissões
-    $ticket = Ticket::findOrFail($id);
     $user = auth()->user();
-
-    if ($ticket->cliente_id !== $user->id && $ticket->empresa_id !== $user->empresa_id) {
-        abort(403, 'Você não tem permissão para interagir com este ticket.');
-    }
+    $ticket = $this->ticketPermitidoAoCliente($id);
 
     // Cria a mensagem vinculada ao ticket
     $mensagem = Mensagem::create([
@@ -207,7 +202,7 @@ public function store(Request $request)
 
 public function finalize(Request $request, $id)
 {
-    $ticket = Ticket::findOrFail($id);
+    $ticket = $this->ticketPermitidoAoCliente($id);
     $user = Auth::user(); // Recupera o usuário autenticado
 
     // Verifica se o ticket possui uma categoria
@@ -275,7 +270,7 @@ public function finalize(Request $request, $id)
 public function calcularHorasSugeridas($id)
 {
     try {
-        $ticket = Ticket::findOrFail($id);
+        $ticket = $this->ticketPermitidoAoCliente($id);
 
         // Verifica se o ticket possui uma categoria
         if (!$ticket->categoria) {
@@ -309,9 +304,26 @@ public function calcularHorasSugeridas($id)
             'horas' => intdiv($tempoTotalMinutos, 60),
             'minutos' => $tempoTotalMinutos % 60,
         ]);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        abort(404);
     } catch (\Exception $e) {
         return response()->json(['error' => 'Erro ao calcular horas sugeridas.'], 500);
     }
+}
+
+private function ticketPermitidoAoCliente($id, array $with = []): Ticket
+{
+    $user = auth()->user();
+    $query = Ticket::with($with)->whereKey($id);
+
+    if ($user->empresa_id !== null) {
+        $query->where('empresa_id', $user->empresa_id);
+    } else {
+        $query->where('cliente_id', $user->id)
+            ->whereNull('empresa_id');
+    }
+
+    return $query->firstOrFail();
 }
 
 }

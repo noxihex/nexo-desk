@@ -17,8 +17,11 @@ class AttachmentUploaderViewTest extends TestCase
 
         foreach ($views as $path => $name) {
             $view = file_get_contents(resource_path('views/' . $path));
-            $this->assertStringContainsString('<x-attachment-uploader name="' . $name . '" />', $view);
+            $this->assertStringContainsString('<x-attachment-uploader name="' . $name . '"', $view);
             $this->assertStringNotContainsString('addAttachmentField', $view);
         }
+
+        $component = file_get_contents(resource_path('views/components/attachment-uploader.blade.php'));
+        $this->assertStringContainsString("'maxSizeMb' => 10", $component);
     }
 }

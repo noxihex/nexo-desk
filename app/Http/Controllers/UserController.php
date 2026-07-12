@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -42,7 +43,7 @@ class UserController extends Controller
     {
         $setores = Setor::all(); // Busca todos os setores do banco
         $empresas = Empresa::all(); // Busca todas as empresas do banco
-        $roles = Role::all(); // Carrega todas as permissões (roles)
+        $roles = Role::whereIn('name', $this->allowedTeamRoles())->get();
 
         return view('cadastros.usuarios.create', compact('setores', 'empresas', 'roles'));
     }
@@ -58,7 +59,7 @@ class UserController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional (nullable)
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional (nullable)
-            'role' => 'required|string',
+            'role' => ['required', Rule::in($this->allowedTeamRoles())],
         ]);
 
         // Cria o usuário, salvando setor e empresa pelo ID se existir
@@ -82,9 +83,11 @@ class UserController extends Controller
      */
     public function edit(User $user)
     {
+        $this->authorizeTeamUserManagement($user);
+
         $setores = Setor::all(); // Busca todos os setores do banco
         $empresas = Empresa::all(); // Busca todas as empresas do banco
-        $roles = Role::all(); // Carrega todas as permissões (roles)
+        $roles = Role::whereIn('name', $this->allowedTeamRoles())->get();
 
         return view('cadastros.usuarios.edit', compact('user', 'setores', 'empresas', 'roles'));
     }
@@ -94,12 +97,14 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
+        $this->authorizeTeamUserManagement($user);
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-            'role' => 'required|string', // Valida a permissão
+            'role' => ['required', Rule::in($this->allowedTeamRoles())],
             'password' => 'nullable|string|min:8|confirmed' // Valida a senha apenas se preenchida
         ]);
 
@@ -128,6 +133,8 @@ class UserController extends Controller
 
      public function deactivate(User $user)
 {
+    $this->authorizeTeamUserManagement($user);
+
     // Verifica se o usuário é o de ID 1 e impede a desativação
     if ($user->id == 1) {
         return redirect()->route('usuarios.index')->with('error', 'Este usuário não pode ser desativado.');
@@ -262,6 +269,8 @@ class UserController extends Controller
 
 public function editCliente(User $user)
 {
+    $this->authorizeClientManagement($user);
+
     $empresas = Empresa::all(); // Busca todas as empresas
     $roles = Role::whereIn('name', ['cliente', 'clientedc'])->get(); // Apenas permissões de clientes
     $empresaId = $user->empresa_id; // Pega a empresa associada ao cliente
@@ -272,11 +281,13 @@ public function editCliente(User $user)
 
 public function updateCliente(Request $request, User $user)
 {
+    $this->authorizeClientManagement($user);
+
     $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
         'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-        'role' => 'required|string', // Deve ser cliente ou clientedc
+        'role' => ['required', Rule::in(['cliente', 'clientedc'])],
         'password' => 'nullable|string|min:8|confirmed' // Valida a senha apenas se preenchida
     ]);
 
@@ -304,6 +315,8 @@ public function updateCliente(Request $request, User $user)
 
 public function deactivateCliente(User $user)
 {
+    $this->authorizeClientManagement($user);
+
     // Verifica o status atual e inverte o status
     $newStatus = !$user->status;
 
@@ -388,6 +401,31 @@ public function getEmpresa($id)
     }
 
     return response()->json(['empresa_id' => null, 'empresa_nome' => null]);
+}
+
+private function allowedTeamRoles(): array
+{
+    return Auth::user()->hasRole('administrador')
+        ? ['analista', 'supervisor', 'administrador']
+        : ['analista'];
+}
+
+private function authorizeTeamUserManagement(User $user): void
+{
+    abort_unless($user->hasAnyRole(['analista', 'supervisor', 'administrador']), 404);
+
+    if (!Auth::user()->hasRole('administrador')) {
+        abort_if(
+            $user->hasAnyRole(['supervisor', 'administrador']),
+            403,
+            'Apenas administradores podem gerenciar supervisores e administradores.'
+        );
+    }
+}
+
+private function authorizeClientManagement(User $user): void
+{
+    abort_unless($user->hasAnyRole(['cliente', 'clientedc']), 404);
 }
 
 

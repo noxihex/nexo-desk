@@ -27,9 +27,11 @@ class AttachmentRulesTest extends TestCase
 
     public function test_rejects_oversized_file_and_unsupported_format(): void
     {
-        $large = UploadedFile::fake()->create('grande.pdf', 5121, 'application/pdf');
+        $atLimit = UploadedFile::fake()->create('limite.pdf', 10240, 'application/pdf');
+        $large = UploadedFile::fake()->create('grande.pdf', 10241, 'application/pdf');
         $unsupported = UploadedFile::fake()->create('programa.exe', 1, 'application/octet-stream');
 
+        $this->assertFalse(Validator::make(['attachments' => [$atLimit]], AttachmentRules::for('attachments'))->fails());
         $this->assertTrue(Validator::make(['attachments' => [$large]], AttachmentRules::for('attachments'))->fails());
         $this->assertTrue(Validator::make(['attachments' => [$unsupported]], AttachmentRules::for('attachments'))->fails());
     }
