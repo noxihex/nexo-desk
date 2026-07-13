@@ -14,7 +14,7 @@ class TicketApiController extends Controller
     public function index()
     {
         return response()->json(
-            Ticket::with(['categoria', 'cliente', 'empresa'])->paginate(10)
+            Ticket::with(['categoria', 'cliente', 'empresa'])->paginate(100)
         );
     }
 
@@ -219,7 +219,7 @@ $ticket = Ticket::findOrFail($id);
         });
 
         // Executa a query com paginação e mantém os parâmetros de filtro nos links da paginação
-        $tickets = $query->paginate(10)->appends($request->query()); // <-- CORREÇÃO APLICADA AQUI
+        $tickets = $query->paginate(100)->appends($request->query()); // <-- CORREÇÃO APLICADA AQUI
 
         return response()->json($tickets);
     }
