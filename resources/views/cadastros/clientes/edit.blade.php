@@ -64,34 +64,9 @@
                     @enderror
                 </div>
 
-                {{-- Tipo de Cliente (Permissão) --}}
                 <div class="form-group">
-                    <label for="role"><i class="fas fa-shield-alt"></i> Tipo de Central do Cliente</label>
-                    <select name="role" id="role" class="form-control @error('role') is-invalid @enderror"  @role('analista') disabled @endrole >
-                        @foreach($roles as $role)
-                            <option value="{{ $role->name }}" {{ $user->roles->first()->name == $role->name ? 'selected' : '' }}>
-                                {{ $role->name == 'cliente' ? 'Cliente HelpDesk' : 'Cliente DataCenter' }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('role')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label for="empresa_id"><i class="fas fa-building"></i> Empresa</label>
-                    <select name="empresa_id" id="empresa_id" class="form-control @error('empresa_id') is-invalid @enderror" @role('analista|supervisor') disabled @endrole >
-                        <option value="">Sem Empresa</option> {{-- Permite a opção "Sem Empresa" --}}
-                        @foreach($empresas as $empresa)
-                            <option value="{{ $empresa->id }}" {{ $empresa->id == $empresaId ? 'selected' : '' }}>
-                                {{ $empresa->nome }}
-                            </option>
-                        @endforeach
-                    </select>
-                    {{-- Campo hidden para enviar o valor da empresa ao backend --}}
+                    <label><i class="fas fa-building"></i> Empresa</label>
+                    <p class="form-control-plaintext mb-0 empresa-selecionada">{{ $user->empresa ? $user->empresa->nome : 'Sem empresa' }}</p>
                     <input type="hidden" name="empresa_id" value="{{ $empresaId }}">
                     @error('empresa_id')
                         <span class="invalid-feedback" role="alert">
@@ -119,4 +94,12 @@
             </form>
         </div>
     </div>
+@endsection
+
+@section('css')
+    <style>
+        .empresa-selecionada {
+            color: inherit;
+        }
+    </style>
 @endsection

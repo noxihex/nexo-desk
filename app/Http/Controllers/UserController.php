@@ -271,12 +271,10 @@ public function editCliente(User $user)
 {
     $this->authorizeClientManagement($user);
 
-    $empresas = Empresa::all(); // Busca todas as empresas
-    $roles = Role::whereIn('name', ['cliente', 'clientedc'])->get(); // Apenas permissões de clientes
     $empresaId = $user->empresa_id; // Pega a empresa associada ao cliente
 
     // Retorna a view de edição de clientes
-    return view('cadastros.clientes.edit', compact('user', 'empresas', 'roles', 'empresaId'));
+    return view('cadastros.clientes.edit', compact('user', 'empresaId'));
 }
 
 public function updateCliente(Request $request, User $user)
@@ -286,8 +284,6 @@ public function updateCliente(Request $request, User $user)
     $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-        'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-        'role' => ['required', Rule::in(['cliente', 'clientedc'])],
         'password' => 'nullable|string|min:8|confirmed' // Valida a senha apenas se preenchida
     ]);
 
@@ -295,7 +291,6 @@ public function updateCliente(Request $request, User $user)
     $user->update([
         'name' => $request->name,
         'email' => $request->email,
-        'empresa_id' => $request->empresa_id, // Permite que o campo seja nulo
     ]);
 
     // Se o campo de senha for preenchido, atualiza a senha
@@ -303,13 +298,16 @@ public function updateCliente(Request $request, User $user)
         $user->update(['password' => Hash::make($request->password)]);
     }
 
-    // Atualiza a permissão (role) do cliente
-    $user->syncRoles($request->role);
+    // Todo contato editado por este fluxo pertence à Central HelpDesk.
+    $user->syncRoles('cliente');
 
     $message = "Contato atualizado com sucesso!";
 
-    // Redireciona para a lista de clientes
-    return redirect()->route('empresas.edit', $request->empresa_id)->with('success', $message);
+    if ($user->empresa_id) {
+        return redirect()->route('empresas.edit', $user->empresa_id)->with('success', $message);
+    }
+
+    return redirect()->route('clientes.index')->with('success', $message);
 }
 
 
