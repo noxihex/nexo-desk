@@ -48,7 +48,7 @@
                                 <a href="{{ route('empresas.edit', $empresa->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
-                                @role('supervisor|administrador')
+                                @role('administrador')
                                 {{-- Botão Excluir (com modal de confirmação) --}}
                                 <button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal{{ $empresa->id }}">
                                     <i class="fas fa-trash"></i> Excluir

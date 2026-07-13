@@ -48,7 +48,7 @@
                                 <form action="{{ route('setores.destroy', $setor->id) }}" method="POST" style="display:inline-block;">
                                     @csrf
                                     @method('DELETE')
-                                    @role('supervisor|administrador')
+                                    @role('administrador')
                                     <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Você tem certeza?')">
                                         <i class="fas fa-trash"></i> Excluir
                                     </button>

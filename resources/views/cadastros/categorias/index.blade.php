@@ -60,7 +60,7 @@
                                 <a href="{{ route('categorias.edit', $categoria->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i> Editar
                                 </a>
-                                @role('supervisor|administrador')
+                                @role('administrador')
                                 <button class="btn btn-sm btn-danger" data-toggle="modal" data-target="#deleteModal{{ $categoria->id }}">
                                     <i class="fas fa-trash"></i> Excluir
                                 </button>
