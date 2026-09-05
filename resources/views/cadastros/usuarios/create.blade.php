@@ -84,7 +84,7 @@
                     <label for="role"><i class="fas fa-shield-alt"></i> Permissão</label>
                     <select name="role" id="role" class="form-control @error('role') is-invalid @enderror">
                         @foreach($roles as $role)
-                            <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
+                            <option value="{{ $role->name }}" {{ old('role') === $role->name ? 'selected' : '' }}>{{ ucfirst($role->name) }}</option>
                         @endforeach
                     </select>
                     @error('role')
@@ -92,6 +92,25 @@
                             <strong>{{ $message }}</strong>
                         </span>
                     @enderror
+                </div>
+
+                <div id="permissao-outros-setores" class="form-group" style="display: none;">
+                    <div class="custom-control custom-checkbox">
+                        <input type="checkbox"
+                               name="pode_ver_tickets_outros_setores"
+                               id="pode_ver_tickets_outros_setores"
+                               value="1"
+                               class="custom-control-input @error('pode_ver_tickets_outros_setores') is-invalid @enderror"
+                               {{ old('pode_ver_tickets_outros_setores') ? 'checked' : '' }}>
+                        <label class="custom-control-label" for="pode_ver_tickets_outros_setores">
+                            Pode ver tickets de outros setores
+                        </label>
+                        @error('pode_ver_tickets_outros_setores')
+                            <span class="invalid-feedback d-block" role="alert">
+                                <strong>{{ $message }}</strong>
+                            </span>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="form-group d-flex justify-content-start">
@@ -125,6 +144,15 @@
         $(document).ready(function() {
             // Esconde a opção "cliente"
             $('#role option[value="cliente"]').hide();
+
+            function atualizarPermissaoOutrosSetores() {
+                const analistaSelecionado = $('#role').val() === 'analista';
+                $('#permissao-outros-setores').toggle(analistaSelecionado);
+                $('#pode_ver_tickets_outros_setores').prop('disabled', !analistaSelecionado);
+            }
+
+            $('#role').on('change', atualizarPermissaoOutrosSetores);
+            atualizarPermissaoOutrosSetores();
         });
     </script>
 @endsection

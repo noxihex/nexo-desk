@@ -74,6 +74,36 @@ php artisan app:create-admin
 
 Informe nome, e-mail e uma senha de 12 a 72 caracteres, seguida da confirmação. A senha fica oculta no terminal e é armazenada como hash; não precisa ser colocada no `.env` nem passada como argumento. O comando exige um terminal interativo (em Docker, use `docker compose exec <serviço> php artisan app:create-admin`).
 
+### Chaves de API
+
+Para abrir o menu interativo:
+
+```bash
+php artisan app:api-key
+```
+
+Ele permite criar uma chave, revogar uma chave específica ou revogar todas as chaves de um usuário. Na criação, selecione o usuário ativo, informe o nome da integração e confirme. O segredo é exibido somente nessa execução.
+
+Para uso em scripts, também é possível criar uma chave diretamente:
+
+```bash
+php artisan app:api-key create usuario@example.com --name=integracao
+```
+
+O comando informa o ID da chave, que deve ser usado para revogá-la sem colocar o segredo no histórico do shell:
+
+```bash
+php artisan app:api-key revoke 12 --force
+```
+
+Para revogar todas as chaves de um usuário:
+
+```bash
+php artisan app:api-key revoke usuario@example.com --all --force
+```
+
+Também são aceitos os verbos `criar` e `revogar`. Sem `--force`, a revogação pede confirmação quando executada em um terminal interativo.
+
 O comando prepara os perfis e permissões padrão e cria um usuário ativo com o perfil `administrador` e a permissão `acesso admin`. Empresa, setor e grupo podem ser definidos depois pelo sistema. Entre na tela de login usando o e-mail e a senha informados.
 
 Se já existir um administrador, mesmo inativo, o comando encerra sem criar outro usuário ou alterar sua senha. E-mails já cadastrados são rejeitados; contas existentes não são promovidas automaticamente. Nos próximos deploys, execute apenas as migrations necessárias. Não use `migrate:fresh` em produção, pois ele apaga os dados.

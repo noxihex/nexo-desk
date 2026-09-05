@@ -60,6 +60,7 @@ class UserController extends Controller
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional (nullable)
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional (nullable)
             'role' => ['required', Rule::in($this->allowedTeamRoles())],
+            'pode_ver_tickets_outros_setores' => 'sometimes|boolean',
         ]);
 
         // Cria o usuário, salvando setor e empresa pelo ID se existir
@@ -68,6 +69,8 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'setor_id' => $request->setor_id, // Armazena o ID do setor, null se não for selecionado
+            'pode_ver_tickets_outros_setores' => $request->input('role') === 'analista'
+                && $request->boolean('pode_ver_tickets_outros_setores'),
             'empresa_id' => $request->empresa_id, // Armazena o ID da empresa, null se não for selecionado
             'status' => true, // Ativo por padrão
         ]);
@@ -105,7 +108,8 @@ class UserController extends Controller
             'setor_id' => 'nullable|exists:setores,id', // Setor é opcional
             'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
             'role' => ['required', Rule::in($this->allowedTeamRoles())],
-            'password' => 'nullable|string|min:8|confirmed' // Valida a senha apenas se preenchida
+            'password' => 'nullable|string|min:8|confirmed', // Valida a senha apenas se preenchida
+            'pode_ver_tickets_outros_setores' => 'sometimes|boolean',
         ]);
 
         // Atualiza os dados do usuário
@@ -113,6 +117,8 @@ class UserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'setor_id' => $request->setor_id, // Permite que o campo seja nulo
+            'pode_ver_tickets_outros_setores' => $request->input('role') === 'analista'
+                && $request->boolean('pode_ver_tickets_outros_setores'),
             'empresa_id' => $request->empresa_id, // Permite que o campo seja nulo
         ]);
 

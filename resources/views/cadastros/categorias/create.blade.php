@@ -34,12 +34,22 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="slatotal"><i class="fas fa-clock"></i> SLA Total (min)</label>
+                    <label for="slatotal">
+                        <i class="fas fa-clock"></i> SLA Total (min)
+                        <i class="far fa-question-circle text-muted ml-1 sla-help" tabindex="0" role="button"
+                           data-toggle="tooltip" data-placement="right"
+                           title="Prazo máximo, em minutos, entre a abertura e a conclusão do ticket. É usado para calcular o percentual de SLA e indicar atrasos."></i>
+                    </label>
                     <input type="number" name="slatotal" class="form-control" required>
                 </div>
 
                 <div class="form-group">
-                    <label for="slaupdate"><i class="fas fa-history"></i> SLA Update (min)</label>
+                    <label for="slaupdate">
+                        <i class="fas fa-history"></i> SLA Update (min)
+                        <i class="far fa-question-circle text-muted ml-1 sla-help" tabindex="0" role="button"
+                           data-toggle="tooltip" data-placement="right"
+                           title="Intervalo máximo, em minutos, sem uma atualização do analista. Ao atingir esse tempo, o ticket requer atenção. Para sugerir as horas gastas, o sistema soma os intervalos entre a abertura, cada mensagem e a finalização, limitando cada intervalo a este valor."></i>
+                    </label>
                     <input type="number" name="slaupdate" class="form-control" required>
                 </div>
 
@@ -71,5 +81,17 @@
         .form-group label {
             font-weight: 600;
         }
+
+        .sla-help {
+            cursor: help;
+        }
     </style>
+@endsection
+
+@section('js')
+    <script>
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+        });
+    </script>
 @endsection

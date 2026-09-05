@@ -25,6 +25,7 @@ class User extends Authenticatable implements Auditable
         'password',
         'grupo_id',
         'setor_id',
+        'pode_ver_tickets_outros_setores',
         'empresa_id',
         'status',
     ];
@@ -47,6 +48,7 @@ class User extends Authenticatable implements Auditable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'status' => 'boolean',
+        'pode_ver_tickets_outros_setores' => 'boolean',
     ];
 
     /**
@@ -63,6 +65,27 @@ class User extends Authenticatable implements Auditable
     public function setor()
     {
         return $this->belongsTo(Setor::class);
+    }
+
+    /**
+     * Indica se a visualização de tickets deve ficar limitada ao setor do usuário.
+     */
+    public function deveRestringirTicketsAoSetor(): bool
+    {
+        $roles = $this->getRoleNames();
+
+        return $roles->contains('analista')
+            && ! $roles->contains(fn ($role) => in_array($role, ['supervisor', 'administrador'], true))
+            && ! $this->pode_ver_tickets_outros_setores;
+    }
+
+    /**
+     * Verifica se o usuário pode visualizar um ticket considerando seu setor.
+     */
+    public function podeVisualizarTicket(Ticket $ticket): bool
+    {
+        return ! $this->deveRestringirTicketsAoSetor()
+            || $ticket->setor_id === $this->setor_id;
     }
 
     /**
@@ -95,6 +118,7 @@ class User extends Authenticatable implements Auditable
         'email',
         'grupo_id',
         'setor_id',
+        'pode_ver_tickets_outros_setores',
         'empresa_id',
         'status',
     ];

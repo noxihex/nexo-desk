@@ -43,7 +43,7 @@ class TicketController extends Controller
     // Query base com os relacionamentos necessários
     $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista');
 
-    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+    if ($user->deveRestringirTicketsAoSetor()) {
         $ticketsQuery->where('setor_id', $user->setor_id);
     }
 
@@ -109,14 +109,14 @@ class TicketController extends Controller
     }
 
     // Carrega setores para os filtros
-    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+    if ($user->deveRestringirTicketsAoSetor()) {
         $setores = Setor::where('id', $user->setor_id)->get();
     } else {
         $setores = Setor::all();
     }
 
     $categorias = Categoria::when(
-        $user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador']),
+        $user->deveRestringirTicketsAoSetor(),
         fn ($query) => $query->where('setor_id', $user->setor_id)
     )->orderBy('nome')->get();
     $empresas = Empresa::orderBy('nome')->get();
@@ -226,11 +226,8 @@ class TicketController extends Controller
 
         $returnUrl = TicketReturnUrl::resolve($request);
 
-    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
-        if ($ticket->setor_id !== $user->setor_id) {
-            // Se o setor do ticket for diferente do setor do analista, nega o acesso.
-            abort(403, 'Acesso não autorizado.');
-        }
+    if (! $user->podeVisualizarTicket($ticket)) {
+        abort(403, 'Acesso não autorizado.');
     }
     
         // Recupera os anexos relacionados ao ticket
@@ -482,9 +479,7 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         ]);
 
         $returnUrl = TicketReturnUrl::resolve($request);
-        $canStillView = !$user->hasRole('analista')
-            || $user->hasRole(['supervisor', 'administrador'])
-            || $ticket->setor_id === $user->setor_id;
+        $canStillView = $user->podeVisualizarTicket($ticket);
 
         return $canStillView
             ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket assumido com sucesso!')
@@ -529,9 +524,7 @@ public function transferirTicket(Request $request, $id)
     $mensagem->save();
 
     $returnUrl = TicketReturnUrl::resolve($request);
-    $canStillView = !$user->hasRole('analista')
-        || $user->hasRole(['supervisor', 'administrador'])
-        || $ticket->setor_id === $user->setor_id;
+    $canStillView = $user->podeVisualizarTicket($ticket);
 
     return $canStillView
         ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket transferido com sucesso!')
@@ -662,7 +655,7 @@ public function pendentes(Request $request)
         ->where('status', '!=', 'fechado'); // Apenas tickets abertos
 
     // ADIÇÃO: Aplica o filtro de setor para o perfil 'analista'
-    if ($user->hasRole('analista') && !$user->hasRole(['supervisor', 'administrador'])) {
+    if ($user->deveRestringirTicketsAoSetor()) {
         $ticketsQuery->where('setor_id', $user->setor_id);
     }
 

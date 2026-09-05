@@ -28,6 +28,11 @@ class VisaoGeralController extends Controller
 
         // Consulta base para tickets
         $query = Ticket::query();
+        $user = Auth::user();
+
+        if ($user->deveRestringirTicketsAoSetor()) {
+            $query->where('setor_id', $user->setor_id);
+        }
 
         // Aplica filtro por analista atribuído, se selecionado
         if ($analista) {
@@ -56,9 +61,16 @@ class VisaoGeralController extends Controller
         // Carrega listas de analistas e setores para os filtros
         $analistas = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
-        })->where('status', true)->orderBy('name')->get();
+        })->where('status', true)
+            ->when($user->deveRestringirTicketsAoSetor(), function ($query) use ($user) {
+                $query->where('setor_id', $user->setor_id);
+            })
+            ->orderBy('name')->get();
 
-        $setores = Setor::orderBy('nome')->get();
+        $setores = Setor::when(
+            $user->deveRestringirTicketsAoSetor(),
+            fn ($query) => $query->whereKey($user->setor_id)
+        )->orderBy('nome')->get();
         $empresas = Empresa::orderBy('nome')->get();
 
         return view('home', compact(
