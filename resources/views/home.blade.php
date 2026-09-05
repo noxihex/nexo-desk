@@ -223,7 +223,7 @@
 
 @role('supervisor|administrador')
 
-<!-- Filtro de Ordenação e Seleção de Analista e Setor -->
+<!-- Filtros de ordenação, analista, setor e empresa -->
 <div class="form-group">
     <form method="GET" action="{{ route('home') }}" class="row">
         <div class="col-md-3 col-12 d-flex align-items-center mb-2">
@@ -251,6 +251,16 @@
                 <option value="">Todos</option>
                 @foreach($setores as $setor)
                     <option value="{{ $setor->id }}" {{ request('setor') == $setor->id ? 'selected' : '' }}>{{ $setor->nome }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-md-3 col-12 d-flex align-items-center mb-2">
+            <label for="empresa" class="mr-2">Filtrar Empresa:</label>
+            <select name="empresa" id="empresa" class="form-control form-control-sm" onchange="this.form.submit()">
+                <option value="">Todas</option>
+                @foreach($empresas as $empresa)
+                    <option value="{{ $empresa->id }}" {{ request('empresa') == $empresa->id ? 'selected' : '' }}>{{ $empresa->nome }}</option>
                 @endforeach
             </select>
         </div>

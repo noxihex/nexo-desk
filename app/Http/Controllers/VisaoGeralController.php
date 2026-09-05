@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Setor;
+use App\Models\Empresa;
 
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -23,6 +24,7 @@ class VisaoGeralController extends Controller
         $order = $request->input('order', 'desc');
         $analista = $request->input('analista');
         $setor = $request->input('setor');
+        $empresa = $request->input('empresa');
 
         // Consulta base para tickets
         $query = Ticket::query();
@@ -37,6 +39,11 @@ class VisaoGeralController extends Controller
             $query->where('setor_id', $setor);
         }
 
+        // Aplica filtro por empresa se selecionada
+        if ($empresa) {
+            $query->where('empresa_id', $empresa);
+        }
+
         // Aplica ordenação
         $query->orderBy('created_at', $order);
 
@@ -49,13 +56,14 @@ class VisaoGeralController extends Controller
         // Carrega listas de analistas e setores para os filtros
         $analistas = User::whereHas('roles', function ($query) {
             $query->whereIn('name', ['analista', 'supervisor', 'administrador']);
-        })->where('status', true)->get();
+        })->where('status', true)->orderBy('name')->get();
 
-        $setores = Setor::all();
+        $setores = Setor::orderBy('nome')->get();
+        $empresas = Empresa::orderBy('nome')->get();
 
         return view('home', compact(
             'ticketsAbertos', 'ticketsPendenteCliente', 'ticketsPendenteAnalista', 'ticketsFechados',
-            'analistas', 'setores'
+            'analistas', 'setores', 'empresas'
         ));
     }
 
