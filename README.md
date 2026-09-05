@@ -107,3 +107,8 @@ Também são aceitos os verbos `criar` e `revogar`. Sem `--force`, a revogação
 O comando prepara os perfis e permissões padrão e cria um usuário ativo com o perfil `administrador` e a permissão `acesso admin`. Empresa, setor e grupo podem ser definidos depois pelo sistema. Entre na tela de login usando o e-mail e a senha informados.
 
 Se já existir um administrador, mesmo inativo, o comando encerra sem criar outro usuário ou alterar sua senha. E-mails já cadastrados são rejeitados; contas existentes não são promovidas automaticamente. Nos próximos deploys, execute apenas as migrations necessárias. Não use `migrate:fresh` em produção, pois ele apaga os dados.
+
+## Licença
+
+O Nexo Desk é distribuído sob a **GNU Affero General Public License v3.0**
+(`AGPL-3.0-only`). Consulte o arquivo [LICENSE](LICENSE) para conhecer os termos.
