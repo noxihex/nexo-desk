@@ -56,7 +56,7 @@ class EmpresaController extends Controller
      */
     public function edit(Empresa $empresa)
     {
-        $clientes = $empresa->users()->role(['cliente', 'clientedc'])->get();
+        $clientes = $empresa->users()->role(['cliente'])->get();
 
         return view('cadastros.empresas.edit', compact('empresa', 'clientes'));
     }

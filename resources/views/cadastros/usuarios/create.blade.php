@@ -123,8 +123,8 @@
 
     <script>
         $(document).ready(function() {
-            // Esconde as opções "cliente" e "clientedc"
-            $('#role option[value="cliente"], #role option[value="clientedc"]').hide();
+            // Esconde a opção "cliente"
+            $('#role option[value="cliente"]').hide();
         });
     </script>
 @endsection

@@ -17,8 +17,7 @@ class RoleSeeder extends Seeder
             'analista' => 'acesso analista',
             'supervisor' => 'acesso supervisor',
             'administrador' => 'acesso admin',
-            'cliente' => 'acesso cliente noc',
-            'clientedc' => 'acesso cliente dc',
+            'cliente' => 'acesso cliente',
         ];
 
         foreach ($permissionsByRole as $roleName => $permissionName) {

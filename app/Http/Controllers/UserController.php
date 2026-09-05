@@ -213,8 +213,8 @@ class UserController extends Controller
 
     public function indexClientes()
     {
-        // Filtra os usuários que possuem as permissões "cliente" ou "clientedc" e aplica paginação
-        $users = User::role(['cliente', 'clientedc'])
+        // Filtra os usuários que possuem as permissões "cliente" e aplica paginação
+        $users = User::role(['cliente'])
                      ->with(['empresa'])
                      ->paginate(10); // Define 10 clientes por página (ajuste conforme necessário)
 
@@ -423,7 +423,7 @@ private function authorizeTeamUserManagement(User $user): void
 
 private function authorizeClientManagement(User $user): void
 {
-    abort_unless($user->hasAnyRole(['cliente', 'clientedc']), 404);
+    abort_unless($user->hasAnyRole(['cliente']), 404);
 }
 
 

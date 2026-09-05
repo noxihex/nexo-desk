@@ -322,13 +322,13 @@ return [
                 'text' => 'Criar novo ticket',
                 'url' => 'tickets/cliente/create',
                 'icon' => 'fas fa-fw fa-plus-circle',
-                'can' => ['acesso cliente noc', 'acesso cliente dc'],
+                'can' => 'acesso cliente',
             ],
             [
                 'text' => 'Meus tickets',
                 'url' => 'tickets/cliente',
                 'icon' => 'fas fa-fw fa-ticket-alt',
-                'can' => ['acesso cliente noc', 'acesso cliente dc'],
+                'can' => 'acesso cliente',
             ],
             [
                 'text' => 'Todos os Tickets',

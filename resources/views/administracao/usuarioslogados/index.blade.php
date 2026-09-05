@@ -41,7 +41,7 @@
 
                                 <!-- Tipo do usuário -->
                                 <td>
-                                    @if(in_array($session->role, ['cliente', 'clientedc']))
+                                    @if(in_array($session->role, ['cliente']))
                                         <span class="badge badge-success">Cliente</span>
                                     @elseif(in_array($session->role, ['analista', 'supervisor', 'administrador']))
                                         <span class="badge badge-primary">Analista</span>

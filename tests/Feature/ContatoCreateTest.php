@@ -67,7 +67,6 @@ class ContatoCreateTest extends TestCase
     {
         Role::findOrCreate('supervisor', 'web');
         Role::findOrCreate('cliente', 'web');
-        Role::findOrCreate('clientedc', 'web');
 
         $supervisor = User::factory()->create(['status' => true]);
         $supervisor->assignRole('supervisor');
@@ -83,7 +82,7 @@ class ContatoCreateTest extends TestCase
             'empresa_id' => $empresa->id,
             'status' => true,
         ]);
-        $contato->assignRole('clientedc');
+        $contato->assignRole('cliente');
 
         $this->actingAs($supervisor)
             ->get(route('clientes.edit', $contato))

@@ -29,16 +29,15 @@ class RoleSeederTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
 
-        $this->assertSame(5, Role::count());
-        $this->assertSame(5, Permission::count());
-        $this->assertSame(5, DB::table('role_has_permissions')->count());
+        $this->assertSame(4, Role::count());
+        $this->assertSame(4, Permission::count());
+        $this->assertSame(4, DB::table('role_has_permissions')->count());
 
         foreach ([
             'analista' => 'acesso analista',
             'supervisor' => 'acesso supervisor',
             'administrador' => 'acesso admin',
-            'cliente' => 'acesso cliente noc',
-            'clientedc' => 'acesso cliente dc',
+            'cliente' => 'acesso cliente',
         ] as $role => $permission) {
             $this->assertTrue(Role::findByName($role, 'web')->hasPermissionTo($permission, 'web'));
         }
@@ -58,6 +57,6 @@ class RoleSeederTest extends TestCase
         $this->assertTrue($role->fresh()->hasPermissionTo('acesso analista', 'web'));
         $this->assertTrue($role->fresh()->hasPermissionTo($extra));
         $this->assertSame(0, $apiRole->fresh()->permissions()->count());
-        $this->assertSame(6, Role::count());
+        $this->assertSame(5, Role::count());
     }
 }

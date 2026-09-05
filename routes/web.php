@@ -41,7 +41,7 @@ Auth::routes(['register' => false]);
 
 
 // --- ROTAS DO CLIENTE ---
-Route::middleware(['auth', 'verifica.status', 'role:cliente|clientedc'])->prefix('tickets/cliente')->name('tickets.cliente.')->group(function () {
+Route::middleware(['auth', 'verifica.status', 'role:cliente'])->prefix('tickets/cliente')->name('tickets.cliente.')->group(function () {
     // Listagem
     Route::get('/', [ClienteTicketController::class, 'index'])->name('index');
     

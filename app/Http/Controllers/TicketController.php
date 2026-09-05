@@ -142,7 +142,7 @@ class TicketController extends Controller
     public function create(Request $request)
     {
         $categorias = Categoria::all();
-        $clientes = User::role(['cliente', 'clientedc'])->get();
+        $clientes = User::role(['cliente'])->get();
         $empresas = Empresa::all();
         $setores = Setor::all();
         $analistas = $this->analistasAtivos()->get();
@@ -260,7 +260,7 @@ class TicketController extends Controller
     public function edit(Request $request, Ticket $ticket)
     {
         $categorias = Categoria::all();
-        $clientes = User::role(['cliente', 'clientedc'])->get();
+        $clientes = User::role(['cliente'])->get();
         $empresas = Empresa::all();
         $setores = Setor::all();
 
