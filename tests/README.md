@@ -28,7 +28,8 @@ nesse caso execute `php artisan config:clear` no ambiente local.
 
 O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória
 e transporte de e-mail `array`. `Tests\TestCase` simula chamadas feitas pelo cliente `Http`
-do Laravel. Isso mantém os observers ativos sem depender do serviço Python de e-mail.
+do Laravel. Tickets e mensagens não enviam mais e-mails pela API Python local;
+a regressão verifica a persistência sem chamadas HTTP, inclusive após a resposta.
 Nos testes de integração HTTP, configure respostas com `Http::fake` e confira os pedidos
 com `Http::assertSent`; o fake genérico não valida sozinho o contrato do serviço remoto.
 

@@ -13,7 +13,7 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
-        // Os observers continuam executando, mas não enviam e-mails reais.
+        // Impede chamadas HTTP reais durante os testes.
         Http::fake();
     }
 }

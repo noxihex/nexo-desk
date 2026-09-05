@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Mensagem;
+use App\Models\Setor;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,26 +22,44 @@ class TestingEnvironmentTest extends TestCase
         $this->assertNull(config('database.connections.mysql.url'));
     }
 
-    public function test_ticket_observer_uses_the_fake_email_service(): void
+    public function test_tickets_and_messages_are_saved_without_email_requests(): void
     {
-        $author = User::factory()->create(['status' => true]);
+        $sector = Setor::create(['nome' => 'Suporte']);
+        $author = User::factory()->create(['status' => true, 'setor_id' => $sector->id]);
+        \Spatie\Permission\Models\Role::findOrCreate('analista', 'web');
+        $author->assignRole('analista');
         $client = User::factory()->create(['status' => true, 'email' => 'cliente@example.com']);
-        $ticket = Ticket::create([
-            'assunto' => 'Aviso de teste',
-            'descricao' => 'Descrição',
-            'user_id' => $author->id,
-            'cliente_id' => $client->id,
-            'status' => 'aberto',
-        ]);
+        foreach ([$author, $client] as $creator) {
+            $ticket = Ticket::create([
+                'assunto' => 'Aviso de teste',
+                'descricao' => 'Descrição',
+                'user_id' => $creator->id,
+                'setor_id' => $sector->id,
+                'atribuido_ao_analista_id' => $author->id,
+                'cliente_id' => $client->id,
+                'status' => 'aberto',
+            ]);
 
-        // O observer agenda o envio após o término da resposta HTTP.
+            $this->assertDatabaseHas('tickets', ['id' => $ticket->id, 'status' => 'aberto']);
+
+            foreach ([$author, $client] as $sender) {
+                $message = Mensagem::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $sender->id,
+                    'descricao' => 'Resposta sem e-mail',
+                ]);
+                $this->assertDatabaseHas('mensagens', [
+                    'id' => $message->id,
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $sender->id,
+                    'descricao' => 'Resposta sem e-mail',
+                ]);
+            }
+        }
+
+        // Executa também os callbacks registrados para depois da resposta HTTP.
         $this->get('/')->assertRedirect('/home');
 
-        Http::assertSentCount(1);
-        Http::assertSent(function ($request) use ($ticket) {
-            return $request->url() === 'http://localhost:5000/send-email'
-                && $request['emails'][0]['email'] === 'cliente@example.com'
-                && $request['titulo_do_email'] === "Novo Ticket #{$ticket->id}";
-        });
+        Http::assertNothingSent();
     }
 }
