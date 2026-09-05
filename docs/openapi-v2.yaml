@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: BTXDesk API V2
+  title: NexoDesk API V2
   version: 2.0.0
   description: API V2 isolada, autenticada com Laravel Sanctum.
 servers:

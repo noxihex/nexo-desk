@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-BTX Desk is a Laravel 8 ticket-management application. Backend code lives in `app/`: controllers are under `app/Http/Controllers`, models under `app/Models`, and API v2 resources under `app/Http/Resources/Api/V2`. Define endpoints in `routes/web.php` and `routes/api.php`. Database migrations, factories, and seeders belong in `database/`. Blade templates and frontend sources are in `resources/views`, `resources/js`, and `resources/sass`; Laravel Mix writes assets to `public/`. API documentation is in `docs/`. Tests are divided into `tests/Unit` and `tests/Feature`.
+Nexo Desk is a Laravel 8 ticket-management application. Backend code lives in `app/`: controllers are under `app/Http/Controllers`, models under `app/Models`, and API v2 resources under `app/Http/Resources/Api/V2`. Define endpoints in `routes/web.php` and `routes/api.php`. Database migrations, factories, and seeders belong in `database/`. Blade templates and frontend sources are in `resources/views`, `resources/js`, and `resources/sass`; Laravel Mix writes assets to `public/`. API documentation is in `docs/`. Tests are divided into `tests/Unit` and `tests/Feature`.
 
 ## Build, Test, and Development Commands
 

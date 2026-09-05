@@ -51,7 +51,7 @@ class ApiV2Test extends TestCase
         $this->getJson('/api/v2/me')->assertUnauthorized();
     }
 
-    public function test_legacy_and_v2_keep_their_respective_page_sizes_and_origem()
+    public function test_legacy_and_v2_paginate_one_hundred_tickets_and_preserve_origem()
     {
         $base = $this->dadosBase();
         for ($i = 0; $i < 101; $i++) {
@@ -59,11 +59,14 @@ class ApiV2Test extends TestCase
         }
 
         $this->getJson('/api/tickets')
-            ->assertOk()->assertJsonPath('per_page', 10)
+            ->assertOk()->assertJsonPath('per_page', 100)
+            ->assertJsonCount(100, 'data')
             ->assertJsonPath('data.0.origem', 'Integração legada');
         $this->getJson('/api/v2/tickets')
             ->assertOk()->assertJsonPath('meta.per_page', 100)
             ->assertJsonCount(100, 'data');
+        $this->getJson('/api/tickets?page=2')->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/v2/tickets?page=2')->assertOk()->assertJsonCount(1, 'data');
         $this->getJson('/api/v2/tickets/search?status=aberto')
             ->assertOk()->assertJsonPath('meta.per_page', 100);
     }
@@ -125,11 +128,16 @@ class ApiV2Test extends TestCase
     public function test_me_and_users_do_not_expose_sensitive_fields()
     {
         $base = $this->dadosBase();
-        $this->getJson('/api/v2/me')->assertOk()
-            ->assertJsonMissing(['password', 'remember_token', 'access_token', 'tokens']);
-        $this->getJson('/api/v2/usuarios')->assertOk()
-            ->assertJsonPath('meta.per_page', 100)
-            ->assertJsonMissing(['password', 'remember_token', 'access_token', 'tokens']);
+        $me = $this->getJson('/api/v2/me')->assertOk()->json('data');
+        $users = $this->getJson('/api/v2/usuarios')->assertOk()
+            ->assertJsonPath('meta.per_page', 100)->json('data');
+        $this->assertNotEmpty($users);
+        foreach (array_merge([$me], $users) as $user) {
+            $this->assertIsArray($user);
+            foreach (['password', 'remember_token', 'access_token', 'tokens'] as $field) {
+                $this->assertArrayNotHasKey($field, $user);
+            }
+        }
         $this->getJson('/api/v2/categorias')->assertOk()
             ->assertJsonPath('meta.per_page', 100)
             ->assertJsonPath('data.0.setor_id', $base['setor']->id);

@@ -11,14 +11,14 @@ class AttachmentRulesTest extends TestCase
 {
     public function test_accepts_five_supported_files(): void
     {
-        $files = array_fill(0, 5, UploadedFile::fake()->image('evidencia.jpg', 20, 20));
+        $files = array_fill(0, 5, UploadedFile::fake()->create('evidencia.jpg', 1, 'image/jpeg'));
 
         $this->assertFalse(Validator::make(['anexos' => $files], AttachmentRules::for('anexos'))->fails());
     }
 
     public function test_rejects_six_files(): void
     {
-        $files = array_fill(0, 6, UploadedFile::fake()->image('evidencia.jpg', 20, 20));
+        $files = array_fill(0, 6, UploadedFile::fake()->create('evidencia.jpg', 1, 'image/jpeg'));
 
         $validator = Validator::make(['anexos' => $files], AttachmentRules::for('anexos'));
         $this->assertTrue($validator->fails());

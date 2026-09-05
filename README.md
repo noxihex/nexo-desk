@@ -1,6 +1,6 @@
-# BTX Desk
+# Nexo Desk
 
-Este é o repositório do sistema **BTX Desk**, uma aplicação Laravel para gerenciamento de tickets.
+Este é o repositório do sistema **Nexo Desk**, uma aplicação Laravel para gerenciamento de tickets.
 
 ## Instalação e Configuração
 
@@ -18,8 +18,8 @@ Certifique-se de ter as seguintes ferramentas instaladas:
 
 1.  **Clone o repositório:**
     ```bash
-    git clone [https://github.com/noxihex/btxdesk.git](https://github.com/noxihex/btxdesk.git)
-    cd btxdesk
+    git clone <URL_DO_REPOSITORIO> nexodesk
+    cd nexodesk
     ```
 
 2.  **Instale as dependências do PHP com o Composer:**
@@ -36,7 +36,7 @@ Certifique-se de ter as seguintes ferramentas instaladas:
     * **Variáveis de banco de dados**: `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`.
     * **Variáveis de nome do sistema**:
         ```
-        APP_NAME_INICIO="BTX"
+        APP_NAME_INICIO="Nexo"
         APP_NAME_FINAL="Desk"
         ```
 

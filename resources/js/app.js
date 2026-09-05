@@ -1,4 +1,4 @@
-/** BTX Desk shared UI behaviours. AdminLTE owns jQuery and Bootstrap. */
+/** Nexo Desk shared UI behaviours. AdminLTE owns jQuery and Bootstrap. */
 (function () {
     'use strict';
 
