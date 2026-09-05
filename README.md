@@ -65,9 +65,15 @@ Certifique-se de ter as seguintes ferramentas instaladas:
 
 ### Primeiro Acesso (Sistema do Zero)
 
-Se esta for a primeira vez que você está configurando o projeto em um banco de dados novo, você pode popular a base de dados com as permissões e perfis de usuário iniciais usando o seeder.
-
-**AVISO**: Este comando apagará todas as tabelas e dados existentes no banco de dados.
+Após configurar o `.env` e executar as migrations, abra um terminal no servidor (ou dentro do container da aplicação):
 
 ```bash
-php artisan migrate:fresh --seed --seeder=RoleSeeder
+php artisan migrate --force
+php artisan app:create-admin
+```
+
+Informe nome, e-mail e uma senha de 12 a 72 caracteres, seguida da confirmação. A senha fica oculta no terminal e é armazenada como hash; não precisa ser colocada no `.env` nem passada como argumento. O comando exige um terminal interativo (em Docker, use `docker compose exec <serviço> php artisan app:create-admin`).
+
+O comando prepara os perfis e permissões padrão e cria um usuário ativo com o perfil `administrador` e a permissão `acesso admin`. Empresa, setor e grupo podem ser definidos depois pelo sistema. Entre na tela de login usando o e-mail e a senha informados.
+
+Se já existir um administrador, mesmo inativo, o comando encerra sem criar outro usuário ou alterar sua senha. E-mails já cadastrados são rejeitados; contas existentes não são promovidas automaticamente. Nos próximos deploys, execute apenas as migrations necessárias. Não use `migrate:fresh` em produção, pois ele apaga os dados.
