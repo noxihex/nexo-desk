@@ -5,6 +5,9 @@
 
     RewriteEngine On
 
+    # Impede acesso direto aos backups legados ainda presentes no storage publico.
+    RewriteRule ^storage/backup(?:/|$) - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

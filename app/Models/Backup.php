@@ -9,5 +9,5 @@ class Backup extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['data_hora', 'local_arquivo'];
+    protected $fillable = ['data_hora', 'local_arquivo', 'status'];
 }

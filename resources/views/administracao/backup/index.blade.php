@@ -29,7 +29,7 @@
                         <th>ID</th>
                         <th>Data e Hora</th>
                         <th>Status</th>
-                        <th>Local do Arquivo</th>
+                        <th>Arquivo</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -45,7 +45,7 @@
                                     <span class="badge badge-danger">Falha</span>
                                 @endif
                             </td>
-                            <td>{{ $backup->local_arquivo }}</td>
+                            <td>{{ basename(str_replace('\\', '/', $backup->local_arquivo)) }}</td>
                             <td>
                                 @if($backup->status == 'sucesso')
                                     <a href="{{ route('backup.download', $backup->id) }}" class="btn btn-sm btn-primary">

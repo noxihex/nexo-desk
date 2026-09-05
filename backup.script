@@ -1,40 +1,58 @@
-Fica em /usr/local/bin/backup_mariadb.sh
-
-crontab -e
-
-0 0 * * * /usr/local/bin/backup_mariadb.sh > /var/log/backup_mariadb.log 2>&1
-
-Altere o user e senha do banco nos campos DB_USER e DB_PASSWORD
-
-
 #!/bin/bash
 
-# Configurações do banco de dados
-DB_USER=""
-DB_PASSWORD=""
+# Instale este arquivo como /usr/local/bin/backup_mariadb.sh e execute-o via cron:
+# 0 0 * * * /usr/local/bin/backup_mariadb.sh > /var/log/backup_mariadb.log 2>&1
+#
+# Crie /root/.my.cnf com permissao 0600:
+# [client]
+# user=USUARIO_DO_BANCO
+# password=SENHA_DO_BANCO
+
+set -eu
+
 DB_NAME="nuvdesk"
-BACKUP_DIR="/var/www/html/nuvdesk/nuvdesk/storage/app/public/backup"
-DATE=$(date +%Y-%m-%d_%H-%M-%S)
+APP_DIR="/var/www/html/nuvdesk/nuvdesk"
+BACKUP_DIR="${BACKUP_STORAGE_PATH:-$APP_DIR/storage/app/private/backups}"
+MYSQL_DEFAULTS_FILE="${MYSQL_DEFAULTS_FILE:-/root/.my.cnf}"
+DATE="$(date +%Y-%m-%d_%H-%M-%S)"
 BACKUP_FILE="backup_$DATE.sql"
 BACKUP_PATH="$BACKUP_DIR/$BACKUP_FILE"
+TEMP_FILE=""
 
-# Cria o diretório de backup, caso não exista
-mkdir -p "$BACKUP_DIR"
+umask 027
+install -d -m 0750 "$BACKUP_DIR"
 
-# Executa o backup usando o mysqldump
-mysqldump -u $DB_USER -p$DB_PASSWORD $DB_NAME > "$BACKUP_PATH"
-
-# Verifica se o backup foi realizado com sucesso
-if [ $? -eq 0 ]; then
-    STATUS="sucesso"
-    echo "Backup realizado com sucesso em $BACKUP_PATH"
-else
-    STATUS="falha"
-    echo "Falha ao realizar o backup."
+if [ ! -r "$MYSQL_DEFAULTS_FILE" ]; then
+    echo "Arquivo de credenciais MySQL nao encontrado ou sem permissao de leitura."
+    exit 1
 fi
 
-# Insere o registro no banco de dados indicando o status do backup e seu caminho
-mysql -u $DB_USER -p$DB_PASSWORD $DB_NAME -e "INSERT INTO backups (data_hora, local_arquivo, status, created_at) VALUES (NOW(), '$BACKUP_PATH', '$STATUS', NOW());"
+TEMP_FILE="$(mktemp "$BACKUP_DIR/.backup_XXXXXX.sql")"
+trap 'if [ -n "$TEMP_FILE" ]; then rm -f -- "$TEMP_FILE"; fi' EXIT
 
-# Remove backups antigos (opcional) - mantém apenas os últimos 7 dias
-find "$BACKUP_DIR" -type f -name "*.sql" -mtime +7 -exec rm {} \; -exec mysql -u $DB_USER -p$DB_PASSWORD $DB_NAME -e "DELETE FROM backups WHERE local_arquivo='{}';" \;
+if mysqldump --defaults-extra-file="$MYSQL_DEFAULTS_FILE" -- "$DB_NAME" > "$TEMP_FILE"; then
+    chmod 0640 "$TEMP_FILE"
+    mv -- "$TEMP_FILE" "$BACKUP_PATH"
+    TEMP_FILE=""
+
+    mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE" --database="$DB_NAME" \
+        --execute="INSERT INTO backups (data_hora, local_arquivo, status, created_at, updated_at) VALUES (NOW(), '$BACKUP_FILE', 'sucesso', NOW(), NOW());"
+
+    echo "Backup realizado com sucesso em $BACKUP_PATH"
+else
+    mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE" --database="$DB_NAME" \
+        --execute="INSERT INTO backups (data_hora, local_arquivo, status, created_at, updated_at) VALUES (NOW(), '$BACKUP_FILE', 'falha', NOW(), NOW());"
+
+    echo "Falha ao realizar o backup."
+    exit 1
+fi
+
+# Mantem somente os backups dos ultimos sete dias e remove seus registros.
+find "$BACKUP_DIR" -maxdepth 1 -type f -name 'backup_*.sql' -mtime +7 -print0 |
+while IFS= read -r -d '' old_backup; do
+    old_file="${old_backup##*/}"
+    if rm -f -- "$old_backup"; then
+        mysql --defaults-extra-file="$MYSQL_DEFAULTS_FILE" --database="$DB_NAME" \
+            --execute="DELETE FROM backups WHERE local_arquivo = '$old_file' OR local_arquivo LIKE '%/storage/app/public/backup/$old_file';"
+    fi
+done
