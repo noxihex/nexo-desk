@@ -468,6 +468,10 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         $ticket->assumido_por_usuario_id = $user->id;
         $ticket->data_hora_assumido = now(); // Define a data e hora atual
 
+        if ($ticket->status === 'aberto') {
+            $ticket->status = 'pendente analista';
+        }
+
         $ticket->save();
 
         // Cria uma mensagem de auditoria indicando que o usuário assumiu o ticket

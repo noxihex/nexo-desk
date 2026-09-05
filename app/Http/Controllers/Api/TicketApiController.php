@@ -254,6 +254,10 @@ $ticket = Ticket::findOrFail($id);
         $ticket->assumido_por_usuario_id = $analista->id;
         $ticket->data_hora_assumido = now();
 
+        if ($ticket->status === 'aberto') {
+            $ticket->status = 'pendente analista';
+        }
+
         $ticket->save();
 
         // Cria uma mensagem de auditoria no histórico do ticket

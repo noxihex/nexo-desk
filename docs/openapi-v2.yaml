@@ -69,6 +69,7 @@ paths:
   /tickets/{id}/assumir:
     post:
       summary: Assume um ticket
+      description: Altera aberto para pendente analista e preserva os demais status.
       parameters: [{ $ref: '#/components/parameters/Id' }]
       requestBody: { required: true, content: { application/json: { schema: { type: object, required: [analista_id, setor_id, categoria_id], properties: { analista_id: { type: integer }, setor_id: { type: integer }, categoria_id: { type: integer } } } } } }
       responses: { '200': { description: Assumido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }

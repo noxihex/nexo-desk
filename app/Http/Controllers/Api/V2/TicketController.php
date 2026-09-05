@@ -155,6 +155,7 @@ class TicketController extends Controller
             'grupo_id' => $analista->grupo_id,
             'assumido_por_usuario_id' => $analista->id,
             'data_hora_assumido' => now(),
+            'status' => $ticket->status === 'aberto' ? 'pendente analista' : $ticket->status,
         ]);
         $ticket->mensagens()->create(['user_id' => $analista->id, 'descricao' => "{$analista->name} assumiu o ticket."]);
         return (new TicketResource($ticket->load(self::RELATIONS)))->additional(['message' => 'Ticket assumido com sucesso!']);

@@ -24,6 +24,8 @@ As listagens de tickets, usuários, empresas, setores, categorias e grupos usam 
 | POST | `/api/v2/tickets/{id}/transferir` | Transfere setor, grupo e opcionalmente analista |
 | PATCH | `/api/v2/tickets/{id}/prazo` | Define ou remove o prazo |
 
+Ao assumir um ticket, o status `aberto` passa para `pendente analista`. Os status `pendente cliente` e `pendente analista` são preservados. A mesma regra se aplica à interface web e ao endpoint legado `/api/tickets/{id}/assumir`.
+
 Na transferência, `setor_id` e `grupo_id` são obrigatórios. `analista_id` omitido preserva o analista atual; `analista_id: null` deixa o ticket sem analista.
 
 ```json

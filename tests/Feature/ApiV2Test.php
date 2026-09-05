@@ -51,6 +51,52 @@ class ApiV2Test extends TestCase
         $this->getJson('/api/v2/me')->assertUnauthorized();
     }
 
+    /** @dataProvider assumirStatusProvider */
+    public function test_assumir_only_changes_open_status(string $prefix, string $status, string $expected)
+    {
+        $base = $this->dadosBase();
+        $ticket = $this->ticket($base, ['status' => $status]);
+        $payload = [
+            'analista_id' => $base['user']->id,
+            'setor_id' => $base['setor']->id,
+            'categoria_id' => $base['categoria']->id,
+        ];
+
+        if ($prefix === '') {
+            \Spatie\Permission\Models\Role::findOrCreate('analista', 'web');
+            $base['user']->assignRole('analista');
+            $this->actingAs($base['user']);
+            $payload = ['setor' => $base['setor']->id, 'categoria' => $base['categoria']->id];
+            $this->post("/tickets/{$ticket->id}/assumir", $payload)->assertRedirect();
+        } else {
+            $this->postJson("{$prefix}/tickets/{$ticket->id}/assumir", $payload)
+                ->assertOk()
+                ->assertJsonPath($prefix === '/api/v2' ? 'data.status' : 'ticket.status', $expected);
+        }
+
+        $ticket->refresh();
+        $this->assertSame($expected, $ticket->status);
+        $this->assertEquals($base['user']->id, $ticket->atribuido_ao_analista_id);
+        $this->assertEquals($base['user']->id, $ticket->assumido_por_usuario_id);
+        $this->assertNotNull($ticket->data_hora_assumido);
+        $this->assertDatabaseHas('mensagens', [
+            'ticket_id' => $ticket->id,
+            'descricao' => "{$base['user']->name} assumiu o ticket.",
+        ]);
+    }
+
+    public function assumirStatusProvider(): array
+    {
+        $cases = [];
+        foreach (['', '/api', '/api/v2'] as $prefix) {
+            foreach (['aberto' => 'pendente analista', 'pendente cliente' => 'pendente cliente', 'pendente analista' => 'pendente analista'] as $status => $expected) {
+                $cases[$prefix.' '.$status] = [$prefix, $status, $expected];
+            }
+        }
+
+        return $cases;
+    }
+
     public function test_legacy_and_v2_paginate_one_hundred_tickets_and_preserve_origem()
     {
         $base = $this->dadosBase();
