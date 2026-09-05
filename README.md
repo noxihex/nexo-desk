@@ -50,10 +50,12 @@ Certifique-se de ter as seguintes ferramentas instaladas:
     * `public/vendor/adminlte/dist/img/logodesk.png`
     * `public/favicon.ico`
 
-6.  **Execute as migrações do banco de dados:**
+6.  **Execute as migrações e cadastre os perfis e permissões padrão:**
     ```bash
-    php artisan migrate
+    php artisan migrate --seed
     ```
+
+    Para reaplicar os acessos padrão em uma instalação existente, execute `php artisan db:seed --class=RoleSeeder`. O seeder pode ser repetido sem duplicações e preserva permissões adicionais já atribuídas aos perfis. Em produção, acrescente `--force` aos comandos. O seeder não cria usuários nem atribui perfis a usuários existentes.
 
 7.  **Instale as dependências do Node.js e compile os assets:**
     ```bash

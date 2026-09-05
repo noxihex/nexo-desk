@@ -3,49 +3,37 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RoleSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     *
-     * @return void
-     */
     public function run()
     {
-        // Usando firstOrCreate para garantir que não tente recriar papéis e permissões existentes
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        // Criando ou pegando os papéis (roles)
-        $analista = Role::firstOrCreate(['name' => 'analista']);
-        $supervisor = Role::firstOrCreate(['name' => 'supervisor']);
-        $administrador = Role::firstOrCreate(['name' => 'administrador']);
-        $cliente = Role::firstOrCreate(['name' => 'cliente']);
-        $clientedc = Role::firstOrCreate(['name' => 'clientedc']);
+        $permissionsByRole = [
+            'analista' => 'acesso analista',
+            'supervisor' => 'acesso supervisor',
+            'administrador' => 'acesso admin',
+            'cliente' => 'acesso cliente noc',
+            'clientedc' => 'acesso cliente dc',
+        ];
 
-        // Criando ou pegando as permissões (permissions)
-        $acessoAdmin = Permission::firstOrCreate(['name' => 'acesso admin']);
-        $acessoAnalista = Permission::firstOrCreate(['name' => 'acesso analista']);
-        $acessoClienteNoc = Permission::firstOrCreate(['name' => 'acesso cliente noc']);
-        $acessoClienteDc = Permission::firstOrCreate(['name' => 'acesso cliente dc']);
-        $acessoSupervisor = Permission::firstOrCreate(['name' => 'acesso supervisor']);
+        foreach ($permissionsByRole as $roleName => $permissionName) {
+            $permission = Permission::firstOrCreate([
+                'name' => $permissionName,
+                'guard_name' => 'web',
+            ]);
 
-        // Atribuindo permissões aos papéis
+            $role = Role::firstOrCreate([
+                'name' => $roleName,
+                'guard_name' => 'web',
+            ]);
 
-        // Administrador recebe a permissão 'acesso admin'
-        $administrador->givePermissionTo($acessoAdmin);
-
-        // Analista recebe a permissão 'acesso analista'
-        $analista->givePermissionTo($acessoAnalista);
-
-        // Supervisor recebe a permissão 'acesso supervisor'
-        $supervisor->givePermissionTo($acessoSupervisor);
-
-        // Cliente NOC recebe a permissão 'acesso cliente noc'
-        $cliente->givePermissionTo($acessoClienteNoc);
-
-        // Cliente DC recebe a permissão 'acesso cliente dc'
-        $clientedc->givePermissionTo($acessoClienteDc);
+            // Garante o acesso padrão sem remover permissões adicionais existentes.
+            $role->givePermissionTo($permission);
+        }
     }
 }
