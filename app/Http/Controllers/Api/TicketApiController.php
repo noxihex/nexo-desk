@@ -22,7 +22,10 @@ class TicketApiController extends Controller
     // Mostra os detalhes de um ticket específico
     public function show($id)
     {
-        $ticket = Ticket::with(['mensagens', 'attachments'])->find($id);
+        $ticket = Ticket::with([
+            'mensagens' => fn ($query) => $query->semInternas(),
+            'attachments',
+        ])->find($id);
 
         if (!$ticket) {
             return response()->json(['error' => 'Ticket não encontrado.'], 404);
@@ -85,7 +88,7 @@ $ticket = Ticket::findOrFail($id);
 
         $slaUpdate = $ticket->categoria->slaupdate ?? 30;
 
-        $mensagens = $ticket->mensagens()->orderBy('created_at', 'asc')->get();
+        $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
         $tempoTotalMinutos = 0;
         $dataReferencia = $ticket->created_at;
 

@@ -154,76 +154,113 @@
 
 <div class="card mt-3">
     <div class="card-header" style="padding: 8px 15px;">
-        <h5 style="margin: 0;"><i class="fas fa-comments"></i> Mensagens</h5>
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 style="margin: 0;"><i class="fas fa-stream"></i> Linha do tempo</h5>
+            <form action="{{ route($isFollowing ? 'tickets.followers.destroy' : 'tickets.followers.store', $ticket) }}" method="POST">
+                @csrf
+                @if($isFollowing) @method('DELETE') @endif
+                <button class="btn btn-sm {{ $isFollowing ? 'btn-outline-secondary' : 'btn-outline-primary' }}" type="submit">
+                    <i class="fas {{ $isFollowing ? 'fa-bell-slash' : 'fa-bell' }}"></i>
+                    {{ $isFollowing ? 'Deixar de seguir' : 'Seguir ticket' }}
+                </button>
+            </form>
+        </div>
+        @if($ticket->seguidores->isNotEmpty())
+            <div class="mt-2 small text-muted"><strong>Seguidores:</strong> {{ $ticket->seguidores->pluck('name')->join(', ') }}</div>
+        @endif
     </div>
 
-    <div class="card-body" id="mensagensContainer" style="max-height: 400px; overflow-y: auto; padding: 10px;">
+    <div class="card-body" id="mensagensContainer" style="max-height: 600px; overflow-y: auto; padding: 10px;">
         <div class="timeline">
-            @if($ticket->mensagens->isNotEmpty())
-                @foreach($ticket->mensagens as $mensagem)
-                    @php
-                        $userType = $mensagem->user->hasRole(['administrador', 'analista', 'supervisor']) ? 'Analista' : 'Cliente';
-                        $iconColor = $userType === 'Analista' ? 'bg-blue' : 'bg-purple';
-                        $badgeColor = $userType === 'Analista' ? 'bg-primary' : 'bg-purple';
-                    @endphp
-
-                    <div class="time-label">
-                        <span class="{{ $badgeColor }}" style="padding: 2px 8px; font-size: 0.85em;">
-                            {{ $mensagem->created_at->format('d/m/Y H:i') }}
-                        </span>
-                    </div>
-                    <div>
-                        <i class="fas fa-user {{ $iconColor }}" style="margin-right: 5px;"></i>
-                        <div class="timeline-item" style="padding: 8px; margin-bottom: 0;">
-                            <span class="time"><i class="fas fa-clock"></i> {{ $mensagem->created_at->diffForHumans() }}</span>
-                            <h3 class="timeline-header" style="margin-bottom: 5px;">
-                                <strong>{{ $mensagem->user->name }} ({{ $userType }})</strong>
-                            </h3>
-                            <div class="timeline-body" style="font-size: 0.9em;">
-                                {!! nl2br(e($mensagem->descricao)) !!}
-
-                                @if($mensagem->attachments->isNotEmpty())
-                                    <hr>
-                                    <p><strong>Anexos:</strong></p>
-                                    <ul style="padding-left: 15px;">
-                                        @foreach($mensagem->attachments as $attachment)
-                                            <li><a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank">{{ basename($attachment->file_path) }}</a></li>
+            @forelse($timeline as $event)
+                @php
+                    $styles = [
+                        'publica' => ['fa-comment', 'bg-blue', 'Resposta pública'],
+                        'interna' => ['fa-lock', 'bg-warning', 'Nota interna'],
+                        'sistema' => ['fa-cog', 'bg-gray', 'Evento do sistema'],
+                        'alteracao' => ['fa-exchange-alt', 'bg-purple', 'Alteração'],
+                        'criacao' => ['fa-plus', 'bg-success', 'Criação'],
+                    ];
+                    [$icon, $color, $label] = $styles[$event['type']] ?? $styles['sistema'];
+                @endphp
+                <div>
+                    <i class="fas {{ $icon }} {{ $color }}"></i>
+                    <div class="timeline-item {{ $event['type'] === 'interna' ? 'border border-warning' : '' }}">
+                        <span class="time"><i class="fas fa-clock"></i> {{ $event['created_at']->format('d/m/Y H:i') }}</span>
+                        <h3 class="timeline-header">
+                            <strong>{{ $event['actor'] }}</strong>
+                            <span class="badge {{ $event['type'] === 'interna' ? 'badge-warning' : 'badge-light' }} ml-1">{{ $label }}</span>
+                        </h3>
+                        <div class="timeline-body">
+                            @if($event['type'] === 'alteracao')
+                                @foreach($event['changes'] as $change)
+                                    <div class="mb-1"><strong>{{ $change['label'] }}:</strong>
+                                        <span class="text-muted">{{ $change['old'] }}</span>
+                                        <i class="fas fa-long-arrow-alt-right mx-1"></i>
+                                        <span>{{ $change['new'] }}</span>
+                                    </div>
+                                @endforeach
+                            @else
+                                {!! nl2br(e($event['description'] ?? '')) !!}
+                                @if(!empty($event['mentions']) && $event['mentions']->isNotEmpty())
+                                    <div class="mt-2 small"><i class="fas fa-at"></i> {{ $event['mentions']->pluck('name')->join(', ') }}</div>
+                                @endif
+                                @if(!empty($event['attachments']) && $event['attachments']->isNotEmpty())
+                                    <hr><strong>Anexos:</strong>
+                                    <ul class="mb-0">
+                                        @foreach($event['attachments'] as $attachment)
+                                            <li>
+                                                @if(($attachment->disk ?? 'public') === 'local')
+                                                    <a href="{{ route('tickets.internal-attachments.show', [$ticket, $attachment]) }}">{{ basename($attachment->file_path) }}</a>
+                                                @else
+                                                    <a href="{{ asset('storage/' . $attachment->file_path) }}" target="_blank">{{ basename($attachment->file_path) }}</a>
+                                                @endif
+                                            </li>
                                         @endforeach
                                     </ul>
-
                                 @endif
-
-                            </div>
+                            @endif
                         </div>
                     </div>
-                @endforeach
-
-            @else
-                <p class="text-muted">Nenhuma mensagem ainda.</p>
-            @endif
+                </div>
+            @empty
+                <p class="text-muted">Nenhum evento ainda.</p>
+            @endforelse
         </div>
     </div>
+    @if($timeline->hasPages())
+        <div class="card-footer pb-0">{{ $timeline->appends(request()->except('timeline_page'))->links() }}</div>
+    @endif
 
     @if($ticket->status !== 'fechado')
     <div class="card-footer" style="padding: 8px 15px;">
         <form action="{{ route('mensagens.store', $ticket->id) }}" method="POST" enctype="multipart/form-data" id="messageForm">
             @csrf
             <input type="hidden" name="return_to" value="{{ $returnUrl }}">
-            <input type="hidden" name="status" id="status" value=""> <!-- Campo oculto para definir o status -->
+            <input type="hidden" name="status" id="status" value="">
+            <input type="hidden" name="tipo" id="messageType" value="publica">
+            <div id="mentionedUsers"></div>
 
             <div class="form-group" style="margin-bottom: 5px;">
                 <label for="descricao" style="margin-bottom: 0.3rem;">Enviar nova mensagem:</label>
                 <textarea name="descricao" id="descricao" class="form-control" rows="3" placeholder="Digite sua mensagem aqui..."></textarea>
+                <div id="mentionSuggestions" class="list-group position-absolute d-none" style="z-index: 1050; max-height: 200px; overflow-y: auto;"></div>
+                <small class="form-text text-muted">Use @ para mencionar analistas em notas internas.</small>
             </div>
 
             <div class="form-group">
                 <x-attachment-uploader name="attachments[]" :max-size-mb="10" collapsible />
             </div>
 
-            <!-- Botões de Envio -->
-            <button type="button" class="btn btn-success btn-sm" onclick="submitMessageForm()"><i class="fas fa-paper-plane"></i> Enviar Mensagem</button>
-            <button type="button" class="btn btn-primary btn-sm" onclick="submitMessageForm('pendente cliente')"><i class="fas fa-paper-plane"></i> Enviar e alterar para Pendente Cliente</button>
-            <button type="button" class="btn btn-warning btn-sm" onclick="submitMessageForm('pendente analista')"><i class="fas fa-paper-plane"></i> Enviar e alterar para Pendente Analista</button>
+            <div class="btn-group">
+                <button type="button" class="btn btn-success btn-sm" onclick="submitMessageForm(null, 'publica')"><i class="fas fa-paper-plane"></i> Responder publicamente</button>
+                <button type="button" class="btn btn-success btn-sm dropdown-toggle dropdown-toggle-split" data-toggle="dropdown"><span class="sr-only">Outras ações</span></button>
+                <div class="dropdown-menu">
+                    <button type="button" class="dropdown-item" onclick="submitMessageForm('pendente cliente', 'publica')">Responder e alterar para Pendente Cliente</button>
+                    <button type="button" class="dropdown-item" onclick="submitMessageForm('pendente analista', 'publica')">Responder e alterar para Pendente Analista</button>
+                </div>
+            </div>
+            <button type="button" class="btn btn-warning btn-sm ml-2" onclick="submitMessageForm(null, 'interna')"><i class="fas fa-lock"></i> Adicionar nota interna</button>
         </form>
     </div>
 </div>
@@ -648,16 +685,69 @@
             });
         @endif
 
-        // Rolar automaticamente as mensagens até o final
-        const mensagensContainer = document.getElementById('mensagensContainer');
-        if (mensagensContainer) {
-            mensagensContainer.scrollTop = mensagensContainer.scrollHeight;
+        const textarea = document.getElementById('descricao');
+        const suggestions = document.getElementById('mentionSuggestions');
+        const selectedMentions = new Map();
+        let mentionTimer = null;
+
+        function renderMentionInputs() {
+            const container = document.getElementById('mentionedUsers');
+            container.innerHTML = '';
+            selectedMentions.forEach(function (name, id) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'mentioned_user_ids[]';
+                input.value = id;
+                container.appendChild(input);
+            });
+        }
+
+        if (textarea && suggestions) {
+            textarea.addEventListener('input', function () {
+                clearTimeout(mentionTimer);
+                const beforeCursor = textarea.value.substring(0, textarea.selectionStart);
+                const match = beforeCursor.match(/(?:^|\s)@([^@\n]*)$/);
+                if (!match) {
+                    suggestions.classList.add('d-none');
+                    return;
+                }
+                mentionTimer = setTimeout(function () {
+                    fetch(@json(route('tickets.mentionables.index', $ticket)) + '?q=' + encodeURIComponent(match[1].trim()), {
+                        headers: { 'Accept': 'application/json' }
+                    }).then(response => response.json()).then(function (payload) {
+                        suggestions.innerHTML = '';
+                        suggestions.style.width = textarea.offsetWidth + 'px';
+                        payload.data.forEach(function (user) {
+                            const option = document.createElement('button');
+                            option.type = 'button';
+                            option.className = 'list-group-item list-group-item-action py-2';
+                            option.textContent = '@' + user.name;
+                            option.addEventListener('click', function () {
+                                const cursor = textarea.selectionStart;
+                                const start = cursor - match[0].length + (match[0].charAt(0) === ' ' ? 1 : 0);
+                                textarea.value = textarea.value.substring(0, start) + '@' + user.name + ' ' + textarea.value.substring(cursor);
+                                selectedMentions.set(String(user.id), user.name);
+                                renderMentionInputs();
+                                suggestions.classList.add('d-none');
+                                textarea.focus();
+                            });
+                            suggestions.appendChild(option);
+                        });
+                        suggestions.classList.toggle('d-none', payload.data.length === 0);
+                    });
+                }, 200);
+            });
         }
     });
 
     // Submeter formulário de mensagens com status opcional
-    function submitMessageForm(status = null) {
+    function submitMessageForm(status = null, type = 'publica') {
+        if (type === 'publica' && document.querySelectorAll('#mentionedUsers input').length) {
+            toastr.warning('As @menções são permitidas somente em notas internas.');
+            return;
+        }
         document.getElementById('status').value = status;
+        document.getElementById('messageType').value = type;
         document.getElementById('messageForm').submit();
     }
 

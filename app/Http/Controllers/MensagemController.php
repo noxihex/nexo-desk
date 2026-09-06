@@ -7,63 +7,40 @@ use App\Support\TicketReturnUrl;
 
 use App\Models\Mensagem;
 use App\Models\Ticket;
+use App\Services\TicketMessageService;
+use App\Support\TicketStaffAccess;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 
 class MensagemController extends Controller
 {
     /**
      * Armazena uma nova mensagem no banco de dados.
      */
-    public function store(Request $request, $ticketId)
+    public function store(Request $request, Ticket $ticket, TicketMessageService $messages)
     {
         $request->validate(array_merge([
             'descricao' => 'nullable|string|required_without:attachments',
+            'tipo' => 'nullable|in:publica,interna',
+            'status' => 'nullable|in:pendente cliente,pendente analista',
+            'mentioned_user_ids' => 'nullable|array',
+            'mentioned_user_ids.*' => 'integer|distinct|exists:users,id',
         ], AttachmentRules::for('attachments')));
-
-        // Cria a mensagem
-        $mensagem = Mensagem::create([
-            'user_id' => auth()->id(),
-            'ticket_id' => $ticketId,
-            'descricao' => $request->filled('descricao') ? $request->input('descricao') : 'Anexo enviado.',
-        ]);
-
-        // Processa os anexos enviados
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                if ($file->isValid()) {
-                    // Gera um nome único para o arquivo
-                    $uniqueName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-                    // Salva o arquivo na pasta especificada com o nome único
-                    $path = $file->storeAs('attachments/messages', $uniqueName, 'public');
-
-                    // Associa o arquivo ao registro da mensagem
-                    $mensagem->attachments()->create(['file_path' => $path]);
-
-                    Log::info("Anexo salvo no caminho: " . $path);
-                } else {
-                    Log::error("Arquivo inválido: " . $file->getClientOriginalName());
-                }
-            }
+        TicketStaffAccess::abortUnlessAllowed($request->user(), $ticket);
+        $type = $request->input('tipo', Mensagem::TIPO_PUBLICA);
+        if ($type === Mensagem::TIPO_INTERNA && $request->filled('status')) {
+            return back()->withErrors(['status' => 'Notas internas não podem alterar o status.'])->withInput();
         }
-
-        // Recupera o ticket
-        $ticket = Ticket::findOrFail($ticketId);
-
-        // Atualiza o status do ticket apenas se o campo 'status' estiver presente e não vazio
-        if ($request->filled('status')) {
-            $ticket->status = $request->input('status');
-        }
-
-        $ticket->touch(); // Atualiza o campo updated_at para a data e hora atuais
-        $ticket->save(); // Salva o ticket com as alterações, se houver
+        $messages->create($ticket, $request->user(), [
+            'descricao' => $request->input('descricao'),
+            'tipo' => $type,
+            'status' => $request->input('status'),
+            'mentioned_user_ids' => $request->input('mentioned_user_ids', []),
+        ], $request->file('attachments', []));
 
         return redirect()->route('tickets.show', [
-            'ticket' => $ticketId,
+            'ticket' => $ticket->id,
             'return_to' => TicketReturnUrl::resolve($request),
-        ])->with('success', 'Mensagem enviada com sucesso!');
+        ])->with('success', $type === Mensagem::TIPO_INTERNA ? 'Nota interna adicionada com sucesso!' : 'Mensagem enviada com sucesso!');
     }
 
 

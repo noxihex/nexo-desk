@@ -101,6 +101,16 @@ class User extends Authenticatable implements Auditable
         return $this->hasOne(NotificationPreference::class);
     }
 
+    public function ticketsSeguidos()
+    {
+        return $this->belongsToMany(Ticket::class, 'ticket_seguidores')->withTimestamps();
+    }
+
+    public function isStaff(): bool
+    {
+        return (bool) $this->status && $this->hasAnyRole(['analista', 'supervisor', 'administrador']);
+    }
+
     public function allowsNotification(string $event, string $channel): bool
     {
         $preference = $this->relationLoaded('notificationPreference')

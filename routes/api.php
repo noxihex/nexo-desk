@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\TicketApiController;
 use App\Http\Controllers\Api\V2\LookupController as V2LookupController;
 use App\Http\Controllers\Api\V2\TicketController as V2TicketController;
 use App\Http\Controllers\MailgunInboundController;
+use App\Http\Controllers\TicketFollowerController;
+use App\Http\Controllers\InternalMessageAttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +47,10 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     Route::post('/tickets', [V2TicketController::class, 'store']);
     Route::post('/tickets/{id}/finalizar', [V2TicketController::class, 'finalizar']);
     Route::post('/tickets/{id}/messages', [V2TicketController::class, 'addMessage']);
+    Route::get('/tickets/{id}/timeline', [V2TicketController::class, 'timeline']);
+    Route::post('/tickets/{ticket}/followers/me', [TicketFollowerController::class, 'store']);
+    Route::delete('/tickets/{ticket}/followers/me', [TicketFollowerController::class, 'destroy']);
+    Route::get('/tickets/{ticket}/messages/attachments/{attachment}', [InternalMessageAttachmentController::class, 'show']);
     Route::patch('/tickets/{id}/status', [V2TicketController::class, 'updateStatus']);
     Route::post('/tickets/{id}/assumir', [V2TicketController::class, 'assumir']);
     Route::post('/tickets/{id}/transferir', [V2TicketController::class, 'transferir']);

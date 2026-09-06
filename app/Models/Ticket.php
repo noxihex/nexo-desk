@@ -109,6 +109,11 @@ class Ticket extends Model implements Auditable
         return $this->hasMany(Mensagem::class);
     }
 
+    public function seguidores()
+    {
+        return $this->belongsToMany(User::class, 'ticket_seguidores')->withTimestamps();
+    }
+
     public function replyTokens()
     {
         return $this->hasMany(EmailReplyToken::class);

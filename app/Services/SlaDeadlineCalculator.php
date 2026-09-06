@@ -18,7 +18,7 @@ class SlaDeadlineCalculator
 
         if ($ticket->atribuido_ao_analista_id) {
             $lastPublicReply = $ticket->mensagens()
-                ->where('tipo', 'publica')
+                ->publicas()
                 ->where('user_id', $ticket->atribuido_ao_analista_id)
                 ->where('created_at', '>=', $reference)
                 ->latest('created_at')

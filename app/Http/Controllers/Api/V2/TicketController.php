@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V2\TicketResource;
+use App\Http\Resources\Api\V2\MessageResource;
 use App\Models\Categoria;
 use App\Models\Grupo;
 use App\Models\Setor;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Models\Mensagem;
 use App\Rules\CategoriaPertenceAoSetor;
+use App\Services\TicketMessageService;
+use App\Services\TicketTimelineService;
+use App\Support\TicketStaffAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -53,7 +58,7 @@ class TicketController extends Controller
 
     public function show($id)
     {
-        $ticket = Ticket::with(array_merge(self::RELATIONS, ['mensagens', 'attachments']))->find($id);
+        $ticket = Ticket::with(array_merge(self::RELATIONS, ['mensagens.attachments', 'mensagens.mencoes', 'attachments']))->find($id);
         if (!$ticket) {
             return response()->json(['error' => 'Ticket não encontrado.'], 404);
         }
@@ -100,7 +105,7 @@ class TicketController extends Controller
         $slaUpdate = $ticket->categoria->slaupdate ?? 30;
         $tempoTotal = 0;
         $referencia = $ticket->created_at;
-        foreach ($ticket->mensagens()->orderBy('created_at')->get() as $mensagem) {
+        foreach ($ticket->mensagens()->semInternas()->orderBy('created_at')->get() as $mensagem) {
             $tempoTotal += min($referencia->diffInMinutes($mensagem->created_at), $slaUpdate);
             $referencia = $mensagem->created_at;
         }
@@ -123,15 +128,56 @@ class TicketController extends Controller
         return response()->json(['message' => 'Ticket finalizado com sucesso.']);
     }
 
-    public function addMessage(Request $request, $id)
+    public function addMessage(Request $request, $id, TicketMessageService $messages)
     {
-        $data = $request->validate(['descricao' => 'required|string']);
-        $ticket = Ticket::findOrFail($id);
-        $mensagem = $ticket->mensagens()->create([
-            'user_id' => $request->user()->id,
-            'descricao' => $data['descricao'],
+        $data = $request->validate([
+            'descricao' => 'required|string',
+            'tipo' => 'nullable|in:publica,interna',
+            'status' => 'nullable|in:pendente cliente,pendente analista',
+            'mentioned_user_ids' => 'nullable|array',
+            'mentioned_user_ids.*' => 'integer|distinct|exists:users,id',
         ]);
-        return response()->json(['message' => 'Mensagem adicionada com sucesso.', 'data' => $mensagem], 201);
+        $ticket = Ticket::findOrFail($id);
+        $type = $data['tipo'] ?? Mensagem::TIPO_PUBLICA;
+        if ($type === Mensagem::TIPO_INTERNA && !empty($data['status'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'status' => 'Notas internas não podem alterar o status.',
+            ]);
+        }
+        $mensagem = $messages->create($ticket, $request->user(), $data + [
+            'tipo' => $type,
+            'mentioned_user_ids' => [],
+        ]);
+        return response()->json([
+            'message' => 'Mensagem adicionada com sucesso.',
+            'data' => (new MessageResource($mensagem))->resolve($request),
+        ], 201);
+    }
+
+    public function timeline(Request $request, $id, TicketTimelineService $timelineService)
+    {
+        $ticket = Ticket::with('user')->findOrFail($id);
+        TicketStaffAccess::abortUnlessAllowed($request->user(), $ticket);
+
+        $timeline = $timelineService->paginate($ticket);
+        $timeline->setCollection($timeline->getCollection()->map(function (array $event) {
+            if (isset($event['mentions'])) {
+                $event['mentions'] = $event['mentions']->map(fn ($user) => ['id' => $user->id, 'name' => $user->name])->values();
+            }
+            if (isset($event['attachments'])) {
+                $event['attachments'] = $event['attachments']->map(fn ($attachment) => [
+                    'id' => $attachment->id,
+                    'name' => basename($attachment->file_path),
+                    'private' => ($attachment->disk ?? 'public') === 'local',
+                    'url' => ($attachment->disk ?? 'public') === 'local'
+                        ? url('/api/v2/tickets/' . $event['ticket_id'] . '/messages/attachments/' . $attachment->id)
+                        : asset('storage/' . $attachment->file_path),
+                ])->values();
+            }
+            return $event;
+        }));
+
+        return response()->json($timeline);
     }
 
     public function updateStatus(Request $request, $id)

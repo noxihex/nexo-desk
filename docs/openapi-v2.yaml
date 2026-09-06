@@ -58,8 +58,28 @@ paths:
     post:
       summary: Adiciona mensagem
       parameters: [{ $ref: '#/components/parameters/Id' }]
-      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [descricao], properties: { descricao: { type: string } } } } } }
-      responses: { '201': { description: Mensagem criada }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+      requestBody: { required: true, content: { application/json: { schema: { type: object, required: [descricao], properties: { descricao: { type: string }, tipo: { type: string, enum: [publica, interna], default: publica }, status: { type: string, enum: [pendente cliente, pendente analista] }, mentioned_user_ids: { type: array, items: { type: integer }, uniqueItems: true } } } } } }
+      responses: { '201': { description: Mensagem criada }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { description: Nota interna não autorizada }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
+  /tickets/{id}/timeline:
+    get:
+      summary: Lista a linha do tempo interna do ticket
+      description: Restrito a staff ativo autorizado a visualizar o ticket. Retorna 50 eventos por página.
+      parameters: [{ $ref: '#/components/parameters/Id' }, { $ref: '#/components/parameters/Page' }]
+      responses: { '200': { description: Página de eventos }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { description: Acesso negado }, '404': { $ref: '#/components/responses/NotFound' } }
+  /tickets/{id}/followers/me:
+    post:
+      summary: Segue o ticket com o usuário autenticado
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '200': { description: Ticket seguido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { description: Acesso negado }, '404': { $ref: '#/components/responses/NotFound' } }
+    delete:
+      summary: Deixa de seguir o ticket com o usuário autenticado
+      parameters: [{ $ref: '#/components/parameters/Id' }]
+      responses: { '200': { description: Ticket não seguido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { description: Acesso negado }, '404': { $ref: '#/components/responses/NotFound' } }
+  /tickets/{id}/messages/attachments/{attachment}:
+    get:
+      summary: Baixa um anexo privado de nota interna
+      parameters: [{ $ref: '#/components/parameters/Id' }, { name: attachment, in: path, required: true, schema: { type: integer } }]
+      responses: { '200': { description: Arquivo }, '401': { $ref: '#/components/responses/Unauthenticated' }, '403': { description: Acesso negado }, '404': { $ref: '#/components/responses/NotFound' } }
   /tickets/{id}/status:
     patch:
       summary: Altera o status

@@ -10,7 +10,7 @@ class MessageAttachment extends Model implements Auditable
 {
     use HasFactory, \OwenIt\Auditing\Auditable;
 
-    protected $fillable = ['mensagem_id', 'file_path'];
+    protected $fillable = ['mensagem_id', 'file_path', 'disk'];
 
     public function mensagem()
     {

@@ -18,6 +18,9 @@ use App\Http\Controllers\ClienteTicketController;
 use App\Http\Controllers\InboundMailboxController;
 use App\Http\Controllers\NotificationCenterController;
 use App\Http\Controllers\NotificationPreferenceController;
+use App\Http\Controllers\TicketFollowerController;
+use App\Http\Controllers\TicketMentionController;
+use App\Http\Controllers\InternalMessageAttachmentController;
 
 /*
 |--------------------------------------------------------------------------
@@ -73,6 +76,10 @@ Route::middleware(['auth', 'verifica.status', 'role:analista|supervisor|administ
     Route::put('/tickets/{id}/finalize', [TicketController::class, 'finalize'])->name('tickets.finalize');
     Route::get('/tickets/{id}/horas-sugeridas', [TicketController::class, 'calcularHorasSugeridas'])->name('tickets.horasSugeridas');
     Route::post('/tickets/{ticket}/mensagens', [MensagemController::class, 'store'])->name('mensagens.store');
+    Route::post('/tickets/{ticket}/seguir', [TicketFollowerController::class, 'store'])->name('tickets.followers.store');
+    Route::delete('/tickets/{ticket}/seguir', [TicketFollowerController::class, 'destroy'])->name('tickets.followers.destroy');
+    Route::get('/tickets/{ticket}/mencionaveis', [TicketMentionController::class, 'index'])->name('tickets.mentionables.index');
+    Route::get('/tickets/{ticket}/mensagens/anexos/{attachment}', [InternalMessageAttachmentController::class, 'show'])->name('tickets.internal-attachments.show');
 
     // Transferência e Assumir
     Route::get('/tickets/{ticket}/transferir', [TicketController::class, 'carregarTransferir'])->name('tickets.carregarTransferir');

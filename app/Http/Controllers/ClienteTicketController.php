@@ -76,13 +76,15 @@ class ClienteTicketController extends Controller
 {
     // Busca o ticket pelo ID, garantindo que seja do mesmo usuário ou empresa
     $ticket = $this->ticketPermitidoAoCliente($id, [
-        'mensagens.user',
-        'mensagens.attachments',
         'attachments',
         'categoria',
         'user',
         'empresa',
     ]);
+
+    $ticket->load(['mensagens' => function ($query) {
+        $query->publicas()->orderBy('created_at');
+    }, 'mensagens.user', 'mensagens.attachments']);
 
     // Retorna a view com o ticket
     $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
@@ -107,6 +109,7 @@ public function storeMessage(Request $request, $id)
         'user_id' => $user->id,
         'ticket_id' => $id,
         'descricao' => $request->filled('descricao') ? $request->descricao : 'Anexo enviado.',
+        'tipo' => Mensagem::TIPO_PUBLICA,
     ]);
 
     // Processa os anexos enviados, se houver
@@ -218,7 +221,7 @@ public function finalize(Request $request, $id)
     $slaUpdate = $ticket->categoria->slaupdate;
 
     // Recuperar todas as mensagens do ticket, ordenadas por criação
-    $mensagens = $ticket->mensagens()->orderBy('created_at', 'asc')->get();
+    $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
 
     // Variável para somar o tempo total congelado
     $tempoTotalMinutos = 0;
@@ -284,7 +287,7 @@ public function calcularHorasSugeridas($id)
         $slaUpdate = $ticket->categoria->slaupdate;
 
         // Recuperar mensagens do ticket
-        $mensagens = $ticket->mensagens()->orderBy('created_at', 'asc')->get();
+        $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
 
         // Variável para somar o tempo total congelado
         $tempoTotalMinutos = 0;

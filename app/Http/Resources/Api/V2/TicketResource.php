@@ -37,7 +37,15 @@ class TicketResource extends JsonResource
             'grupo' => $this->whenLoaded('grupo'),
             'setor' => $this->whenLoaded('setor'),
             'analista' => $this->whenLoaded('analista'),
-            'mensagens' => $this->whenLoaded('mensagens'),
+            'mensagens' => $this->when($this->relationLoaded('mensagens'), function () use ($request) {
+                $user = $request->user();
+                $canSeeInternal = $user && method_exists($user, 'isStaff') && $user->isStaff()
+                    && $user->podeVisualizarTicket($this->resource);
+                $messages = $this->mensagens->filter(function ($message) use ($canSeeInternal) {
+                    return $canSeeInternal || $message->tipo !== \App\Models\Mensagem::TIPO_INTERNA;
+                })->values();
+                return MessageResource::collection($messages);
+            }),
             'attachments' => $this->whenLoaded('attachments'),
         ];
     }

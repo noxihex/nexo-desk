@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
+use App\Services\TicketTimelineService;
 
 
 class TicketController extends Controller
@@ -225,7 +226,7 @@ class TicketController extends Controller
     /**
      * Exibe um ticket específico.
      */
-    public function show(Request $request, Ticket $ticket)
+    public function show(Request $request, Ticket $ticket, TicketTimelineService $timelineService)
     {
         $user = Auth::user();
 
@@ -253,8 +254,12 @@ class TicketController extends Controller
 
         $setorSelecionado = $ticket->setor_id;
 
+        $ticket->load(['user', 'seguidores.roles']);
+        $timeline = $timelineService->paginate($ticket);
+        $isFollowing = $ticket->seguidores->contains('id', $user->id);
+
         // Retorna os dados para a view
-        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl'));
+        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl', 'timeline', 'isFollowing'));
     }
 
 
@@ -361,7 +366,7 @@ class TicketController extends Controller
         $slaUpdate = $ticket->categoria->slaupdate;
 
         // Recuperar todas as mensagens do ticket, ordenadas por criação
-        $mensagens = $ticket->mensagens()->orderBy('created_at', 'asc')->get();
+        $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
 
         // Variável para somar o tempo total congelado
         $tempoTotalMinutos = 0;
@@ -427,7 +432,7 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
             $slaUpdate = $ticket->categoria->slaupdate;
 
             // Recuperar mensagens do ticket
-            $mensagens = $ticket->mensagens()->orderBy('created_at', 'asc')->get();
+            $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
 
             // Variável para somar o tempo total congelado
             $tempoTotalMinutos = 0;
