@@ -11,6 +11,7 @@ class CategoriaResource extends JsonResource
         return [
             'id' => $this->id, 'nome' => $this->nome, 'prioridade' => $this->prioridade,
             'slatotal' => $this->slatotal, 'slaupdate' => $this->slaupdate, 'setor_id' => $this->setor_id,
+            'setor_ids' => $this->setores->pluck('id')->sort()->values()->all(),
         ];
     }
 }

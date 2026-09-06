@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
 use App\Support\TicketReturnUrl;
+use App\Rules\CategoriaPertenceAoSetor;
 
 use App\Models\Ticket;
 use App\Models\Categoria;
@@ -117,7 +118,7 @@ class TicketController extends Controller
 
     $categorias = Categoria::when(
         $user->deveRestringirTicketsAoSetor(),
-        fn ($query) => $query->where('setor_id', $user->setor_id)
+        fn ($query) => $query->whereHas('setores', fn ($setores) => $setores->whereKey($user->setor_id))
     )->orderBy('nome')->get();
     $empresas = Empresa::orderBy('nome')->get();
 
@@ -161,7 +162,11 @@ class TicketController extends Controller
         $request->validate(array_merge([
             'assunto' => 'required|string|max:255',
             'descricao' => 'required|string',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor_id')),
+            ],
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'setor_id' => 'nullable|exists:setores,id',
@@ -238,7 +243,8 @@ class TicketController extends Controller
 
         // Obter categorias associadas ao setor do ticket (ou uma coleção vazia caso o setor não esteja definido)
         $categoriasAssociadas = $ticket->setor_id
-            ? Categoria::where('setor_id', $ticket->setor_id)->get()
+            ? Categoria::whereHas('setores', fn ($query) => $query->whereKey($ticket->setor_id))
+                ->orderBy('nome')->get()
             : collect(); // Retorna coleção vazia se não houver setor associado
 
         // A interface de transferência filtra esta lista pelo setor escolhido.
@@ -271,10 +277,17 @@ class TicketController extends Controller
 
     public function update(Request $request, Ticket $ticket)
     {
+        $categoriaRules = ['required', 'exists:categorias,id'];
+        $mesmaCombinacaoHistorica = (string) $request->input('categoria_id') === (string) $ticket->categoria_id
+            && (string) $request->input('setor_id') === (string) $ticket->setor_id;
+        if (!$mesmaCombinacaoHistorica) {
+            $categoriaRules[] = new CategoriaPertenceAoSetor($request->input('setor_id'));
+        }
+
         $request->validate([
             'assunto' => 'required|string|max:255',
             'descricao' => 'required|string',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => $categoriaRules,
             'cliente_id' => 'nullable|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'setor_id' => 'nullable|exists:setores,id',
@@ -451,7 +464,11 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         // Validação
         $request->validate([
             'setor' => 'required|exists:setores,id',
-            'categoria' => 'required|exists:categorias,id',
+            'categoria' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor')),
+            ],
         ]);
 
         // Atualiza setor e categoria do ticket
@@ -490,18 +507,25 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
 // Função para transferir o ticket
 public function transferirTicket(Request $request, $id)
 {
+    $ticket = Ticket::findOrFail($id);
+
     $dados = $request->validate([
         'setor' => 'required|exists:setores,id',
+        'categoria' => [
+            'required',
+            'exists:categorias,id',
+            new CategoriaPertenceAoSetor($request->input('setor')),
+        ],
         'analista' => $this->regrasAnalista('setor'),
     ]);
 
-    $ticket = Ticket::findOrFail($id);
     $user = Auth::user(); // Recupera o usuário autenticado (quem está fazendo a transferência)
 
     // Atualiza o setor e o analista, se fornecidos
     if ($dados['setor']) {
         $ticket->setor_id = $dados['setor'];
     }
+    $ticket->categoria_id = $dados['categoria'];
     if ($request->has('analista')) { // Verifica se a chave 'analista' existe na requisição, mesmo que o valor seja null
         $ticket->atribuido_ao_analista_id = $dados['analista']; // Define como null se nenhum analista for selecionado
     }
@@ -582,7 +606,8 @@ public function carregarAssumir($id, Request $request)
 
     // Obter categorias associadas ao setor selecionado
     $categoriasAssociadas = $setorSelecionado
-        ? Categoria::where('setor_id', $setorSelecionado)->get()
+        ? Categoria::whereHas('setores', fn ($query) => $query->whereKey($setorSelecionado))
+            ->orderBy('nome')->get()
         : collect(); // Retorna coleção vazia se não houver setor selecionado
 
     // Retornar a view com os dados
@@ -608,7 +633,8 @@ public function carregarTransferir($id)
 public function carregarCategorias($setor_id)
 {
     // Busca categorias associadas ao setor informado
-    $categorias = Categoria::where('setor_id', $setor_id)->get();
+    $categorias = Categoria::whereHas('setores', fn ($query) => $query->whereKey($setor_id))
+        ->orderBy('nome')->get();
 
     // Retorna as categorias como JSON
     return response()->json($categorias);

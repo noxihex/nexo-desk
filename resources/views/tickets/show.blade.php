@@ -303,7 +303,7 @@
                 @csrf
                 <input type="hidden" name="return_to" value="{{ $returnUrl }}">
                 <div class="modal-body">
-                    <p>Selecione o setor e o analista:</p>
+                    <p>Selecione o setor, a categoria e o analista:</p>
 
                     <!-- Seleção de Setor -->
                     <div class="form-group">
@@ -315,6 +315,13 @@
                                     {{ $setor->nome }}
                                 </option>
                             @endforeach
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="categoria-transfer">Categoria:</label>
+                        <select name="categoria" id="categoria-transfer" class="form-control" required disabled>
+                            <option value="">Selecione um setor primeiro</option>
                         </select>
                     </div>
 
@@ -565,7 +572,9 @@
     $(document).ready(function () {
         const analistasTransferencia = @json($analistas->map(fn ($analista) => ['id' => $analista->id, 'name' => $analista->name, 'setor_id' => $analista->setor_id])->values());
         const analistaTransferSelecionado = @json($ticket->atribuido_ao_analista_id);
+        const categoriaTransferSelecionada = @json($ticket->categoria_id);
         const analistaTransfer = $('#analista-transfer');
+        const categoriaTransfer = $('#categoria-transfer');
 
         function atualizarAnalistasTransferencia() {
             const setorId = $('#setor-transfer').val();
@@ -588,8 +597,41 @@
                 });
         }
 
-        $('#setor-transfer').on('change', atualizarAnalistasTransferencia);
+        function atualizarCategoriasTransferencia() {
+            const setorId = $('#setor-transfer').val();
+            categoriaTransfer.empty();
+
+            if (!setorId) {
+                categoriaTransfer.prop('disabled', true)
+                    .append('<option value="">Selecione um setor primeiro</option>');
+                return;
+            }
+
+            categoriaTransfer.prop('disabled', true)
+                .append('<option value="">Carregando...</option>');
+
+            $.get(`/categorias/${setorId}`, function (categorias) {
+                categoriaTransfer.empty()
+                    .append('<option value="">Selecione uma categoria</option>');
+
+                categorias.forEach(categoria => {
+                    const selected = String(categoria.id) === String(categoriaTransferSelecionada) ? ' selected' : '';
+                    categoriaTransfer.append(`<option value="${categoria.id}"${selected}>${categoria.nome}</option>`);
+                });
+                categoriaTransfer.prop('disabled', false);
+            }).fail(function () {
+                categoriaTransfer.empty()
+                    .append('<option value="">Erro ao carregar categorias</option>')
+                    .prop('disabled', true);
+            });
+        }
+
+        $('#setor-transfer').on('change', function () {
+            atualizarAnalistasTransferencia();
+            atualizarCategoriasTransferencia();
+        });
         atualizarAnalistasTransferencia();
+        atualizarCategoriasTransferencia();
 
         // Exibir mensagens de sucesso ou erro usando Toastr
         @if(session('success'))

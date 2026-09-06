@@ -55,15 +55,17 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="setor_id"><i class="fas fa-building"></i> Setor</label>
-                    <select name="setor_id" class="form-control">
-                        <option value="">Sem setor</option>
+                    <label for="setor_ids"><i class="fas fa-building"></i> Setores</label>
+                    <select name="setor_ids[]" id="setor_ids" class="form-control @error('setor_ids') is-invalid @enderror" multiple>
                         @foreach($setores as $setor)
-                            <option value="{{ $setor->id }}" {{ $categoria->setor_id == $setor->id ? 'selected' : '' }}>
+                            <option value="{{ $setor->id }}" {{ in_array($setor->id, old('setor_ids', $categoria->setores->pluck('id')->all())) ? 'selected' : '' }}>
                                 {{ $setor->nome }}
                             </option>
                         @endforeach
                     </select>
+                    <small class="form-text text-muted">Deixe vazio para manter a categoria indisponível nos tickets.</small>
+                    @error('setor_ids')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    @error('setor_ids.*')<div class="text-danger small">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="form-group d-flex justify-content-start">

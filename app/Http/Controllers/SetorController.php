@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Categoria;
 use App\Models\Setor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SetorController extends Controller
 {
@@ -70,7 +72,18 @@ class SetorController extends Controller
      */
     public function destroy(Setor $setor)
     {
-        $setor->delete();
+        DB::transaction(function () use ($setor) {
+            Categoria::where('setor_id', $setor->id)->get()->each(function ($categoria) use ($setor) {
+                $novoSetorLegado = $categoria->setores()
+                    ->where('setores.id', '!=', $setor->id)
+                    ->orderBy('setores.id')
+                    ->value('setores.id');
+
+                $categoria->update(['setor_id' => $novoSetorLegado]);
+            });
+
+            $setor->delete();
+        });
 
         return redirect()->route('setores.index')->with('success', 'Setor excluído com sucesso!');
     }

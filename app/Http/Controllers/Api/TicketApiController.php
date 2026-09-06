@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Rules\CategoriaPertenceAoSetor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Ticket;
@@ -36,7 +37,11 @@ class TicketApiController extends Controller
         $request->validate([
             'assunto' => 'required|string|max:255',
             'descricao' => 'required|string',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor_id')),
+            ],
             'cliente_id' => 'required|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'grupo_id' => 'nullable|exists:grupos,id',
@@ -231,7 +236,11 @@ $ticket = Ticket::findOrFail($id);
         $request->validate([
             'analista_id'  => 'required|exists:users,id',
             'setor_id'     => 'required|exists:setores,id',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor_id')),
+            ],
         ]);
 
         // Busca o ticket pelo ID

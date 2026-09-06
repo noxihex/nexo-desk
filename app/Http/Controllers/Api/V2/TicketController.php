@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Api\V2;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V2\TicketResource;
+use App\Models\Categoria;
 use App\Models\Grupo;
 use App\Models\Setor;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Rules\CategoriaPertenceAoSetor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class TicketController extends Controller
 {
@@ -63,7 +66,11 @@ class TicketController extends Controller
         $data = $request->validate([
             'assunto' => 'required|string|max:255',
             'descricao' => 'required|string',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor_id')),
+            ],
             'cliente_id' => 'required|exists:users,id',
             'empresa_id' => 'nullable|exists:empresas,id',
             'grupo_id' => 'nullable|exists:grupos,id',
@@ -143,7 +150,11 @@ class TicketController extends Controller
         $data = $request->validate([
             'analista_id' => 'required|exists:users,id',
             'setor_id' => 'required|exists:setores,id',
-            'categoria_id' => 'required|exists:categorias,id',
+            'categoria_id' => [
+                'required',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($request->input('setor_id')),
+            ],
         ]);
         $ticket = Ticket::findOrFail($id);
         $analista = User::findOrFail($data['analista_id']);
@@ -162,10 +173,23 @@ class TicketController extends Controller
 
     public function transferir(Request $request, $id)
     {
+        $ticket = Ticket::findOrFail($id);
+        $setorDestino = $request->input('setor_id');
+        $categoriaAtualCompativel = $ticket->categoria_id && $setorDestino
+            && Categoria::whereKey($ticket->categoria_id)
+                ->whereHas('setores', fn ($query) => $query->whereKey($setorDestino))
+                ->exists();
+
         $data = $request->validate([
             'setor_id' => 'required|exists:setores,id',
             'grupo_id' => 'required|exists:grupos,id',
             'analista_id' => 'sometimes|nullable|exists:users,id',
+            'categoria_id' => [
+                Rule::requiredIf(!$categoriaAtualCompativel || $request->exists('categoria_id')),
+                'nullable',
+                'exists:categorias,id',
+                new CategoriaPertenceAoSetor($setorDestino),
+            ],
         ]);
 
         $ticket = DB::transaction(function () use ($request, $data, $id) {
@@ -177,6 +201,9 @@ class TicketController extends Controller
             ];
             $ticket->setor_id = $data['setor_id'];
             $ticket->grupo_id = $data['grupo_id'];
+            if ($request->exists('categoria_id')) {
+                $ticket->categoria_id = $data['categoria_id'];
+            }
             if ($request->exists('analista_id')) {
                 $ticket->atribuido_ao_analista_id = $data['analista_id'];
             }

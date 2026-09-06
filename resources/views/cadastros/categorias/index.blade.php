@@ -47,7 +47,7 @@
                 <thead>
                     <tr>
                         <th>Nome da Categoria</th>
-                        <th>Setor</th>
+                        <th>Setores</th>
                         <th class="text-center">Ações</th>
                     </tr>
                 </thead>
@@ -55,7 +55,7 @@
                     @foreach($categorias as $categoria)
                         <tr>
                             <td>{{ $categoria->nome }}</td>
-                            <td>{{ $categoria->setor->nome ?? 'Sem setor' }}</td>
+                            <td>{{ $categoria->setores->pluck('nome')->implode(', ') ?: 'Sem setor' }}</td>
                             <td class="text-center">
                                 <a href="{{ route('categorias.edit', $categoria->id) }}" class="btn btn-sm btn-warning">
                                     <i class="fas fa-edit"></i> Editar

@@ -21,16 +21,17 @@ As listagens de tickets, usuários, empresas, setores, categorias e grupos usam 
 | POST | `/api/v2/tickets/{id}/messages` | Adiciona mensagem |
 | PATCH | `/api/v2/tickets/{id}/status` | Altera o status |
 | POST | `/api/v2/tickets/{id}/assumir` | Atribui o ticket a um analista |
-| POST | `/api/v2/tickets/{id}/transferir` | Transfere setor, grupo e opcionalmente analista |
+| POST | `/api/v2/tickets/{id}/transferir` | Transfere setor, grupo, categoria quando necessária e opcionalmente analista |
 
 Ao assumir um ticket, o status `aberto` passa para `pendente analista`. Os status `pendente cliente` e `pendente analista` são preservados. A mesma regra se aplica à interface web e ao endpoint legado `/api/tickets/{id}/assumir`.
 
-Na transferência, `setor_id` e `grupo_id` são obrigatórios. `analista_id` omitido preserva o analista atual; `analista_id: null` deixa o ticket sem analista.
+Na transferência, `setor_id` e `grupo_id` são obrigatórios. `categoria_id` é opcional quando a categoria atual pertence ao setor de destino; caso contrário, deve indicar uma categoria associada ao novo setor. `analista_id` omitido preserva o analista atual; `analista_id: null` deixa o ticket sem analista.
 
 ```json
 {
   "setor_id": 1,
   "grupo_id": 2,
+  "categoria_id": 3,
   "analista_id": null
 }
 ```
@@ -39,7 +40,7 @@ O campo `prazo` foi descontinuado: não é retornado nas APIs e, quando enviado 
 
 ## Cadastros e usuário autenticado
 
-`GET /api/v2/usuarios`, `/empresas`, `/setores`, `/categorias` e `/grupos` retornam cadastros paginados. `GET /api/v2/me` retorna o usuário do token, seus papéis, permissões, empresa, setor e grupo, sem credenciais ou tokens.
+`GET /api/v2/usuarios`, `/empresas`, `/setores`, `/categorias` e `/grupos` retornam cadastros paginados. Cada categoria contém `setor_ids` com todas as associações. O campo `setor_id` continua representando a associação principal apenas para compatibilidade e será removido em uma futura versão da API. `GET /api/v2/me` retorna o usuário do token, seus papéis, permissões, empresa, setor e grupo, sem credenciais ou tokens.
 
 ## Erros
 

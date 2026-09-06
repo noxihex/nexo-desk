@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Categoria;
 use App\Models\Setor; // Importação do modelo Setor
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CategoriaController extends Controller
 {
@@ -13,7 +14,7 @@ class CategoriaController extends Controller
      */
     public function index(Request $request)
 {
-    $categorias = Categoria::with('setor')
+    $categorias = Categoria::with('setores')
         ->when($request->filled('search'), function ($query) use ($request) {
             $query->where('nome', 'like', '%' . $request->input('search') . '%');
         })
@@ -47,17 +48,24 @@ class CategoriaController extends Controller
             'prioridade' => 'required|in:Alta,Normal,Baixa',
             'slatotal' => 'required|integer|min:1',
             'slaupdate' => 'required|integer|min:1',
-            'setor_id' => 'nullable|exists:setores,id', // Permite valor nulo ou setor existente
+            'setor_ids' => 'nullable|array',
+            'setor_ids.*' => 'integer|distinct|exists:setores,id',
         ]);
 
-        // Criar a categoria explicitamente com os dados validados
-        Categoria::create([
-            'nome' => $validatedData['nome'],
-            'prioridade' => $validatedData['prioridade'],
-            'slatotal' => $validatedData['slatotal'],
-            'slaupdate' => $validatedData['slaupdate'],
-            'setor_id' => $validatedData['setor_id'] ?? null, // Define como null se nenhum setor for selecionado
-        ]);
+        DB::transaction(function () use ($validatedData) {
+            $setorIds = collect($validatedData['setor_ids'] ?? [])->map(function ($id) {
+                return (int) $id;
+            })->sort()->values();
+
+            $categoria = Categoria::create([
+                'nome' => $validatedData['nome'],
+                'prioridade' => $validatedData['prioridade'],
+                'slatotal' => $validatedData['slatotal'],
+                'slaupdate' => $validatedData['slaupdate'],
+                'setor_id' => $setorIds->first(),
+            ]);
+            $categoria->setores()->sync($setorIds->all());
+        });
 
         return redirect()->route('categorias.index')->with('success', 'Categoria criada com sucesso!');
     }
@@ -67,6 +75,7 @@ class CategoriaController extends Controller
      */
     public function edit(Categoria $categoria)
     {
+        $categoria->load('setores');
         // Buscar todos os setores para exibir no formulário
         $setores = Setor::all();
         return view('cadastros.categorias.edit', compact('categoria', 'setores'));
@@ -83,17 +92,27 @@ class CategoriaController extends Controller
             'prioridade' => 'required|in:Alta,Normal,Baixa',
             'slatotal' => 'required|integer|min:1',
             'slaupdate' => 'required|integer|min:1',
-            'setor_id' => 'nullable|exists:setores,id', // Permite valor nulo ou setor existente
+            'setor_ids' => 'nullable|array',
+            'setor_ids.*' => 'integer|distinct|exists:setores,id',
         ]);
 
-        // Atualizar explicitamente os campos da categoria
-        $categoria->update([
-            'nome' => $validatedData['nome'],
-            'prioridade' => $validatedData['prioridade'],
-            'slatotal' => $validatedData['slatotal'],
-            'slaupdate' => $validatedData['slaupdate'],
-            'setor_id' => $validatedData['setor_id'] ?? null, // Define como null se nenhum setor for selecionado
-        ]);
+        DB::transaction(function () use ($validatedData, $categoria) {
+            $setorIds = collect($validatedData['setor_ids'] ?? [])->map(function ($id) {
+                return (int) $id;
+            })->sort()->values();
+            $setorLegado = $setorIds->contains((int) $categoria->setor_id)
+                ? $categoria->setor_id
+                : $setorIds->first();
+
+            $categoria->update([
+                'nome' => $validatedData['nome'],
+                'prioridade' => $validatedData['prioridade'],
+                'slatotal' => $validatedData['slatotal'],
+                'slaupdate' => $validatedData['slaupdate'],
+                'setor_id' => $setorLegado,
+            ]);
+            $categoria->setores()->sync($setorIds->all());
+        });
 
         return redirect()->route('categorias.index')->with('success', 'Categoria atualizada com sucesso!');
     }
@@ -111,7 +130,9 @@ class CategoriaController extends Controller
     {
         try {
             // Busca categorias relacionadas ao setor
-            $categorias = Categoria::where('setor_id', $setorId)->get();
+            $categorias = Categoria::whereHas('setores', function ($query) use ($setorId) {
+                $query->whereKey($setorId);
+            })->orderBy('nome')->get();
 
             // Retorna a lista de categorias em JSON
             return response()->json($categorias);

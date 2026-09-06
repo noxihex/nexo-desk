@@ -108,6 +108,7 @@ class AnalistaOutrosSetoresTest extends TestCase
             'slaupdate' => 30,
             'setor_id' => $setorDoAnalista->id,
         ]);
+        $categoria->setores()->attach([$setorDoAnalista->id, $outroSetor->id]);
 
         $ticketMesmoSetor = $this->ticket($analista, $categoria, $setorDoAnalista);
         $ticketOutroSetor = $this->ticket($analista, $categoria, $outroSetor);

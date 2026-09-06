@@ -25,6 +25,7 @@ class ApiV2Test extends TestCase
             'nome' => 'Incidente', 'prioridade' => 'Normal', 'slatotal' => 120,
             'slaupdate' => 30, 'setor_id' => $setor->id,
         ]);
+        $categoria->setores()->attach($setor->id);
         Sanctum::actingAs($user);
 
         return compact('user', 'cliente', 'setor', 'grupo', 'categoria');
@@ -148,12 +149,34 @@ class ApiV2Test extends TestCase
         $this->assertFalse((new Ticket())->isFillable('prazo'));
     }
 
+    public function test_ticket_creation_rejects_a_category_from_another_sector()
+    {
+        $base = $this->dadosBase();
+        $outroSetor = Setor::create(['nome' => 'Outro setor']);
+        $payload = [
+            'assunto' => 'Combinação inválida',
+            'descricao' => 'Descrição',
+            'categoria_id' => $base['categoria']->id,
+            'cliente_id' => $base['cliente']->id,
+            'setor_id' => $outroSetor->id,
+        ];
+
+        foreach (['/api/tickets', '/api/v2/tickets'] as $endpoint) {
+            $this->postJson($endpoint, $payload)
+                ->assertStatus(422)
+                ->assertJsonValidationErrors('categoria_id');
+        }
+
+        $this->assertDatabaseMissing('tickets', ['assunto' => 'Combinação inválida']);
+    }
+
     public function test_transfer_updates_audit_history_and_supports_omitted_or_null_analyst()
     {
         $base = $this->dadosBase();
         $analista = User::factory()->create(['status' => true]);
         $novoSetor = Setor::create(['nome' => 'Infraestrutura']);
         $novoGrupo = Grupo::create(['nome' => 'Nível 2']);
+        $base['categoria']->setores()->attach($novoSetor->id);
         $ticket = $this->ticket($base, ['atribuido_ao_analista_id' => $analista->id]);
 
         $this->postJson("/api/v2/tickets/{$ticket->id}/transferir", [
@@ -182,9 +205,47 @@ class ApiV2Test extends TestCase
         ])->assertStatus(422)->assertJsonValidationErrors(['setor_id', 'grupo_id', 'analista_id']);
     }
 
+    public function test_transfer_requires_a_compatible_category_for_the_destination_sector()
+    {
+        $base = $this->dadosBase();
+        $novoSetor = Setor::create(['nome' => 'Financeiro']);
+        $novoGrupo = Grupo::create(['nome' => 'Financeiro']);
+        $novaCategoria = Categoria::create([
+            'nome' => 'Cobrança', 'prioridade' => 'Normal', 'slatotal' => 120,
+            'slaupdate' => 30, 'setor_id' => $novoSetor->id,
+        ]);
+        $novaCategoria->setores()->attach($novoSetor->id);
+        $ticket = $this->ticket($base);
+
+        $this->postJson("/api/v2/tickets/{$ticket->id}/transferir", [
+            'setor_id' => $novoSetor->id,
+            'grupo_id' => $novoGrupo->id,
+        ])->assertStatus(422)->assertJsonValidationErrors('categoria_id');
+
+        $this->postJson("/api/v2/tickets/{$ticket->id}/transferir", [
+            'setor_id' => $novoSetor->id,
+            'grupo_id' => $novoGrupo->id,
+            'categoria_id' => $base['categoria']->id,
+        ])->assertStatus(422)->assertJsonValidationErrors('categoria_id');
+
+        $this->postJson("/api/v2/tickets/{$ticket->id}/transferir", [
+            'setor_id' => $novoSetor->id,
+            'grupo_id' => $novoGrupo->id,
+            'categoria_id' => $novaCategoria->id,
+        ])->assertOk()->assertJsonPath('data.categoria_id', $novaCategoria->id);
+
+        $this->assertDatabaseHas('tickets', [
+            'id' => $ticket->id,
+            'setor_id' => $novoSetor->id,
+            'categoria_id' => $novaCategoria->id,
+        ]);
+    }
+
     public function test_me_and_users_do_not_expose_sensitive_fields()
     {
         $base = $this->dadosBase();
+        $setorCompartilhado = Setor::create(['nome' => 'Atendimento']);
+        $base['categoria']->setores()->attach($setorCompartilhado->id);
         $me = $this->getJson('/api/v2/me')->assertOk()->json('data');
         $users = $this->getJson('/api/v2/usuarios')->assertOk()
             ->assertJsonPath('meta.per_page', 100)->json('data');
@@ -197,7 +258,8 @@ class ApiV2Test extends TestCase
         }
         $this->getJson('/api/v2/categorias')->assertOk()
             ->assertJsonPath('meta.per_page', 100)
-            ->assertJsonPath('data.0.setor_id', $base['setor']->id);
+            ->assertJsonPath('data.0.setor_id', $base['setor']->id)
+            ->assertJsonPath('data.0.setor_ids', collect([$base['setor']->id, $setorCompartilhado->id])->sort()->values()->all());
         $this->getJson('/api/v2/grupos')->assertOk()->assertJsonPath('meta.per_page', 100);
     }
 

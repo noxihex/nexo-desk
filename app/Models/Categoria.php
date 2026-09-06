@@ -23,4 +23,10 @@ class Categoria extends Model implements Auditable
     {
         return $this->belongsTo(Setor::class);
     }
+
+    public function setores()
+    {
+        return $this->belongsToMany(Setor::class, 'categoria_setor')
+            ->orderBy('setores.nome');
+    }
 }

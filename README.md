@@ -126,7 +126,7 @@ Acesse [http://127.0.0.1:8000](http://127.0.0.1:8000) e entre com o e-mail e a s
 O sistema não oferece cadastro público de contas. Após entrar como administrador, prepare os cadastros antes de abrir o primeiro chamado:
 
 1. Em **Cadastros → Setores**, crie as áreas responsáveis pelo atendimento.
-2. Em **Cadastros → Categorias**, cadastre os tipos de solicitação, associando o setor, a prioridade e os parâmetros de SLA.
+2. Em **Cadastros → Categorias**, cadastre os tipos de solicitação, associando um ou mais setores, a prioridade e os parâmetros de SLA.
 3. Em **Cadastros → Empresas**, cadastre as organizações atendidas. Na edição de cada empresa, adicione os contatos que acessarão o sistema como clientes.
 4. Em **Cadastros → Usuários**, crie as contas da equipe, escolha os perfis e vincule os analistas aos seus setores.
 5. Em **Tickets → Criar novo ticket**, informe assunto, descrição e categoria; preencha os vínculos e o responsável conforme o atendimento. Adicione anexos quando necessário.

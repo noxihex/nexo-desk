@@ -35,7 +35,7 @@ class LookupController extends Controller
 
     public function categorias()
     {
-        return CategoriaResource::collection(Categoria::paginate(100));
+        return CategoriaResource::collection(Categoria::with('setores')->paginate(100));
     }
 
     public function grupos()

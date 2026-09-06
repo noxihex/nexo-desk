@@ -214,8 +214,14 @@
                         });
 
                         // Se o ticket já possui uma categoria selecionada, mantém a seleção
-                        const categoriaId = '{{ $ticket->categoria_id ?? '' }}'; // ID da categoria do ticket
+                        const categoriaId = @json($ticket->categoria_id);
+                        const setorOriginalId = @json($ticket->setor_id);
+                        const categoriaNome = @json(optional($ticket->categoria)->nome);
                         if (categoriaId) {
+                            const categoriaDisponivel = categoriaSelect.find(`option[value="${categoriaId}"]`).length > 0;
+                            if (!categoriaDisponivel && String(setorId) === String(setorOriginalId)) {
+                                categoriaSelect.append(new Option(`${categoriaNome} (associação histórica)`, categoriaId, true, true));
+                            }
                             categoriaSelect.val(categoriaId).trigger('change');
                         }
                     },

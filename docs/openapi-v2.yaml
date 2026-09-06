@@ -76,6 +76,7 @@ paths:
   /tickets/{id}/transferir:
     post:
       summary: Transfere um ticket
+      description: categoria_id é obrigatório quando a categoria atual não pertence ao setor de destino.
       parameters: [{ $ref: '#/components/parameters/Id' }]
       requestBody:
         required: true
@@ -84,13 +85,28 @@ paths:
             schema:
               type: object
               required: [setor_id, grupo_id]
-              properties: { setor_id: { type: integer }, grupo_id: { type: integer }, analista_id: { type: integer, nullable: true } }
-            example: { setor_id: 1, grupo_id: 2, analista_id: null }
+              properties: { setor_id: { type: integer }, grupo_id: { type: integer }, categoria_id: { type: integer, nullable: true }, analista_id: { type: integer, nullable: true } }
+            example: { setor_id: 1, grupo_id: 2, categoria_id: 3, analista_id: null }
       responses: { '200': { description: Transferido }, '401': { $ref: '#/components/responses/Unauthenticated' }, '404': { $ref: '#/components/responses/NotFound' }, '422': { $ref: '#/components/responses/ValidationError' } }
   /usuarios: { get: { summary: Lista usuários seguros para integração, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de usuários }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
   /empresas: { get: { summary: Lista empresas, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de empresas }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
   /setores: { get: { summary: Lista setores, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de setores }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
-  /categorias: { get: { summary: Lista categorias com setor_id, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de categorias }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
+  /categorias:
+    get:
+      summary: Lista categorias com setor_id legado e todas as associações em setor_ids
+      parameters: [{ $ref: '#/components/parameters/Page' }]
+      responses:
+        '200':
+          description: Página de categorias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Categoria' } }
+                  meta: { type: object }
+                  links: { type: object }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
   /grupos: { get: { summary: Lista grupos, parameters: [{ $ref: '#/components/parameters/Page' }], responses: { '200': { description: Página de grupos }, '401': { $ref: '#/components/responses/Unauthenticated' } } } }
   /me:
     get:
@@ -132,6 +148,16 @@ components:
         grupo_id: { type: integer, nullable: true }
         setor_id: { type: integer, nullable: true }
         atribuido_ao_analista_id: { type: integer, nullable: true }
+    Categoria:
+      type: object
+      properties:
+        id: { type: integer }
+        nome: { type: string }
+        prioridade: { type: string, enum: [Alta, Normal, Baixa] }
+        slatotal: { type: integer }
+        slaupdate: { type: integer }
+        setor_id: { type: integer, nullable: true, deprecated: true }
+        setor_ids: { type: array, items: { type: integer } }
     TicketResponse: { type: object, properties: { data: { $ref: '#/components/schemas/Ticket' }, message: { type: string } } }
     MeResponse:
       type: object
