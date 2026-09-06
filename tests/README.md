@@ -1,59 +1,89 @@
 # Testes
 
-Execute `php artisan test` na raiz do projeto. No Windows com XAMPP fora do PATH:
+O Nexo Desk utiliza **PHPUnit 9** para verificar regras de negócio, rotas, autorização e respostas da aplicação. Os testes estão organizados em `tests/Unit` e `tests/Feature`, com configuração em [`phpunit.xml`](../phpunit.xml).
 
-```powershell
-C:\xampp\php\php.exe artisan test
-```
+Execute os comandos deste guia na raiz do projeto, em um ambiente de desenvolvimento ou integração contínua.
 
-## Banco e serviços
+## Preparação do ambiente
 
-A suíte usa exclusivamente o banco descartável MySQL/MariaDB `nexodesk_testing`.
-Crie esse banco vazio uma vez no servidor local:
+Conclua a configuração descrita no [README principal](../README.md) e instale as dependências de desenvolvimento com `composer install` (sem `--no-dev`). O comando `php` deve estar disponível no terminal; caso contrário, utilize o caminho do executável da sua instalação. Em ambientes com containers, execute os comandos no serviço da aplicação.
+
+A suíte requer MySQL ou MariaDB e a extensão PHP `pdo_mysql`. Os testes isolados `RoleSeederTest` e `UnifyClientRolesTest` usam SQLite em memória e também exigem `pdo_sqlite`.
+
+### Banco de testes
+
+Crie uma vez o banco exclusivo para os testes:
 
 ```sql
 CREATE DATABASE nexodesk_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-`RefreshDatabase` recria as tabelas com as migrations reais e desfaz os dados de cada teste.
-Não coloque dados de trabalho nesse banco e não execute duas suítes simultaneamente nele.
-SQLite não substitui essa execução: as migrations históricas contêm operações específicas de MySQL.
-O teste isolado de permissões pode continuar usando SQLite em memória e requer `pdo_sqlite`.
+**Esse banco é descartável.** Os testes com `RefreshDatabase` recriam as tabelas usando as migrations da aplicação e isolam os dados de cada teste. Não armazene dados de trabalho nele nem execute duas suítes simultaneamente contra o mesmo banco.
 
-Os padrões são `127.0.0.1:3306`, usuário `root`, senha vazia. Para outro ambiente,
-defina `TEST_DB_HOST`, `TEST_DB_PORT`, `TEST_DB_USERNAME` e `TEST_DB_PASSWORD` no ambiente
-do processo ou no `.env` local (nunca versione credenciais). `DB_*` e `DATABASE_URL` da
-aplicação não selecionam o banco de testes. O bootstrap rejeita configuração cacheada;
-nesse caso execute `php artisan config:clear` no ambiente local.
+A conexão padrão utiliza `127.0.0.1:3306`, usuário `root` e senha vazia. Para usar outra conexão, defina estas variáveis no ambiente do processo ou no `.env` local:
 
-O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória
-e transporte de e-mail `array`. `Tests\TestCase` simula chamadas feitas pelo cliente `Http`
-do Laravel. Tickets e mensagens não enviam mais e-mails pela API Python local;
-a regressão verifica a persistência sem chamadas HTTP, inclusive após a resposta.
-Nos testes de integração HTTP, configure respostas com `Http::fake` e confira os pedidos
-com `Http::assertSent`; o fake genérico não valida sozinho o contrato do serviço remoto.
+```dotenv
+TEST_DB_HOST=127.0.0.1
+TEST_DB_PORT=3306
+TEST_DB_USERNAME=seu_usuario_de_testes
+TEST_DB_PASSWORD="sua_senha_de_testes"
+```
 
-## Como manter a suíte útil
+O usuário informado precisa ter permissão para criar, alterar e remover tabelas em `nexodesk_testing`. Não versione credenciais.
 
-- Teste o comportamento observável: status, destino de redirecionamento, dados persistidos,
-  autorização, JSON e conteúdo renderizado. Não derive a expectativa do código que está sendo testado.
-- Quando o requisito mudar intencionalmente, ajuste o teste correspondente na mesma alteração.
-  Não remova uma asserção ou pule um teste apenas para obter uma execução verde.
-- Evite exigir contagens de arquivos, indentação, LF/CRLF, ordem de classes CSS ou diretivas
-  Blade quando o requisito é o resultado da página. Os testes estáticos restantes de CSS/JS
-  verificam trechos específicos e não substituem testes de navegador.
-- Crie os próprios dados com factories e `RefreshDatabase`; não dependa de IDs fixos,
-  registros do banco local, ordem de execução ou serviços externos.
-- Para campos sensíveis, verifique ausência das **chaves** no JSON; procurar uma lista
-  de nomes com `assertJsonMissing` não garante que essas propriedades estejam ausentes.
+O bootstrap fixa o nome do banco como `nexodesk_testing` e ignora `DB_*` e `DATABASE_URL` na seleção dessa conexão. SQLite não substitui o MySQL/MariaDB na suíte completa, pois as migrations históricas contêm operações específicas de MySQL.
 
-Validações úteis:
+Se houver configuração em cache, limpe-a antes da execução:
 
-```sh
+```bash
+php artisan config:clear
+```
+
+O bootstrap interrompe os testes quando detecta configuração cacheada.
+
+## Execução
+
+Para executar toda a suíte:
+
+```bash
+php artisan test
+```
+
+Para executar apenas os testes da API v2:
+
+```bash
 php artisan test --filter=ApiV2Test
+```
+
+Para investigar dependências entre testes, execute-os em ordem aleatória com uma semente reproduzível:
+
+```bash
 php vendor/phpunit/phpunit/phpunit --order-by=random --random-order-seed=20260905
 ```
 
-Falhas de conexão, extensões ausentes ou configuração cacheada são problemas de preparação
-do ambiente. Falhas de comportamento precisam ser confrontadas com o requisito atual;
-uma falha antiga não é automaticamente um falso positivo.
+Repita a mesma semente para reproduzir a ordem ou altere o número para explorar outras sequências.
+
+## Isolamento de serviços
+
+O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória, filas síncronas e transporte de e-mail `array`, sem envio real de mensagens.
+
+A classe `Tests\TestCase` usa `Http::fake()` para simular chamadas feitas pelo cliente HTTP do Laravel. Nos testes de integrações, configure respostas específicas com `Http::fake` e valide os pedidos com `Http::assertSent`; a simulação genérica não verifica sozinha o contrato do serviço remoto.
+
+## Orientações para novos testes
+
+- Use nomes de classes e arquivos com o sufixo `Test`. Coloque lógica isolada em `tests/Unit` e testes de rotas, autorização, views e banco em `tests/Feature`.
+- Verifique comportamentos observáveis: status HTTP, redirecionamentos, persistência, autorização, JSON e conteúdo renderizado. Não derive a expectativa da implementação testada.
+- Crie os dados necessários com factories e utilize `RefreshDatabase` nos testes de banco. Evite depender de IDs fixos, registros locais, ordem de execução ou serviços externos.
+- Adicione cobertura de regressão ao corrigir bugs. Quando um requisito mudar, ajuste o teste correspondente; não remova asserções nem ignore testes apenas para obter uma execução sem falhas.
+- Evite verificar detalhes de formatação ou estrutura interna quando o requisito é o resultado da página. Testes estáticos de CSS e JavaScript não substituem testes de navegador.
+- Para campos sensíveis, confira a ausência das **chaves** no JSON. Passar uma lista de nomes a `assertJsonMissing` não garante que essas propriedades estejam ausentes.
+
+## Diagnóstico de falhas
+
+| Situação | O que verificar |
+| --- | --- |
+| Falha de conexão ou acesso negado | Disponibilidade do MySQL/MariaDB, variáveis `TEST_DB_*` e permissões do usuário. |
+| Banco `nexodesk_testing` inexistente | Crie o banco com o comando SQL deste guia. |
+| Driver ou extensão ausente | Verifique as extensões do PHP utilizado no terminal, incluindo `pdo_mysql` e `pdo_sqlite`. |
+| Configuração cacheada | Execute `php artisan config:clear` no ambiente de testes. |
+| Falha em uma asserção | Compare o resultado com o requisito atual e investigue a regressão; uma falha antiga não é automaticamente um falso positivo. |
