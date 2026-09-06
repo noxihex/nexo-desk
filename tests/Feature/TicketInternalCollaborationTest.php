@@ -164,4 +164,83 @@ class TicketInternalCollaborationTest extends TestCase
         $this->assertNotNull($change);
         $this->assertSame('Status', collect($change['changes'])->firstWhere('field', 'status')['label']);
     }
+
+    public function test_staff_timeline_lists_oldest_messages_first_and_distinguishes_authors(): void
+    {
+        $context = $this->context();
+        $clientMessage = $context['ticket']->mensagens()->create([
+            'user_id' => $context['client']->id,
+            'descricao' => 'Mensagem antiga do cliente',
+            'tipo' => 'publica',
+        ]);
+        $staffMessage = $context['ticket']->mensagens()->create([
+            'user_id' => $context['analyst']->id,
+            'descricao' => 'Mensagem nova da staff',
+            'tipo' => 'publica',
+        ]);
+        $clientMessage->forceFill(['created_at' => now()->subMinutes(2)])->save();
+        $staffMessage->forceFill(['created_at' => now()->subMinute()])->save();
+
+        $messages = app(TicketTimelineService::class)
+            ->paginate($context['ticket']->fresh()->load('user'), 50, 'timeline_page', true)
+            ->getCollection()
+            ->where('type', 'publica')
+            ->values();
+
+        $this->assertSame(['client', 'staff'], $messages->pluck('author_role')->all());
+        $this->assertSame(['Cliente', 'Analista'], $messages->pluck('author_role_label')->all());
+
+        $this->actingAs($context['analyst'])
+            ->get(route('tickets.show', $context['ticket']))
+            ->assertOk()
+            ->assertSeeInOrder(['Mensagem antiga do cliente', 'Mensagem nova da staff'])
+            ->assertSee('timeline-message-client', false)
+            ->assertSee('timeline-message-staff', false);
+    }
+
+    public function test_staff_can_persist_conversations_only_timeline_preference(): void
+    {
+        $context = $this->context();
+        $context['ticket']->mensagens()->create([
+            'user_id' => $context['client']->id,
+            'descricao' => 'Resposta pública visível',
+            'tipo' => 'publica',
+        ]);
+        $context['ticket']->mensagens()->create([
+            'user_id' => $context['analyst']->id,
+            'descricao' => 'Nota interna visível',
+            'tipo' => 'interna',
+        ]);
+        $context['ticket']->mensagens()->create([
+            'user_id' => $context['analyst']->id,
+            'descricao' => 'Evento de sistema oculto',
+            'tipo' => 'sistema',
+        ]);
+
+        $this->actingAs($context['analyst'])
+            ->from(route('tickets.show', $context['ticket']))
+            ->put(route('ticket-timeline-preferences.update'), ['conversations_only' => true])
+            ->assertRedirect(route('tickets.show', $context['ticket']));
+
+        $this->assertTrue($context['analyst']->fresh()->timeline_conversations_only);
+        $this->assertFalse($context['client']->fresh()->timeline_conversations_only);
+
+        $this->get(route('tickets.show', $context['ticket']))
+            ->assertOk()
+            ->assertSee('Resposta pública visível')
+            ->assertSee('Nota interna visível')
+            ->assertDontSee('Evento de sistema oculto')
+            ->assertDontSee('Ticket criado.')
+            ->assertSee('Exibir toda a atividade');
+
+        $this->put(route('ticket-timeline-preferences.update'), ['conversations_only' => false])
+            ->assertRedirect();
+
+        $this->assertFalse($context['analyst']->fresh()->timeline_conversations_only);
+        $this->get(route('tickets.show', $context['ticket']))
+            ->assertOk()
+            ->assertSee('Evento de sistema oculto')
+            ->assertSee('Ticket criado.')
+            ->assertSee('Ocultar sistema e alterações');
+    }
 }

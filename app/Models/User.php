@@ -28,6 +28,7 @@ class User extends Authenticatable implements Auditable
         'pode_ver_tickets_outros_setores',
         'empresa_id',
         'status',
+        'timeline_conversations_only',
     ];
 
     /**
@@ -49,6 +50,7 @@ class User extends Authenticatable implements Auditable
         'email_verified_at' => 'datetime',
         'status' => 'boolean',
         'pode_ver_tickets_outros_setores' => 'boolean',
+        'timeline_conversations_only' => 'boolean',
     ];
 
     /**

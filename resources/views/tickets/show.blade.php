@@ -156,14 +156,25 @@
     <div class="card-header" style="padding: 8px 15px;">
         <div class="d-flex justify-content-between align-items-center">
             <h5 style="margin: 0;"><i class="fas fa-stream"></i> Linha do tempo</h5>
-            <form action="{{ route($isFollowing ? 'tickets.followers.destroy' : 'tickets.followers.store', $ticket) }}" method="POST">
-                @csrf
-                @if($isFollowing) @method('DELETE') @endif
-                <button class="btn btn-sm {{ $isFollowing ? 'btn-outline-secondary' : 'btn-outline-primary' }}" type="submit">
-                    <i class="fas {{ $isFollowing ? 'fa-bell-slash' : 'fa-bell' }}"></i>
-                    {{ $isFollowing ? 'Deixar de seguir' : 'Seguir ticket' }}
-                </button>
-            </form>
+            <div class="d-flex align-items-center">
+                <form action="{{ route('ticket-timeline-preferences.update') }}" method="POST" class="mr-2">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="conversations_only" value="{{ auth()->user()->timeline_conversations_only ? 0 : 1 }}">
+                    <button class="btn btn-sm {{ auth()->user()->timeline_conversations_only ? 'btn-outline-primary' : 'btn-outline-secondary' }}" type="submit">
+                        <i class="fas {{ auth()->user()->timeline_conversations_only ? 'fa-eye' : 'fa-eye-slash' }}"></i>
+                        {{ auth()->user()->timeline_conversations_only ? 'Exibir toda a atividade' : 'Ocultar sistema e alterações' }}
+                    </button>
+                </form>
+                <form action="{{ route($isFollowing ? 'tickets.followers.destroy' : 'tickets.followers.store', $ticket) }}" method="POST">
+                    @csrf
+                    @if($isFollowing) @method('DELETE') @endif
+                    <button class="btn btn-sm {{ $isFollowing ? 'btn-outline-secondary' : 'btn-outline-primary' }}" type="submit">
+                        <i class="fas {{ $isFollowing ? 'fa-bell-slash' : 'fa-bell' }}"></i>
+                        {{ $isFollowing ? 'Deixar de seguir' : 'Seguir ticket' }}
+                    </button>
+                </form>
+            </div>
         </div>
         @if($ticket->seguidores->isNotEmpty())
             <div class="mt-2 small text-muted"><strong>Seguidores:</strong> {{ $ticket->seguidores->pluck('name')->join(', ') }}</div>
@@ -182,14 +193,26 @@
                         'criacao' => ['fa-plus', 'bg-success', 'Criação'],
                     ];
                     [$icon, $color, $label] = $styles[$event['type']] ?? $styles['sistema'];
+                    $isPublicMessage = $event['type'] === 'publica';
+                    $authorRole = $event['author_role'] ?? null;
+                    if ($isPublicMessage && $authorRole === 'client') {
+                        $icon = 'fa-user-circle';
+                        $color = 'bg-purple';
+                    } elseif ($isPublicMessage && $authorRole === 'staff') {
+                        $icon = 'fa-user-circle';
+                        $color = 'bg-blue';
+                    }
                 @endphp
                 <div>
                     <i class="fas {{ $icon }} {{ $color }}"></i>
-                    <div class="timeline-item {{ $event['type'] === 'interna' ? 'border border-warning' : '' }}">
+                    <div class="timeline-item {{ $event['type'] === 'interna' ? 'border border-warning' : '' }} {{ $isPublicMessage && $authorRole ? 'timeline-message-' . $authorRole : '' }}">
                         <span class="time"><i class="fas fa-clock"></i> {{ $event['created_at']->format('d/m/Y H:i') }}</span>
                         <h3 class="timeline-header">
                             <strong>{{ $event['actor'] }}</strong>
-                            <span class="badge {{ $event['type'] === 'interna' ? 'badge-warning' : 'badge-light' }} ml-1">{{ $label }}</span>
+                            @if($isPublicMessage && !empty($event['author_role_label']))
+                                ({{ $event['author_role_label'] }})
+                            @endif
+                            <span class="badge {{ $event['type'] === 'interna' ? 'badge-warning' : ($authorRole === 'client' ? 'bg-purple text-white' : ($authorRole === 'staff' ? 'badge-primary' : 'badge-light')) }} ml-1">{{ $label }}</span>
                         </h3>
                         <div class="timeline-body">
                             @if($event['type'] === 'alteracao')
@@ -495,6 +518,14 @@
             background-color: #5a33a0;
             color: white;
         }
+
+        .timeline-item.timeline-message-staff {
+            border-left: 3px solid #007bff;
+        }
+
+        .timeline-item.timeline-message-client {
+            border-left: 3px solid #6f42c1;
+        }
     </style>
 @endsection
 @section('js')
@@ -607,6 +638,11 @@
 
 <script>
     $(document).ready(function () {
+        const mensagensContainer = document.getElementById('mensagensContainer');
+        if (mensagensContainer) {
+            mensagensContainer.scrollTop = mensagensContainer.scrollHeight;
+        }
+
         const analistasTransferencia = @json($analistas->map(fn ($analista) => ['id' => $analista->id, 'name' => $analista->name, 'setor_id' => $analista->setor_id])->values());
         const analistaTransferSelecionado = @json($ticket->atribuido_ao_analista_id);
         const categoriaTransferSelecionada = @json($ticket->categoria_id);

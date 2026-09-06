@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationPreferenceController;
 use App\Http\Controllers\TicketFollowerController;
 use App\Http\Controllers\TicketMentionController;
 use App\Http\Controllers\InternalMessageAttachmentController;
+use App\Http\Controllers\TicketTimelinePreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +65,9 @@ Route::middleware(['auth', 'verifica.status', 'role:cliente'])->prefix('tickets/
 
 // --- ROTAS DO STAFF (Analistas, Supervisores e Administradores) ---
 Route::middleware(['auth', 'verifica.status', 'role:analista|supervisor|administrador'])->group(function () {
+
+    Route::put('/preferencias/timeline-tickets', [TicketTimelinePreferenceController::class, 'update'])
+        ->name('ticket-timeline-preferences.update');
 
     Route::get('/tickets/atencao', [VisaoGeralController::class, 'obterTicketsAtencao'])->name('tickets.atencao');
     

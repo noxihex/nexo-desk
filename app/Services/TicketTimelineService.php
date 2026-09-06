@@ -26,7 +26,13 @@ class TicketTimelineService
         'empresa_id' => 'Empresa',
     ];
 
-    public function paginate(Ticket $ticket, int $perPage = 50, string $pageName = 'timeline_page'): LengthAwarePaginator
+    public function paginate(
+        Ticket $ticket,
+        int $perPage = 50,
+        string $pageName = 'timeline_page',
+        bool $oldestFirst = false,
+        bool $conversationsOnly = false
+    ): LengthAwarePaginator
     {
         $audits = Audit::with('user')
             ->where('auditable_type', Ticket::class)
@@ -61,7 +67,7 @@ class TicketTimelineService
             ];
         })->filter()->values();
 
-        $messages = $ticket->mensagens()->with(['user', 'attachments', 'mencoes'])
+        $messages = $ticket->mensagens()->with(['user.roles', 'attachments', 'mencoes'])
             ->get()->reject(function (Mensagem $message) use ($auditEvents) {
                 if ($message->tipo !== Mensagem::TIPO_SISTEMA) {
                     return false;
@@ -75,11 +81,15 @@ class TicketTimelineService
                     return abs($event['created_at']->diffInSeconds($message->created_at, false)) <= 3;
                 });
             })->map(function (Mensagem $message) use ($ticket) {
+                $isStaff = $message->user && $message->user->hasRole(['administrador', 'analista', 'supervisor']);
+
                 return [
                     'key' => 'message-' . $message->id,
                     'type' => $message->tipo ?: Mensagem::TIPO_PUBLICA,
                     'created_at' => Carbon::parse($message->created_at),
                     'actor' => optional($message->user)->name ?: 'Usuário removido',
+                    'author_role' => $message->user ? ($isStaff ? 'staff' : 'client') : null,
+                    'author_role_label' => $message->user ? ($isStaff ? 'Analista' : 'Cliente') : null,
                     'description' => $message->descricao,
                     'attachments' => $message->attachments,
                     'mentions' => $message->mencoes,
@@ -95,10 +105,16 @@ class TicketTimelineService
             'description' => 'Ticket criado.',
         ]]);
 
-        $events = $creation->concat($messages)->concat($auditEvents)
-            ->sortByDesc(fn ($event) => sprintf('%010d-%s', $event['created_at']->timestamp, $event['key']))
-            ->values();
+        $events = $creation->concat($messages)->concat($auditEvents);
+        if ($conversationsOnly) {
+            $events = $events->whereIn('type', [Mensagem::TIPO_PUBLICA, Mensagem::TIPO_INTERNA]);
+        }
+        $sortKey = fn ($event) => sprintf('%010d-%s', $event['created_at']->timestamp, $event['key']);
+        $events = ($oldestFirst ? $events->sortBy($sortKey) : $events->sortByDesc($sortKey))->values();
         $page = LengthAwarePaginator::resolveCurrentPage($pageName);
+        if ($oldestFirst && !request()->has($pageName)) {
+            $page = max(1, (int) ceil($events->count() / $perPage));
+        }
 
         return new LengthAwarePaginator(
             $events->forPage($page, $perPage)->values(),

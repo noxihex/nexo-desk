@@ -255,7 +255,13 @@ class TicketController extends Controller
         $setorSelecionado = $ticket->setor_id;
 
         $ticket->load(['user', 'seguidores.roles']);
-        $timeline = $timelineService->paginate($ticket);
+        $timeline = $timelineService->paginate(
+            $ticket,
+            50,
+            'timeline_page',
+            true,
+            (bool) $user->timeline_conversations_only
+        );
         $isFollowing = $ticket->seguidores->contains('id', $user->id);
 
         // Retorna os dados para a view
