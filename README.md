@@ -34,7 +34,7 @@ Certifique-se de ter as seguintes ferramentas instaladas:
     ```
     Em seguida, abra o arquivo `.env` e configure as seguintes variáveis:
     * **Variáveis de banco de dados**: `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD`.
-    * **Variáveis de nome do sistema**:
+    * **Variáveis de nome do sistema (opcional)**:
         ```
         APP_NAME_INICIO="Nexo"
         APP_NAME_FINAL="Desk"
@@ -45,7 +45,7 @@ Certifique-se de ter as seguintes ferramentas instaladas:
     php artisan key:generate
     ```
 
-5.  **Copie os arquivos estáticos (logo e favicon):**
+5.  **Copie os arquivos estáticos (opcional):**
     O repositório não inclui a logo e o favicon para permitir a personalização por ambiente. Certifique-se de que os seguintes arquivos existem no seu projeto:
     * `public/vendor/adminlte/dist/img/logodesk.png`
     * `public/favicon.ico`
