@@ -117,24 +117,35 @@ class ApiV2Test extends TestCase
             ->assertOk()->assertJsonPath('meta.per_page', 100);
     }
 
-    public function test_prazo_can_be_created_changed_removed_and_rejects_datetime()
+    public function test_removed_prazo_is_ignored_on_creation_and_absent_from_api_responses()
     {
         $base = $this->dadosBase();
         $response = $this->postJson('/api/v2/tickets', [
-            'assunto' => 'Com prazo', 'descricao' => 'Descrição',
+            'assunto' => 'Sem prazo', 'descricao' => 'Descrição',
             'categoria_id' => $base['categoria']->id, 'cliente_id' => $base['cliente']->id,
             'prazo' => '2026-07-31',
-        ])->assertCreated()->assertJsonPath('data.prazo', '2026-07-31');
+        ])->assertCreated();
+        $this->assertArrayNotHasKey('prazo', $response->json('data'));
         $id = $response->json('data.id');
+        $this->assertDatabaseHas('tickets', ['id' => $id, 'prazo' => null]);
 
-        $this->patchJson("/api/v2/tickets/{$id}/prazo", ['prazo' => '2026-08-15'])
-            ->assertOk()->assertJsonPath('data.prazo', '2026-08-15');
-        $this->patchJson("/api/v2/tickets/{$id}/prazo", ['prazo' => null])
-            ->assertOk()->assertJsonPath('data.prazo', null);
-        $this->patchJson("/api/v2/tickets/{$id}/prazo", ['prazo' => '2026-08-15 12:00:00'])
-            ->assertStatus(422)->assertJsonValidationErrors('prazo');
-        $this->patchJson("/api/v2/tickets/{$id}/prazo", ['prazo' => '15/08/2026'])
-            ->assertStatus(422)->assertJsonValidationErrors('prazo');
+        // Simula um ticket anterior à remoção da funcionalidade.
+        \Illuminate\Support\Facades\DB::table('tickets')->where('id', $id)
+            ->update(['prazo' => '2026-07-31']);
+        foreach (['/api', '/api/v2'] as $prefix) {
+            $detail = $this->getJson("{$prefix}/tickets/{$id}")->assertOk()->json();
+            $this->assertArrayNotHasKey('prazo', $prefix === '/api/v2' ? $detail['data'] : $detail);
+            foreach (['/tickets', '/tickets/search?status=aberto'] as $path) {
+                $tickets = $this->getJson($prefix . $path)->assertOk()->json('data');
+                $this->assertNotEmpty($tickets);
+                foreach ($tickets as $ticket) {
+                    $this->assertArrayNotHasKey('prazo', $ticket);
+                }
+            }
+        }
+        $this->patchJson("/api/v2/tickets/{$id}/prazo", ['prazo' => null])->assertNotFound();
+        $this->assertDatabaseHas('tickets', ['id' => $id, 'prazo' => '2026-07-31']);
+        $this->assertFalse((new Ticket())->isFillable('prazo'));
     }
 
     public function test_transfer_updates_audit_history_and_supports_omitted_or_null_analyst()

@@ -57,7 +57,6 @@
                                 {{ $ticket->user->name }}
                                 ({{ $ticket->user->hasRole(['supervisor', 'analista', 'administrador']) ? 'Analista' : 'Cliente' }})
                             </p>
-                            <p class="mb-1"><strong>Prazo:</strong> {{ $ticket->prazo ? $ticket->prazo->format('d/m/Y') : '-' }}</p>
                         </div>
 
                         <div>

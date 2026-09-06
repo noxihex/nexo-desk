@@ -69,7 +69,6 @@ class TicketController extends Controller
             'grupo_id' => 'nullable|exists:grupos,id',
             'setor_id' => 'nullable|exists:setores,id',
             'atribuido_ao_analista_id' => 'nullable|exists:users,id',
-            'prazo' => 'nullable|date_format:Y-m-d',
         ]);
         $data['user_id'] = $request->user()->id;
         $data['status'] = 'aberto';
@@ -201,13 +200,5 @@ class TicketController extends Controller
         });
 
         return (new TicketResource($ticket->load(self::RELATIONS)))->additional(['message' => 'Ticket transferido com sucesso.']);
-    }
-
-    public function updatePrazo(Request $request, $id)
-    {
-        $data = $request->validate(['prazo' => 'present|nullable|date_format:Y-m-d']);
-        $ticket = Ticket::findOrFail($id);
-        $ticket->update(['prazo' => $data['prazo']]);
-        return (new TicketResource($ticket->load(self::RELATIONS)))->additional(['message' => 'Prazo atualizado com sucesso.']);
     }
 }

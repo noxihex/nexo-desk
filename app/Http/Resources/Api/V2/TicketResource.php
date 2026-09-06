@@ -23,7 +23,6 @@ class TicketResource extends JsonResource
             'horas_gastas' => $this->horas_gastas,
             'descricao_final' => $this->descricao_final,
             'origem' => $this->origem,
-            'prazo' => $this->prazo ? $this->prazo->format('Y-m-d') : null,
             'assumido_por_usuario_id' => $this->assumido_por_usuario_id,
             'data_hora_assumido' => $this->data_hora_assumido,
             'transferido_por_usuario_id' => $this->transferido_por_usuario_id,

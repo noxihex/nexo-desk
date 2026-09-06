@@ -24,10 +24,15 @@ class ApiRouteContractTest extends TestCase
             'POST api/v2/tickets', 'POST api/v2/tickets/{id}/finalizar',
             'POST api/v2/tickets/{id}/messages', 'PATCH api/v2/tickets/{id}/status',
             'POST api/v2/tickets/{id}/assumir', 'POST api/v2/tickets/{id}/transferir',
-            'PATCH api/v2/tickets/{id}/prazo', 'GET api/v2/usuarios',
+            'GET api/v2/usuarios',
             'GET api/v2/empresas', 'GET api/v2/setores', 'GET api/v2/categorias',
             'GET api/v2/grupos', 'GET api/v2/me',
         ]);
+    }
+
+    public function test_prazo_endpoint_is_removed()
+    {
+        $this->patchJson('/api/v2/tickets/1/prazo', ['prazo' => null])->assertNotFound();
     }
 
     private function assertRoutes(array $expected): void

@@ -45,7 +45,6 @@ Route::prefix('v2')->middleware('auth:sanctum')->group(function () {
     Route::patch('/tickets/{id}/status', [V2TicketController::class, 'updateStatus']);
     Route::post('/tickets/{id}/assumir', [V2TicketController::class, 'assumir']);
     Route::post('/tickets/{id}/transferir', [V2TicketController::class, 'transferir']);
-    Route::patch('/tickets/{id}/prazo', [V2TicketController::class, 'updatePrazo']);
 
     Route::get('/usuarios', [V2LookupController::class, 'usuarios']);
     Route::get('/empresas', [V2LookupController::class, 'empresas']);

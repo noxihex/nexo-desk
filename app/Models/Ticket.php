@@ -23,7 +23,6 @@ class Ticket extends Model implements Auditable
         'atribuido_ao_analista_id',
         'horas_gastas',
         'origem',
-        'prazo',
         'assumido_por_usuario_id',
         'data_hora_assumido',
         'transferido_por_usuario_id',
@@ -32,9 +31,8 @@ class Ticket extends Model implements Auditable
         'data_hora_finalizado'
     ];
 
-    protected $casts = [
-        'prazo' => 'date:Y-m-d',
-    ];
+    // Preserva dados históricos sem expor o campo removido nas APIs.
+    protected $hidden = ['prazo'];
 
     /**
      * Define os campos a serem ignorados na auditoria.

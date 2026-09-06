@@ -16,13 +16,12 @@ As listagens de tickets, usuários, empresas, setores, categorias e grupos usam 
 | GET | `/api/v2/tickets` | Lista tickets |
 | GET | `/api/v2/tickets/search` | Pesquisa por `assunto`, `setor_id`, `grupo_id` e `status` |
 | GET | `/api/v2/tickets/{id}` | Detalha um ticket |
-| POST | `/api/v2/tickets` | Cria um ticket; aceita `prazo` opcional em `YYYY-MM-DD` |
+| POST | `/api/v2/tickets` | Cria um ticket |
 | POST | `/api/v2/tickets/{id}/finalizar` | Finaliza um ticket |
 | POST | `/api/v2/tickets/{id}/messages` | Adiciona mensagem |
 | PATCH | `/api/v2/tickets/{id}/status` | Altera o status |
 | POST | `/api/v2/tickets/{id}/assumir` | Atribui o ticket a um analista |
 | POST | `/api/v2/tickets/{id}/transferir` | Transfere setor, grupo e opcionalmente analista |
-| PATCH | `/api/v2/tickets/{id}/prazo` | Define ou remove o prazo |
 
 Ao assumir um ticket, o status `aberto` passa para `pendente analista`. Os status `pendente cliente` e `pendente analista` são preservados. A mesma regra se aplica à interface web e ao endpoint legado `/api/tickets/{id}/assumir`.
 
@@ -36,11 +35,7 @@ Na transferência, `setor_id` e `grupo_id` são obrigatórios. `analista_id` omi
 }
 ```
 
-Para remover um prazo:
-
-```json
-{ "prazo": null }
-```
+O campo `prazo` foi descontinuado: não é retornado nas APIs e, quando enviado na criação, é ignorado. O endpoint `PATCH /api/v2/tickets/{id}/prazo` foi removido (404). Valores históricos permanecem no banco, sem uso pela aplicação; não é necessária nova migração. O SLA das categorias permanece inalterado.
 
 ## Cadastros e usuário autenticado
 
