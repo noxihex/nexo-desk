@@ -88,6 +88,43 @@
         </div>
     </div>
 
+    <div class="card card-info">
+        <div class="card-header"><h3 class="card-title">Preferências de notificação</h3></div>
+        <form action="{{ route('notification-preferences.update') }}" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="card-body table-responsive p-0">
+                @php
+                    $preference = $user->notificationPreference;
+                    $events = [
+                        'novo_ticket' => 'Novo ticket',
+                        'nova_mensagem' => 'Nova mensagem',
+                        'sla' => 'Alertas de SLA',
+                        'ticket_resolvido' => 'Ticket resolvido',
+                    ];
+                @endphp
+                <table class="table table-hover">
+                    <thead><tr><th>Evento</th><th>Central interna</th><th>E-mail</th></tr></thead>
+                    <tbody>
+                    @foreach($events as $event => $label)
+                        <tr>
+                            <td>{{ $label }}</td>
+                            @foreach(['database', 'mail'] as $channel)
+                                @php $field = $event . '_' . $channel; $checked = old($field, $preference ? $preference->{$field} : true); @endphp
+                                <td>
+                                    <input type="hidden" name="{{ $field }}" value="0">
+                                    <input type="checkbox" name="{{ $field }}" value="1" {{ $checked ? 'checked' : '' }} aria-label="{{ $label }} por {{ $channel === 'mail' ? 'e-mail' : 'central interna' }}">
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer"><button type="submit" class="btn btn-info">Salvar preferências</button></div>
+        </form>
+    </div>
+
 @endsection
 
 @section('js')
@@ -156,7 +193,6 @@
     <!-- Incluindo CSS do Toastr via CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 @endsection
-
 
 
 

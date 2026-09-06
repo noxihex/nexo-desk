@@ -15,6 +15,9 @@ use App\Http\Controllers\AdministracaoController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\ClienteTicketController;
+use App\Http\Controllers\InboundMailboxController;
+use App\Http\Controllers\NotificationCenterController;
+use App\Http\Controllers\NotificationPreferenceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -125,6 +128,10 @@ Route::middleware(['auth', 'verifica.status', 'role:administrador'])->group(func
     Route::get('/administracao/backup', [BackupController::class, 'index'])->name('backup.index');
     Route::get('/administracao/backup/download/{id}', [BackupController::class, 'download'])->name('backup.download');
     Route::get('/administracao/auditoria', [AuditController::class, 'index'])->name('auditoria.index');
+    Route::resource('/administracao/caixas-email', InboundMailboxController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['caixas-email' => 'mailbox'])
+        ->names('inbound-mailboxes');
 });
 
 // --- ROTAS COMPARTILHADAS (Qualquer usuário logado) ---
@@ -133,4 +140,8 @@ Route::middleware(['auth', 'verifica.status'])->group(function () {
     Route::get('/minhaconta', [UserController::class, 'editMinhaConta'])->name('minhaconta.edit');
     Route::put('/minhaconta', [UserController::class, 'updateMinhaConta'])->name('minhaconta.update');
     Route::put('/minhaconta/password', [UserController::class, 'updateMinhaSenha'])->name('minhaconta.password');
+    Route::get('/notificacoes', [NotificationCenterController::class, 'index'])->name('notifications.index');
+    Route::post('/notificacoes/{id}/lida', [NotificationCenterController::class, 'read'])->name('notifications.read');
+    Route::post('/notificacoes/lidas', [NotificationCenterController::class, 'readAll'])->name('notifications.read-all');
+    Route::put('/minhaconta/notificacoes', [NotificationPreferenceController::class, 'update'])->name('notification-preferences.update');
 });

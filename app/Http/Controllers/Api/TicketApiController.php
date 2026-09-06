@@ -116,6 +116,7 @@ $ticket = Ticket::findOrFail($id);
         $ticket->mensagens()->create([
             'user_id' => $user->id,
             'descricao' => "{$user->name} finalizou o ticket via API. Relato final: {$request->descricao_fechamento}",
+            'tipo' => 'sistema',
         ]);
 
         return response()->json(['message' => 'Ticket finalizado com sucesso.']);
@@ -179,6 +180,7 @@ $ticket = Ticket::findOrFail($id);
         $ticket->mensagens()->create([
             'user_id' => $user->id,
             'descricao' => "{$user->name} alterou o status do ticket para '{$request->status}'.",
+            'tipo' => 'sistema',
         ]);
 
         // Retorna uma resposta de sucesso com o ticket atualizado
@@ -274,6 +276,7 @@ $ticket = Ticket::findOrFail($id);
         $ticket->mensagens()->create([
             'user_id'   => $analista->id,
             'descricao' => "{$analista->name} assumiu o ticket.",
+            'tipo' => 'sistema',
         ]);
 
         return response()->json([

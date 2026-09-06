@@ -352,7 +352,7 @@ public function deactivateCliente(User $user)
 
 public function editMinhaConta()
 {
-    $user = auth()->user(); // Pega o usuário autenticado
+    $user = auth()->user()->load('notificationPreference'); // Pega o usuário autenticado
     return view('minhaconta.edit', compact('user')); // Retorna a view de edição de conta
 }
 

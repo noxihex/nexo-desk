@@ -152,6 +152,8 @@ A recuperação de senha por e-mail vem desativada (`PASSWORD_RESET_ENABLED=fals
 
 Após alterar o `.env`, execute `php artisan config:clear` caso a configuração esteja em cache.
 
+Notificações de tickets, alertas de SLA e a integração bidirecional com Mailgun exigem também um queue worker e o scheduler do Laravel. Consulte o guia de [notificações e integração com e-mail](docs/email-notifications.md) antes de ativar as flags em produção.
+
 ## API e chaves de acesso
 
 A API v2 está disponível em `/api/v2`. Consulte os endpoints, exemplos e formatos de resposta na [documentação da API](docs/api-v2.md) e na [especificação OpenAPI](docs/openapi-v2.yaml).

@@ -27,6 +27,7 @@ class Ticket extends Model implements Auditable
         'data_hora_assumido',
         'transferido_por_usuario_id',
         'data_hora_transferido',
+        'sla_update_reference_at',
         'finalizado_por_usuario_id',
         'data_hora_finalizado'
     ];
@@ -43,8 +44,18 @@ class Ticket extends Model implements Auditable
         'horas_gastas',
         'data_hora_assumido',
         'data_hora_transferido',
+        'sla_update_reference_at',
         'data_hora_finalizado'
     ];
+
+    protected static function booted()
+    {
+        static::updating(function (Ticket $ticket) {
+            if ($ticket->isDirty('atribuido_ao_analista_id')) {
+                $ticket->sla_update_reference_at = now();
+            }
+        });
+    }
 
     // Relacionamento com a categoria
     public function categoria()
@@ -96,5 +107,10 @@ class Ticket extends Model implements Auditable
     public function mensagens()
     {
         return $this->hasMany(Mensagem::class);
+    }
+
+    public function replyTokens()
+    {
+        return $this->hasMany(EmailReplyToken::class);
     }
 }

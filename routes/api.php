@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TicketApiController;
 use App\Http\Controllers\Api\V2\LookupController as V2LookupController;
 use App\Http\Controllers\Api\V2\TicketController as V2TicketController;
+use App\Http\Controllers\MailgunInboundController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,8 @@ use App\Http\Controllers\Api\V2\TicketController as V2TicketController;
 | is assigned the "api" middleware group. Enjoy building your API!
 |
 */
+
+Route::post('/mailgun/inbound', MailgunInboundController::class)->middleware('throttle:mailgun-inbound');
 
 
 Route::middleware('auth:sanctum')->group(function () {

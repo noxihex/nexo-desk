@@ -258,6 +258,7 @@ public function finalize(Request $request, $id)
     $mensagem->ticket_id = $ticket->id;
     $mensagem->user_id = $user->id;
     $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
+    $mensagem->tipo = 'sistema';
     $mensagem->save();
 
     return redirect()->route('tickets.cliente.show', [

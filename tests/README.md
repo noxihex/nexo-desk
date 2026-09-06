@@ -65,7 +65,7 @@ Repita a mesma semente para reproduzir a ordem ou altere o número para explorar
 
 ## Isolamento de serviços
 
-O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória, filas síncronas e transporte de e-mail `array`, sem envio real de mensagens.
+O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória, filas síncronas e transporte de e-mail `array`, sem envio real de mensagens. As notificações ficam desativadas por padrão e os cenários focados usam os fakes de Mail e Queue; nenhuma integração depende da antiga API Python local.
 
 A classe `Tests\TestCase` usa `Http::fake()` para simular chamadas feitas pelo cliente HTTP do Laravel. Nos testes de integrações, configure respostas específicas com `Http::fake` e valide os pedidos com `Http::assertSent`; a simulação genérica não verifica sozinha o contrato do serviço remoto.
 

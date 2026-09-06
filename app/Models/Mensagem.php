@@ -12,7 +12,7 @@ class Mensagem extends Model implements Auditable
 
     protected $table = 'mensagens'; // Define o nome correto da tabela
 
-    protected $fillable = ['descricao', 'user_id', 'ticket_id'];
+    protected $fillable = ['descricao', 'tipo', 'origem', 'user_id', 'ticket_id'];
 
     // Relacionamento com o usuário
     public function user()
@@ -30,5 +30,10 @@ class Mensagem extends Model implements Auditable
     public function attachments()
     {
         return $this->hasMany(MessageAttachment::class);
+    }
+
+    public function isPublica(): bool
+    {
+        return ($this->tipo ?: 'publica') === 'publica';
     }
 }

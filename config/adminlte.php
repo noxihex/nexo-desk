@@ -444,6 +444,12 @@ return [
                 'icon' => 'fas fa-fw fa-database',
                 'can' => 'acesso admin',
             ],
+            [
+                'text' => 'Caixas de e-mail',
+                'url' => 'administracao/caixas-email',
+                'icon' => 'fas fa-fw fa-envelope-open-text',
+                'can' => 'acesso admin',
+            ],
         ],
     ],
 

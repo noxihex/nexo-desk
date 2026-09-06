@@ -404,6 +404,7 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
         $mensagem->ticket_id = $ticket->id;
         $mensagem->user_id = $user->id;
         $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
+        $mensagem->tipo = 'sistema';
         $mensagem->save();
 
         return redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => TicketReturnUrl::resolve($request)])
@@ -493,6 +494,7 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
             'ticket_id' => $ticket->id,
             'descricao' => "{$user->name} assumiu o ticket.", // Mensagem indicando quem assumiu
             'user_id' => $user->id, // Registra o ID do usuário que assumiu
+            'tipo' => 'sistema',
         ]);
 
         $returnUrl = TicketReturnUrl::resolve($request);
@@ -545,6 +547,7 @@ public function transferirTicket(Request $request, $id)
     $mensagem->user_id = $user->id; // ID do usuário que fez a transferência
     $destino = $novoAnalista ? $novoAnalista->name : ($ticket->setor ? $ticket->setor->nome : 'sem setor');
     $mensagem->descricao = "{$user->name} transferiu o ticket para {$destino}";
+    $mensagem->tipo = 'sistema';
     $mensagem->save();
 
     $returnUrl = TicketReturnUrl::resolve($request);

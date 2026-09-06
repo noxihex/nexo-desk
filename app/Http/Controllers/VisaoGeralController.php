@@ -12,6 +12,7 @@ use App\Models\Empresa;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\SlaDeadlineCalculator;
 
 class VisaoGeralController extends Controller
 {
@@ -119,7 +120,7 @@ class VisaoGeralController extends Controller
 
 
 
-    public function obterTicketsAtencao()
+public function obterTicketsAtencao()
 {
     $tickets = Ticket::whereIn('status', ['aberto', 'pendente cliente', 'pendente analista']) // Inclui todos os status relevantes
         ->where('atribuido_ao_analista_id', Auth::id()) // Apenas tickets atribuídos ao analista atual
@@ -128,32 +129,12 @@ class VisaoGeralController extends Controller
         })
         ->get();
 
-    $ticketsComAlerta = [];
-
-    foreach ($tickets as $ticket) {
-        // Determina a data inicial de referência (transferência, assunção ou criação)
-        $dataReferencia = $ticket->data_hora_transferido
-            ?? $ticket->data_hora_assumido
-            ?? $ticket->created_at;
-
-        // Obtém a última mensagem enviada pelo analista atribuído
-        $ultimaMensagem = $ticket->mensagens()
-            ->where('user_id', $ticket->atribuido_ao_analista_id) // Apenas mensagens do analista atribuído
-            ->latest()
-            ->first();
-
-        $dataUltimaInteracao = $ultimaMensagem
-            ? $ultimaMensagem->created_at
-            : $dataReferencia;
-
-        // Calcula o tempo decorrido desde a última interação
-        $tempoDecorrido = Carbon::now()->diffInMinutes($dataUltimaInteracao);
-
-        // Verifica se o tempo decorrido excede o SLA definido
-        if ($tempoDecorrido >= $ticket->categoria->slaupdate) {
-            $ticketsComAlerta[] = $ticket->id; // Adiciona o ticket ao alerta
-        }
-    }
+    $calculator = app(SlaDeadlineCalculator::class);
+    $ticketsComAlerta = $tickets
+        ->filter(fn ($ticket) => $calculator->updateIsDue($ticket))
+        ->pluck('id')
+        ->values()
+        ->all();
 
     return $ticketsComAlerta; // Retorna apenas os tickets com alerta
 }

@@ -117,6 +117,7 @@ class TicketController extends Controller
         $ticket->mensagens()->create([
             'user_id' => $user->id,
             'descricao' => "{$user->name} finalizou o ticket via API. Relato final: {$data['descricao_fechamento']}",
+            'tipo' => 'sistema',
         ]);
 
         return response()->json(['message' => 'Ticket finalizado com sucesso.']);
@@ -141,6 +142,7 @@ class TicketController extends Controller
         $ticket->mensagens()->create([
             'user_id' => $request->user()->id,
             'descricao' => "{$request->user()->name} alterou o status do ticket para '{$data['status']}'.",
+            'tipo' => 'sistema',
         ]);
         return (new TicketResource($ticket->load(self::RELATIONS)))->additional(['message' => 'Status do ticket atualizado com sucesso.']);
     }
@@ -167,7 +169,7 @@ class TicketController extends Controller
             'data_hora_assumido' => now(),
             'status' => $ticket->status === 'aberto' ? 'pendente analista' : $ticket->status,
         ]);
-        $ticket->mensagens()->create(['user_id' => $analista->id, 'descricao' => "{$analista->name} assumiu o ticket."]);
+        $ticket->mensagens()->create(['user_id' => $analista->id, 'descricao' => "{$analista->name} assumiu o ticket.", 'tipo' => 'sistema']);
         return (new TicketResource($ticket->load(self::RELATIONS)))->additional(['message' => 'Ticket assumido com sucesso!']);
     }
 
@@ -222,6 +224,7 @@ class TicketController extends Controller
             $ticket->mensagens()->create([
                 'user_id' => $request->user()->id,
                 'descricao' => $request->user()->name . ' transferiu o ticket: ' . implode('; ', $alteracoes) . '.',
+                'tipo' => 'sistema',
             ]);
             return $ticket;
         });

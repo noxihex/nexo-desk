@@ -10,6 +10,9 @@
 
     <ul class="navbar-nav ml-auto">
         @include('layouts.theme-toggle')
+        @auth
+            @include('layouts.notification-center')
+        @endauth
         @yield('content_top_nav_right')
         @each('adminlte::partials.navbar.menu-item', $adminlte->menu('navbar-right'), 'item')
 

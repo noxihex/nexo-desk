@@ -96,6 +96,20 @@ class User extends Authenticatable implements Auditable
         return $this->belongsTo(Empresa::class);
     }
 
+    public function notificationPreference()
+    {
+        return $this->hasOne(NotificationPreference::class);
+    }
+
+    public function allowsNotification(string $event, string $channel): bool
+    {
+        $preference = $this->relationLoaded('notificationPreference')
+            ? $this->notificationPreference
+            : $this->notificationPreference()->first();
+
+        return $preference ? $preference->allows($event, $channel) : true;
+    }
+
     /**
      * Atributos para serem ignorados pela auditoria.
      *
