@@ -134,16 +134,16 @@ O sistema não oferece cadastro público de contas. Após entrar como administra
 
 Clientes utilizam uma área própria para abrir e acompanhar chamados. Analistas operam os tickets; supervisores e administradores também acessam cadastros e relatórios. As ferramentas de administração ficam restritas a administradores.
 
-## Personalização e e-mail
+## Personalização opcional e e-mail
 
-Para personalizar o nome exibido na interface, ajuste no `.env`:
+O nome e a identidade visual padrão já estão configurados no projeto. Caso seja necessário adaptar a instalação à sua organização, é possível alterar o nome exibido na interface no `.env`:
 
 ```dotenv
 APP_NAME_INICIO="Nexo"
 APP_NAME_FINAL="Desk"
 ```
 
-A logo e o favicon não são incluídos no repositório. Para utilizar sua identidade visual, adicione os arquivos:
+A logo e o favicon originais também são versionados. Opcionalmente, para utilizar outra identidade visual, substitua os arquivos:
 
 - `public/vendor/adminlte/dist/img/logodesk.png`
 - `public/favicon.ico`
