@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Ticket;
+use App\Support\ElapsedTime;
 use Carbon\Carbon;
 
 class SlaDeadlineCalculator
@@ -34,12 +35,12 @@ class SlaDeadlineCalculator
     public function updateIsDue(Ticket $ticket, ?Carbon $now = null): bool
     {
         return $ticket->categoria
-            && $this->updateReference($ticket)->diffInMinutes($now ?: now()) >= (int) $ticket->categoria->slaupdate;
+            && ElapsedTime::wholeMinutes($this->updateReference($ticket), $now ?: now()) >= (int) $ticket->categoria->slaupdate;
     }
 
     public function totalIsDue(Ticket $ticket, ?Carbon $now = null): bool
     {
         return $ticket->categoria
-            && Carbon::parse($ticket->created_at)->diffInMinutes($now ?: now()) >= (int) $ticket->categoria->slatotal;
+            && ElapsedTime::wholeMinutes(Carbon::parse($ticket->created_at), $now ?: now()) >= (int) $ticket->categoria->slatotal;
     }
 }

@@ -39,6 +39,18 @@ class ApiRouteContractTest extends TestCase
         $this->patchJson('/api/v2/tickets/1/prazo', ['prazo' => null])->assertNotFound();
     }
 
+    public function test_named_routes_are_unique(): void
+    {
+        $duplicates = collect(Route::getRoutes())
+            ->filter(fn ($route) => $route->getName() !== null)
+            ->groupBy(fn ($route) => $route->getName())
+            ->filter(fn ($routes) => $routes->count() > 1)
+            ->keys()
+            ->all();
+
+        $this->assertSame([], $duplicates, 'Nomes de rota duplicados: '.implode(', ', $duplicates));
+    }
+
     private function assertRoutes(array $expected): void
     {
         $actual = collect(Route::getRoutes())->flatMap(function ($route) {

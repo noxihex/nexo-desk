@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
+use App\Support\ElapsedTime;
 use App\Support\TicketReturnUrl;
 
 use App\Http\Controllers\Controller;
@@ -231,13 +232,13 @@ public function finalize(Request $request, $id)
 
     // Iterar pelas mensagens para calcular o tempo congelado
     foreach ($mensagens as $mensagem) {
-        $tempoDecorrido = $dataReferencia->diffInMinutes($mensagem->created_at);
+        $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
         $tempoCongelado = min($tempoDecorrido, $slaUpdate);
         $tempoTotalMinutos += $tempoCongelado;
         $dataReferencia = $mensagem->created_at;
     }
 
-    $tempoFinal = $dataReferencia->diffInMinutes(now());
+    $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
     $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
     $tempoTotalMinutos += $tempoCongeladoFinal;
 
@@ -294,13 +295,13 @@ public function calcularHorasSugeridas($id)
         $dataReferencia = $ticket->created_at;
 
         foreach ($mensagens as $mensagem) {
-            $tempoDecorrido = $dataReferencia->diffInMinutes($mensagem->created_at);
+            $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
             $tempoCongelado = min($tempoDecorrido, $slaUpdate);
             $tempoTotalMinutos += $tempoCongelado;
             $dataReferencia = $mensagem->created_at;
         }
 
-        $tempoFinal = $dataReferencia->diffInMinutes(now());
+        $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
         $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
         $tempoTotalMinutos += $tempoCongeladoFinal;
 

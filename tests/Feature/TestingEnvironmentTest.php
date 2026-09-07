@@ -22,6 +22,13 @@ class TestingEnvironmentTest extends TestCase
         $this->assertNull(config('database.connections.mysql.url'));
     }
 
+    public function test_storage_roots_remain_explicit_and_separated(): void
+    {
+        $this->assertSame(storage_path('app'), config('filesystems.disks.local.root'));
+        $this->assertSame(storage_path('app/public'), config('filesystems.disks.public.root'));
+        $this->assertSame(storage_path('app/private/backups'), config('filesystems.disks.backups.root'));
+    }
+
     public function test_tickets_and_messages_are_saved_without_email_requests(): void
     {
         $sector = Setor::create(['nome' => 'Suporte']);
