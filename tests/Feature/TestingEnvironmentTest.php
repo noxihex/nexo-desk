@@ -29,6 +29,16 @@ class TestingEnvironmentTest extends TestCase
         $this->assertSame(storage_path('app/private/backups'), config('filesystems.disks.backups.root'));
     }
 
+    public function test_sanctum_preserves_authentication_defaults_and_uses_current_middleware(): void
+    {
+        $this->assertSame(['web'], config('sanctum.guard'));
+        $this->assertNull(config('sanctum.expiration'));
+        $this->assertSame('', config('sanctum.token_prefix'));
+        $this->assertSame(\Laravel\Sanctum\Http\Middleware\AuthenticateSession::class, config('sanctum.middleware.authenticate_session'));
+        $this->assertSame(\Illuminate\Cookie\Middleware\EncryptCookies::class, config('sanctum.middleware.encrypt_cookies'));
+        $this->assertSame(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, config('sanctum.middleware.validate_csrf_token'));
+    }
+
     public function test_tickets_and_messages_are_saved_without_email_requests(): void
     {
         $sector = Setor::create(['nome' => 'Suporte']);
