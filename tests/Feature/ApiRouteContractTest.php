@@ -51,6 +51,14 @@ class ApiRouteContractTest extends TestCase
         $this->assertSame([], $duplicates, 'Nomes de rota duplicados: '.implode(', ', $duplicates));
     }
 
+    public function test_application_route_count_matches_the_upgrade_baseline(): void
+    {
+        $applicationRoutes = collect(Route::getRoutes())
+            ->reject(fn ($route) => str_starts_with($route->uri(), '_ignition/'));
+
+        $this->assertCount(126, $applicationRoutes);
+    }
+
     private function assertRoutes(array $expected): void
     {
         $actual = collect(Route::getRoutes())->flatMap(function ($route) {
