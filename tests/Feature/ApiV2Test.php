@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class ApiV2Test extends TestCase
@@ -52,7 +53,7 @@ class ApiV2Test extends TestCase
         $this->getJson('/api/v2/me')->assertUnauthorized();
     }
 
-    /** @dataProvider assumirStatusProvider */
+    #[DataProvider('assumirStatusProvider')]
     public function test_assumir_only_changes_open_status(string $prefix, string $status, string $expected)
     {
         $base = $this->dadosBase();
@@ -86,7 +87,7 @@ class ApiV2Test extends TestCase
         ]);
     }
 
-    public function assumirStatusProvider(): array
+    public static function assumirStatusProvider(): array
     {
         $cases = [];
         foreach (['', '/api', '/api/v2'] as $prefix) {

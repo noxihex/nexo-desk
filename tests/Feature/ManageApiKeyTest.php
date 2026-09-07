@@ -6,6 +6,7 @@ use App\Console\Commands\ManageApiKey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\TestCase;
@@ -38,6 +39,8 @@ class ManageApiKeyTest extends TestCase
 
     public function test_authenticates_a_token_issued_with_the_legacy_format(): void
     {
+        $this->assertTrue(Schema::hasColumn('personal_access_tokens', 'expires_at'));
+
         $user = User::factory()->create(['status' => true]);
         $plainTextToken = 'legacy-plain-text-token';
         $tokenId = DB::table('personal_access_tokens')->insertGetId([
