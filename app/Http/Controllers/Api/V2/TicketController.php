@@ -15,6 +15,7 @@ use App\Rules\CategoriaPertenceAoSetor;
 use App\Services\TicketMessageService;
 use App\Services\TicketTimelineService;
 use App\Support\TicketStaffAccess;
+use App\Support\ElapsedTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -106,10 +107,10 @@ class TicketController extends Controller
         $tempoTotal = 0;
         $referencia = $ticket->created_at;
         foreach ($ticket->mensagens()->semInternas()->orderBy('created_at')->get() as $mensagem) {
-            $tempoTotal += min($referencia->diffInMinutes($mensagem->created_at), $slaUpdate);
+            $tempoTotal += min(ElapsedTime::wholeMinutes($referencia, $mensagem->created_at), $slaUpdate);
             $referencia = $mensagem->created_at;
         }
-        $tempoTotal += min($referencia->diffInMinutes(now()), $slaUpdate);
+        $tempoTotal += min(ElapsedTime::wholeMinutes($referencia, now()), $slaUpdate);
         $user = $request->user();
         $ticket->update([
             'status' => 'fechado',

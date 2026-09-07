@@ -1,6 +1,6 @@
 # Nexo Desk
 
-O **Nexo Desk** é um sistema de gerenciamento de chamados que centraliza o atendimento entre clientes e equipes de suporte. Desenvolvido com **Laravel 8** e **AdminLTE**, permite organizar solicitações por empresa, setor e categoria, acompanhar o histórico de atendimento e consultar indicadores de trabalho.
+O **Nexo Desk** é um sistema de gerenciamento de chamados que centraliza o atendimento entre clientes e equipes de suporte. Desenvolvido com **Laravel 12** e **AdminLTE 3**, permite organizar solicitações por empresa, setor e categoria, acompanhar o histórico de atendimento e consultar indicadores de trabalho.
 
 ## Funcionalidades
 
@@ -17,7 +17,7 @@ As instruções abaixo são para uma instalação local a partir de um banco vaz
 
 ### Pré-requisitos
 
-- **PHP 8.1 ou superior**, compatível com as dependências fixadas em `composer.lock`. Embora o `composer.json` declare suporte a versões anteriores, o lock atual contém pacotes que exigem PHP 8.1.
+- **PHP 8.2 ou superior**, exigido pelo Laravel 12 e pelas dependências fixadas em `composer.lock`.
 - **Composer**, para instalar as dependências PHP.
 - **MySQL ou MariaDB**, com um banco criado e um usuário autorizado a criar e alterar tabelas. As migrations contêm operações específicas de MySQL; não use SQLite nesta instalação.
 - **Node.js e npm**, para instalar e compilar os arquivos de frontend.

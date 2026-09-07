@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\ElapsedTime;
 
 class TicketApiController extends Controller
 {
@@ -93,12 +94,12 @@ $ticket = Ticket::findOrFail($id);
         $dataReferencia = $ticket->created_at;
 
         foreach ($mensagens as $mensagem) {
-            $tempoDecorrido = $dataReferencia->diffInMinutes($mensagem->created_at);
+            $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
             $tempoTotalMinutos += min($tempoDecorrido, $slaUpdate);
             $dataReferencia = $mensagem->created_at;
         }
 
-        $tempoFinal = $dataReferencia->diffInMinutes(now());
+        $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
         $tempoTotalMinutos += min($tempoFinal, $slaUpdate);
 
         $request->validate([

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\User;
+use App\Support\ElapsedTime;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -47,7 +48,7 @@ class RelatorioAnalistaController extends Controller
             $usuarioId = $request->input('usuario_id');
 
             // Calcula o intervalo em horas
-            $intervaloHoras = $dataFim->diffInHours($dataInicio);
+            $intervaloHoras = ElapsedTime::wholeHours($dataFim, $dataInicio);
 
             // Define o intervalo de agrupamento (hora ou dia)
             if ($intervaloHoras <= 24) {

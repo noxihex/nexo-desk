@@ -124,7 +124,13 @@ class TicketNotificationsAndEmailTest extends TestCase
 
         (new SendTicketNotificationMail($delivery->id, $payload))->handle();
 
-        Mail::assertSent(\App\Mail\TicketEventMail::class, 1);
+        Mail::assertSent(\App\Mail\TicketEventMail::class, function ($mail) use ($ticket) {
+            $mail->build();
+
+            return isset($mail->replyTo[0]['address'])
+                && str_starts_with($mail->replyTo[0]['address'], "reply+{$ticket->id}.")
+                && str_ends_with($mail->replyTo[0]['address'], '@inbound.example.com');
+        });
         $this->assertDatabaseHas('notification_deliveries', ['id' => $delivery->id, 'status' => 'delivered', 'attempts' => 1]);
         $this->assertDatabaseCount('email_reply_tokens', 1);
         $this->assertSame(64, strlen(EmailReplyToken::first()->token_hash));

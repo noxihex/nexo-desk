@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
+use App\Support\ElapsedTime;
 use App\Support\TicketReturnUrl;
 use App\Rules\CategoriaPertenceAoSetor;
 
@@ -87,9 +88,9 @@ class TicketController extends Controller
 
             if ($ticket->status === 'fechado') {
                 $dataFinalizacao = $ticket->data_hora_finalizado ? \Carbon\Carbon::parse($ticket->data_hora_finalizado) : $dataCriacao;
-                $minutosDecorridos = $dataFinalizacao->diffInMinutes($dataCriacao);
+                $minutosDecorridos = ElapsedTime::wholeMinutes($dataFinalizacao, $dataCriacao);
             } else {
-                $minutosDecorridos = now()->diffInMinutes($dataCriacao);
+                $minutosDecorridos = ElapsedTime::wholeMinutes(now(), $dataCriacao);
             }
 
             return $slaTotal > 0 ? ($minutosDecorridos / $slaTotal) * 100 : 0;
@@ -382,13 +383,13 @@ class TicketController extends Controller
 
         // Iterar pelas mensagens para calcular o tempo congelado
         foreach ($mensagens as $mensagem) {
-            $tempoDecorrido = $dataReferencia->diffInMinutes($mensagem->created_at);
+            $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
             $tempoCongelado = min($tempoDecorrido, $slaUpdate);
             $tempoTotalMinutos += $tempoCongelado;
             $dataReferencia = $mensagem->created_at;
         }
 
-        $tempoFinal = $dataReferencia->diffInMinutes(now());
+        $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
         $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
         $tempoTotalMinutos += $tempoCongeladoFinal;
 
@@ -445,13 +446,13 @@ $ticket->horas_gastas = ($horas * 60) + $minutos;
             $dataReferencia = $ticket->created_at;
 
             foreach ($mensagens as $mensagem) {
-                $tempoDecorrido = $dataReferencia->diffInMinutes($mensagem->created_at);
+                $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
                 $tempoCongelado = min($tempoDecorrido, $slaUpdate);
                 $tempoTotalMinutos += $tempoCongelado;
                 $dataReferencia = $mensagem->created_at;
             }
 
-            $tempoFinal = $dataReferencia->diffInMinutes(now());
+            $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
             $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
             $tempoTotalMinutos += $tempoCongeladoFinal;
 

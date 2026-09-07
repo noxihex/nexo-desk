@@ -8,6 +8,7 @@ use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class TestingEnvironmentTest extends TestCase
@@ -20,6 +21,39 @@ class TestingEnvironmentTest extends TestCase
         $this->assertSame('mysql', config('database.default'));
         $this->assertSame('nexodesk_testing', app('db')->connection()->getDatabaseName());
         $this->assertNull(config('database.connections.mysql.url'));
+        $this->assertSame('array', config('cache.default'));
+        $this->assertSame('log', config('broadcasting.default'));
+        $this->assertSame('array', config('mail.default'));
+        $this->assertSame('sync', config('queue.default'));
+        $this->assertSame('array', config('session.driver'));
+    }
+
+    public function test_storage_roots_remain_explicit_and_separated(): void
+    {
+        $this->assertSame(storage_path('app'), config('filesystems.disks.local.root'));
+        $this->assertSame(storage_path('app/public'), config('filesystems.disks.public.root'));
+        $this->assertSame(storage_path('app/private/backups'), config('filesystems.disks.backups.root'));
+    }
+
+    public function test_each_configured_local_disk_can_store_and_read_files(): void
+    {
+        foreach (['local', 'public', 'backups'] as $disk) {
+            Storage::fake($disk);
+            Storage::disk($disk)->put('upgrade-check.txt', $disk);
+
+            Storage::disk($disk)->assertExists('upgrade-check.txt');
+            $this->assertSame($disk, Storage::disk($disk)->get('upgrade-check.txt'));
+        }
+    }
+
+    public function test_sanctum_preserves_authentication_defaults_and_uses_current_middleware(): void
+    {
+        $this->assertSame(['web'], config('sanctum.guard'));
+        $this->assertNull(config('sanctum.expiration'));
+        $this->assertSame('', config('sanctum.token_prefix'));
+        $this->assertSame(\Laravel\Sanctum\Http\Middleware\AuthenticateSession::class, config('sanctum.middleware.authenticate_session'));
+        $this->assertSame(\Illuminate\Cookie\Middleware\EncryptCookies::class, config('sanctum.middleware.encrypt_cookies'));
+        $this->assertSame(\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class, config('sanctum.middleware.validate_csrf_token'));
     }
 
     public function test_tickets_and_messages_are_saved_without_email_requests(): void

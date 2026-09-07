@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Console\Commands\ManageApiKey;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\PersonalAccessToken;
 use Symfony\Component\Console\Tester\CommandTester;
 use Tests\TestCase;
@@ -33,6 +35,28 @@ class ManageApiKeyTest extends TestCase
         $this->assertSame(User::class, $token->tokenable_type);
         $this->assertSame(['*'], $token->abilities);
         $this->assertSame(64, strlen($token->token));
+    }
+
+    public function test_authenticates_a_token_issued_with_the_legacy_format(): void
+    {
+        $this->assertTrue(Schema::hasColumn('personal_access_tokens', 'expires_at'));
+
+        $user = User::factory()->create(['status' => true]);
+        $plainTextToken = 'legacy-plain-text-token';
+        $tokenId = DB::table('personal_access_tokens')->insertGetId([
+            'tokenable_type' => User::class,
+            'tokenable_id' => $user->id,
+            'name' => 'legacy',
+            'token' => hash('sha256', $plainTextToken),
+            'abilities' => json_encode(['*']),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->withToken($tokenId.'|'.$plainTextToken)
+            ->getJson('/api/user')
+            ->assertOk()
+            ->assertJsonPath('id', $user->id);
     }
 
     public function test_interactive_menu_creates_an_api_key(): void
