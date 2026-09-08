@@ -2,6 +2,8 @@
 @import '../../vendor/livewire/flux/dist/flux.css';
 
 @source '../views/components/layouts/modern.blade.php';
+@source '../views/components/layouts/auth.blade.php';
+@source '../views/auth/**/*.blade.php';
 @source '../views/components/modern/**/*.blade.php';
 @source '../views/livewire/**/*.blade.php';
 @source '../../app/Livewire/**/*.php';

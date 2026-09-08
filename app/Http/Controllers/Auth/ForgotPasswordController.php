@@ -2,38 +2,27 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Actions\Auth\SendPasswordResetLink;
 use App\Http\Controllers\Controller;
 use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
 
 class ForgotPasswordController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Password Reset Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller is responsible for handling password reset emails and
-    | includes a trait which assists in sending these notifications from
-    | your application to your users. Feel free to explore this trait.
-    |
-    */
+    use SendsPasswordResetEmails;
 
-    use SendsPasswordResetEmails {
-        sendResetLinkEmail as protected sendResetLinkEmailUsingTrait;
-    }
-
-    /**
-     * Impede temporariamente o envio automático, sem remover o fluxo de
-     * recuperação. Para reativá-lo, basta definir PASSWORD_RESET_ENABLED=true.
-     */
     public function sendResetLinkEmail(Request $request)
     {
-        if (! config('auth.password_reset_enabled')) {
-            return back()
-                ->withInput($request->only('email'))
-                ->with('error', 'A recuperação automática de senha está temporariamente desativada. Entre em contato com o administrador.');
+        $status = app(SendPasswordResetLink::class)->handle($request->only('email'));
+
+        if ($status === null) {
+            return back()->withInput($request->only('email'))
+                ->with('error', SendPasswordResetLink::DISABLED_MESSAGE);
         }
-        return $this->sendResetLinkEmailUsingTrait($request);
+
+        return $status === Password::RESET_LINK_SENT
+            ? $this->sendResetLinkResponse($request, $status)
+            : $this->sendResetLinkFailedResponse($request, $status);
     }
 }

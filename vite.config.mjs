@@ -9,6 +9,8 @@ export default defineConfig({
             refresh: [
                 'app/Livewire/**',
                 'resources/views/components/layouts/modern.blade.php',
+                'resources/views/components/layouts/auth.blade.php',
+                'resources/views/auth/**',
                 'resources/views/components/modern/**',
                 'resources/views/livewire/**',
             ],

@@ -46,7 +46,7 @@ Os dois servidores de frontend não compartilham arquivo HMR. O Mix usa `public/
 | Legada | `resources/js/app.js` e `resources/sass/app.scss` | `public/js`, `public/css` e `public/mix-manifest.json` | `public/hot` |
 | Moderna | `resources/js/modern.js` e `resources/css/modern.css` | `public/build` e `public/build/manifest.json` | `storage/vite.hot` |
 
-`modern.js` não importa Bootstrap, AdminLTE, jQuery, Sass ou scripts legados. O Tailwind usa `source(none)` e examina somente o layout moderno, os wrappers modernos e futuras classes/views Livewire. Não inclua `@vite`, diretivas Livewire, Flux ou classes Tailwind em uma view que estenda `adminlte::page` ou `adminlte::auth.*`.
+`modern.js` não importa Bootstrap, AdminLTE, jQuery, Sass ou scripts legados. O Tailwind usa `source(none)` e examina somente os layouts modernos, as views de autenticação, os wrappers modernos e as classes/views Livewire. Não inclua `@vite`, diretivas Livewire, Flux ou classes Tailwind em uma view que estenda `adminlte::page` ou `adminlte::auth.*`.
 
 ## Primeira página moderna
 
@@ -226,3 +226,22 @@ Quando o Flux Free possuir um equivalente, o wrapper deve delegar ao Flux e comp
 - Valide a página moderna com usuários de cada perfil relevante.
 - Somente então substitua a rota/view antiga; mantenha uma estratégia simples de reversão.
 - Remova dependências legadas apenas quando nenhuma tela ainda depender delas.
+
+## Autenticação moderna
+
+A primeira migração atende `/login`, `/password/reset`, `/password/reset/{token}` e `/password/confirm`. Os GETs e nomes de rota continuam nos controllers existentes; as views `auth.*` montam o layout `components.layouts.auth` e os componentes em `App\Livewire\Modern\Auth`.
+
+Os formulários ativos usam `wire:submit`. As operações em `App\Actions\Auth` são compartilhadas com os POSTs existentes, mantendo validações, respostas HTTP/JSON, guard, broker, mensagens e redirecionamentos. O login compartilha o limite de cinco tentativas por minuto por e-mail/IP entre os dois transportes. A confirmação revalida a sessão em cada submissão. As senhas são limpas do estado dos componentes após a tentativa, e o token de redefinição é uma propriedade bloqueada do Livewire.
+
+Os links e redirecionamentos usam carregamento completo, inclusive na entrada das telas internas legadas. O layout de autenticação carrega somente Vite, Livewire e Flux, oferece os temas claro/escuro/sistema e não utiliza a sidebar moderna. Os wrappers adicionais `x-modern.checkbox` (`name`, `label`) e `x-modern.alert` (`variant`, `heading`, conteúdo no slot padrão) encaminham atributos ao Flux Free; o aviso define `role="alert"` para erros e `role="status"` nos demais casos.
+
+A recuperação respeita `PASSWORD_RESET_ENABLED` a cada envio. O padrão continua desativado, com a mesma orientação para procurar o administrador. Não há alteração de configuração de e-mail nem de banco de dados.
+
+`auth.register` e `auth.verify` são somente templates modernos preparados para uma etapa futura. Não possuem ações Livewire nem rotas públicas, e seus controles de envio ficam desabilitados. Ativar esses fluxos exige uma entrega própria, incluindo as regras de cadastro e verificação; não basta expor os templates.
+
+### Verificação e reversão
+
+- Executar `php artisan test --filter=ModernAuthenticationTest` para os contratos Livewire e HTTP, incluindo o envelope JSON real do Livewire.
+- Executar `php artisan test` no banco exclusivo `nexodesk_testing` e `npm run build:modern` antes da entrega.
+- Conferir login, recuperação, redefinição e confirmação em desktop/mobile, teclado, temas e navegação para o legado; notificações de teste devem ser simuladas.
+- Para reverter, reverter o commit desta migração e executar novamente o build moderno. Os endpoints POST, o logout, os assets Mix e os templates das páginas internas continuam disponíveis; não há migrações a desfazer.
