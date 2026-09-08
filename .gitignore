@@ -23,6 +23,7 @@ Homestead.json
 .phpunit.result.cache
 
 /public/build
+/storage/vite.hot
 /storage/pail
 .env.backup
 .env.production

@@ -54,7 +54,9 @@ class ApiRouteContractTest extends TestCase
     public function test_application_route_count_matches_the_upgrade_baseline(): void
     {
         $applicationRoutes = collect(Route::getRoutes())
-            ->reject(fn ($route) => str_starts_with($route->uri(), '_ignition/'));
+            ->reject(fn ($route) => str_starts_with($route->uri(), '_ignition/')
+                || str_starts_with($route->uri(), 'livewire-')
+                || str_starts_with($route->uri(), 'flux/'));
 
         $this->assertCount(126, $applicationRoutes);
     }

@@ -20,7 +20,7 @@ As instruções abaixo são para uma instalação local a partir de um banco vaz
 - **PHP 8.2 ou superior**, exigido pelo Laravel 12 e pelas dependências fixadas em `composer.lock`.
 - **Composer**, para instalar as dependências PHP.
 - **MySQL ou MariaDB**, com um banco criado e um usuário autorizado a criar e alterar tabelas. As migrations contêm operações específicas de MySQL; não use SQLite nesta instalação.
-- **Node.js e npm**, para instalar e compilar os arquivos de frontend.
+- **Node.js 20.19 ou superior e npm**, para instalar e compilar os arquivos de frontend.
 - **Git**, para clonar o repositório.
 
 Habilite as extensões PHP exigidas pelo Composer e o driver `pdo_mysql`. O usuário que executa a aplicação deve ter permissão de escrita em `storage/` e `bootstrap/cache/`.
@@ -94,6 +94,8 @@ npm run prod
 ```
 
 O Laravel Mix gera os arquivos JavaScript e CSS em `public/`. Durante o desenvolvimento, use `npm run dev` para uma compilação ou `npm run watch` para recompilar a cada alteração.
+
+O comando `npm run prod` compila tanto a interface legada com Mix quanto a stack moderna com Vite. Consulte o guia da [stack moderna](docs/modern-stack.md) para executar os builds separadamente, iniciar os dois watchers e criar novas páginas com Livewire e Flux.
 
 ### 5. Crie o primeiro administrador
 

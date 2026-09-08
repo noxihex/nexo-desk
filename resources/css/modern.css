@@ -1,0 +1,27 @@
+@import 'tailwindcss' source(none);
+@import '../../vendor/livewire/flux/dist/flux.css';
+
+@source '../views/components/layouts/modern.blade.php';
+@source '../views/components/modern/**/*.blade.php';
+@source '../views/livewire/**/*.blade.php';
+@source '../../app/Livewire/**/*.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    --color-accent: #007bff;
+    --color-accent-content: #0069d9;
+    --color-accent-foreground: #ffffff;
+}
+
+@layer theme {
+    .dark {
+        --color-accent: #5da9ff;
+        --color-accent-content: #8fc5ff;
+        --color-accent-foreground: #0f172a;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}

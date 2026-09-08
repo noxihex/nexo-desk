@@ -6,18 +6,27 @@
         "watch": "mix watch",
         "watch-poll": "mix watch -- --watch-options-poll=1000",
         "hot": "mix watch --hot",
+        "dev:modern": "vite",
+        "dev:all": "concurrently --kill-others-on-fail --names mix,vite \"npm run watch\" \"npm run dev:modern\"",
+        "build:legacy": "mix --production",
+        "build:modern": "vite build",
         "prod": "npm run production",
-        "production": "mix --production"
+        "production": "npm run build:legacy && npm run build:modern"
     },
     "devDependencies": {
         "@popperjs/core": "^2.10.2",
+        "@tailwindcss/vite": "^4.3.3",
         "axios": "^0.21",
         "bootstrap": "^5.1.3",
+        "concurrently": "^9.2.4",
         "laravel-mix": "^6.0.6",
+        "laravel-vite-plugin": "^3.2.0",
         "lodash": "^4.17.19",
         "postcss": "^8.1.14",
         "resolve-url-loader": "^5.0.0",
         "sass": "^1.32.11",
-        "sass-loader": "^11.0.1"
+        "sass-loader": "^11.0.1",
+        "tailwindcss": "^4.3.3",
+        "vite": "^8.2.2"
     }
 }
