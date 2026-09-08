@@ -1,6 +1,7 @@
 @props([
     'title' => null,
     'heading' => null,
+    'showSuccess' => true,
 ])
 
 <!doctype html>
@@ -147,7 +148,7 @@
             @endif
 
             <div class="mb-6 space-y-3" aria-live="polite">
-                @if(session('success'))
+                @if($showSuccess && session('success'))
                     <flux:callout variant="success" icon="check-circle" :text="session('success')" />
                 @endif
 

@@ -1,9 +1,20 @@
 @import 'tailwindcss' source(none);
 @import '../../vendor/livewire/flux/dist/flux.css';
 
+@source '../views/cadastros/empresas/index.blade.php';
+@source '../views/cadastros/empresas/create.blade.php';
+@source '../views/cadastros/empresas/edit.blade.php';
+@source '../views/cadastros/clientes/index.blade.php';
+@source '../views/cadastros/clientes/create.blade.php';
+@source '../views/cadastros/clientes/edit.blade.php';
+@source '../views/cadastros/usuarios/index.blade.php';
+@source '../views/cadastros/usuarios/create.blade.php';
+@source '../views/cadastros/usuarios/edit.blade.php';
 @source '../views/components/layouts/modern.blade.php';
 @source '../views/components/layouts/auth.blade.php';
 @source '../views/auth/**/*.blade.php';
+@source '../views/cadastros/categorias/**/*.blade.php';
+@source '../views/cadastros/setores/**/*.blade.php';
 @source '../views/components/modern/**/*.blade.php';
 @source '../views/livewire/**/*.blade.php';
 @source '../../app/Livewire/**/*.php';

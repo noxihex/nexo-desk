@@ -2,15 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Setor;
-use App\Models\Empresa; // Importando o modelo Empresa
+use App\Actions\Cadastros\ManagePeople;
+use App\Actions\Cadastros\SavePerson;
+use App\Actions\Cadastros\ChangePersonStatus;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Role;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
@@ -19,21 +17,7 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $showAll = $request->boolean('todos');
-
-        $users = User::role(['analista', 'supervisor', 'administrador'])
-            ->with(['setor', 'empresa', 'roles'])
-            ->when(! $showAll, function ($query) {
-                $query->where('status', true);
-            })
-            ->when($request->filled('search'), function ($query) use ($request) {
-                $query->where('name', 'like', '%' . $request->input('search') . '%');
-            })
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
-
-        return view('cadastros.usuarios.index', compact('users', 'showAll'));
+        return view('cadastros.usuarios.index');
     }
 
     /**
@@ -41,11 +25,7 @@ class UserController extends Controller
      */
     public function create()
     {
-        $setores = Setor::all(); // Busca todos os setores do banco
-        $empresas = Empresa::all(); // Busca todas as empresas do banco
-        $roles = Role::whereIn('name', $this->allowedTeamRoles())->get();
-
-        return view('cadastros.usuarios.create', compact('setores', 'empresas', 'roles'));
+        return view('cadastros.usuarios.create');
     }
 
     /**
@@ -53,31 +33,7 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'setor_id' => 'nullable|exists:setores,id', // Setor é opcional (nullable)
-            'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional (nullable)
-            'role' => ['required', Rule::in($this->allowedTeamRoles())],
-            'pode_ver_tickets_outros_setores' => 'sometimes|boolean',
-        ]);
-
-        // Cria o usuário, salvando setor e empresa pelo ID se existir
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'setor_id' => $request->setor_id, // Armazena o ID do setor, null se não for selecionado
-            'pode_ver_tickets_outros_setores' => $request->input('role') === 'analista'
-                && $request->boolean('pode_ver_tickets_outros_setores'),
-            'empresa_id' => $request->empresa_id, // Armazena o ID da empresa, null se não for selecionado
-            'status' => true, // Ativo por padrão
-        ]);
-
-        // Atribui o papel ao usuário
-        $user->assignRole($request->role);
-
+        app(SavePerson::class)->handle($request->all(), false);
         return redirect()->route('usuarios.index')->with('success', 'Usuário criado com sucesso!');
     }
 
@@ -87,12 +43,7 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $this->authorizeTeamUserManagement($user);
-
-        $setores = Setor::all(); // Busca todos os setores do banco
-        $empresas = Empresa::all(); // Busca todas as empresas do banco
-        $roles = Role::whereIn('name', $this->allowedTeamRoles())->get();
-
-        return view('cadastros.usuarios.edit', compact('user', 'setores', 'empresas', 'roles'));
+        return view('cadastros.usuarios.edit', compact('user'));
     }
 
     /**
@@ -100,36 +51,7 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $this->authorizeTeamUserManagement($user);
-
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'setor_id' => 'nullable|exists:setores,id', // Setor é opcional
-            'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-            'role' => ['required', Rule::in($this->allowedTeamRoles())],
-            'password' => 'nullable|string|min:8|confirmed', // Valida a senha apenas se preenchida
-            'pode_ver_tickets_outros_setores' => 'sometimes|boolean',
-        ]);
-
-        // Atualiza os dados do usuário
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'setor_id' => $request->setor_id, // Permite que o campo seja nulo
-            'pode_ver_tickets_outros_setores' => $request->input('role') === 'analista'
-                && $request->boolean('pode_ver_tickets_outros_setores'),
-            'empresa_id' => $request->empresa_id, // Permite que o campo seja nulo
-        ]);
-
-        // Se o campo de senha for preenchido, atualiza a senha
-        if ($request->filled('password')) {
-            $user->update(['password' => Hash::make($request->password)]);
-        }
-
-        // Atualiza a permissão (role) do usuário
-        $user->syncRoles($request->role);
-
+        app(SavePerson::class)->handle($request->all(), false, $user->id);
         return redirect()->route('usuarios.index')->with('success', 'Usuário atualizado com sucesso!');
     }
 
@@ -137,47 +59,15 @@ class UserController extends Controller
      * Desativa um usuário (alterando o status para inativo).
      */
 
-     public function deactivate(User $user)
-{
-    $this->authorizeTeamUserManagement($user);
-
-    // Verifica se o usuário é o de ID 1 e impede a desativação
-    if ($user->id == 1) {
-        return redirect()->route('usuarios.index')->with('error', 'Este usuário não pode ser desativado.');
-    }
-
-    // Verifica o status atual e inverte o status
-    $newStatus = !$user->status;
-
-    // Atualiza o status do usuário
-    $user->update(['status' => $newStatus]);
-
-    // Se o status for inativo, deslogar o usuário e limpar o remember_token
-    if ($newStatus == 0) {
-        // Remove as sessões do usuário
-        DB::table('sessions')->where('user_id', $user->id)->delete();
-
-        // Limpa o remember_token para evitar login automático
-        $user->forceFill(['remember_token' => null])->save();
-
-        // Verifica se as sessões foram removidas
-        $deletedSessions = DB::table('sessions')->where('user_id', $user->id)->count();
-        if ($deletedSessions == 0) {
-            \Log::info("Usuário {$user->id} deslogado com sucesso.");
-        } else {
-            \Log::warning("Erro ao deslogar o usuário {$user->id}.");
+    public function deactivate(User $user)
+    {
+        $this->authorizeTeamUserManagement($user);
+        if ($user->id === 1) {
+            return redirect()->route('usuarios.index')->with('error', 'Este usuário não pode ser desativado.');
         }
+        $user = app(ChangePersonStatus::class)->handle($user->id, false);
+        return redirect()->route('usuarios.index')->with('success', $user->status ? 'Usuário ativado com sucesso!' : 'Usuário desativado com sucesso!');
     }
-
-    // Define a mensagem de acordo com o novo status
-    $message = $newStatus ? 'Usuário ativado com sucesso!' : 'Usuário desativado com sucesso!';
-
-    // Redireciona corretamente para a lista de usuários
-    return redirect()->route('usuarios.index')->with('success', $message);
-}
-
-
-
 
     /**
      * Exibe o formulário de instalação inicial.
@@ -214,140 +104,46 @@ class UserController extends Controller
         return redirect('/login')->with('success', 'Usuário criado com sucesso!');
     }
 
-
-
-
     public function indexClientes()
     {
-        // Filtra os usuários que possuem as permissões "cliente" e aplica paginação
-        $users = User::role(['cliente'])
-                     ->with(['empresa'])
-                     ->paginate(10); // Define 10 clientes por página (ajuste conforme necessário)
-
-        // Retorna a view específica para a listagem de clientes
-        return view('cadastros.clientes.index', compact('users'));
+        return redirect()->route('empresas.index');
     }
 
 
     public function createCliente(Request $request)
     {
-        $empresaId = $request->query('empresa_id'); // Recupera o ID da empresa da query string (ex: ?empresa_id=1)
-        $empresa = $empresaId ? Empresa::find($empresaId) : null;
-
-        return view('cadastros.clientes.create', compact('empresa', 'empresaId'));
+        if (! $request->filled('empresa_id')) {
+            return redirect()->route('empresas.index')->with('error', 'Selecione uma empresa para cadastrar seu contato.');
+        }
+        $request->validate(['empresa_id' => 'required|integer|exists:empresas,id']);
+        $empresaId = (int) $request->query('empresa_id');
+        return view('cadastros.clientes.create', compact('empresaId'));
     }
 
     public function storeCliente(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'empresa_id' => 'nullable|exists:empresas,id', // Empresa é opcional
-        ]);
+        $user = app(SavePerson::class)->handle($request->all(), true);
+        return ($user->empresa_id ? redirect()->route('empresas.edit', $user->empresa_id) : redirect()->route('clientes.index'))->with('success', 'Contato criado com sucesso!');
+    }
 
-        // Cria o cliente
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'empresa_id' => $request->empresa_id, // Armazena o ID da empresa, null se não for selecionado
-            'status' => true, // Ativo por padrão
-        ]);
+    public function editCliente(User $user)
+    {
+        $this->authorizeClientManagement($user);
+        return view('cadastros.clientes.edit', compact('user'));
+    }
 
-        // Todo contato criado por este fluxo pertence à Central HelpDesk.
-        $user->assignRole('cliente');
-
-        // Define a mensagem de sucesso
-        $message = 'Contato criado com sucesso!';
-
-        // Redireciona para a página correta
-        if ($request->filled('empresa_id')) {
-            // Se o cliente está associado a uma empresa, redireciona para a página de edição da empresa
-            return redirect()->route('empresas.edit', $request->empresa_id)->with('success', $message);
-        }
-
-        // Caso contrário, redireciona para a lista geral de clientes
-        return redirect()->route('clientes.index')->with('success', $message);
+    public function updateCliente(Request $request, User $user)
+    {
+        $user = app(SavePerson::class)->handle($request->all(), true, $user->id);
+        return ($user->empresa_id ? redirect()->route('empresas.edit', $user->empresa_id) : redirect()->route('clientes.index'))->with('success', 'Contato atualizado com sucesso!');
     }
 
 
-
-public function editCliente(User $user)
-{
-    $this->authorizeClientManagement($user);
-
-    $empresaId = $user->empresa_id; // Pega a empresa associada ao cliente
-
-    // Retorna a view de edição de clientes
-    return view('cadastros.clientes.edit', compact('user', 'empresaId'));
-}
-
-public function updateCliente(Request $request, User $user)
-{
-    $this->authorizeClientManagement($user);
-
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-        'password' => 'nullable|string|min:8|confirmed' // Valida a senha apenas se preenchida
-    ]);
-
-    // Atualiza o cliente
-    $user->update([
-        'name' => $request->name,
-        'email' => $request->email,
-    ]);
-
-    // Se o campo de senha for preenchido, atualiza a senha
-    if ($request->filled('password')) {
-        $user->update(['password' => Hash::make($request->password)]);
+    public function deactivateCliente(User $user)
+    {
+        $user = app(ChangePersonStatus::class)->handle($user->id, true);
+        return ($user->empresa_id ? redirect()->route('empresas.edit', $user->empresa_id) : redirect()->route('clientes.index'))->with('success', $user->status ? 'Contato ativado com sucesso!' : 'Contato desativado com sucesso!');
     }
-
-    // Todo contato editado por este fluxo pertence à Central HelpDesk.
-    $user->syncRoles('cliente');
-
-    $message = "Contato atualizado com sucesso!";
-
-    if ($user->empresa_id) {
-        return redirect()->route('empresas.edit', $user->empresa_id)->with('success', $message);
-    }
-
-    return redirect()->route('clientes.index')->with('success', $message);
-}
-
-
-public function deactivateCliente(User $user)
-{
-    $this->authorizeClientManagement($user);
-
-    // Verifica o status atual e inverte o status
-    $newStatus = !$user->status;
-
-    // Atualiza o status do cliente
-    $user->update(['status' => $newStatus]);
-
-    // Se o cliente foi desativado, remover as sessões ativas e o token `remember_me`
-    if ($newStatus == 0) {
-        // Remove todas as sessões ativas do cliente
-        DB::table('sessions')->where('user_id', $user->id)->delete();
-
-        // Limpa o token `remember_me` para evitar recriação automática da sessão
-        $user->update(['remember_token' => null]);
-    }
-
-    // Define a mensagem de acordo com o novo status
-    $message = $newStatus ? 'Contato ativado com sucesso!' : 'Contato desativado com sucesso!';
-
-    // Redireciona para a página correta
-    if ($user->empresa_id) {
-        // Se o cliente pertence a uma empresa, redireciona para a página de edição da empresa
-        return redirect()->route('empresas.edit', $user->empresa_id)->with('success', $message);
-    }
-
-    // Se o cliente não pertence a uma empresa, redireciona para a lista de clientes
-    return redirect()->route('clientes.index')->with('success', $message);
-}
 
 
 public function editMinhaConta()
@@ -407,30 +203,15 @@ public function getEmpresa($id)
     return response()->json(['empresa_id' => null, 'empresa_nome' => null]);
 }
 
-private function allowedTeamRoles(): array
-{
-    return Auth::user()->hasRole('administrador')
-        ? ['analista', 'supervisor', 'administrador']
-        : ['analista'];
-}
-
-private function authorizeTeamUserManagement(User $user): void
-{
-    abort_unless($user->hasAnyRole(['analista', 'supervisor', 'administrador']), 404);
-
-    if (!Auth::user()->hasRole('administrador')) {
-        abort_if(
-            $user->hasAnyRole(['supervisor', 'administrador']),
-            403,
-            'Apenas administradores podem gerenciar supervisores e administradores.'
-        );
+    private function authorizeTeamUserManagement(User $user): void
+    {
+        app(ManagePeople::class)->authorize($user, false);
     }
-}
 
-private function authorizeClientManagement(User $user): void
-{
-    abort_unless($user->hasAnyRole(['cliente']), 404);
-}
+    private function authorizeClientManagement(User $user): void
+    {
+        app(ManagePeople::class)->authorize($user, true);
+    }
 
 
 }

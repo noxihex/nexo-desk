@@ -245,3 +245,52 @@ A recuperação respeita `PASSWORD_RESET_ENABLED` a cada envio. O padrão contin
 - Executar `php artisan test` no banco exclusivo `nexodesk_testing` e `npm run build:modern` antes da entrega.
 - Conferir login, recuperação, redefinição e confirmação em desktop/mobile, teclado, temas e navegação para o legado; notificações de teste devem ser simuladas.
 - Para reverter, reverter o commit desta migração e executar novamente o build moderno. Os endpoints POST, o logout, os assets Mix e os templates das páginas internas continuam disponíveis; não há migrações a desfazer.
+
+## Cadastros modernos: categorias e setores
+
+As páginas de listagem, criação e edição em `/cadastros/categorias` e `/cadastros/setores` usam o layout moderno por meio de `x-modern.cadastros.layout`. Os GETs continuam nos controllers existentes e os formulários são componentes em `App\Livewire\Modern\Cadastros`. Os endpoints POST, PUT/PATCH e DELETE mantêm URLs, nomes de rota e redirecionamentos. As consultas de categorias usadas pelos tickets e pela API não foram alteradas. Grupos permanece fora desta migração.
+
+A sidebar desses cadastros mostra Categorias e Setores com indicação da seção atual. “Voltar ao sistema” abre `/home`. Todos os links entre páginas usam carregamento completo para preservar o isolamento entre Mix e Vite.
+
+### Comportamento e autorização
+
+- A busca por nome usa `wire:model.live.debounce.300ms` e o parâmetro `search` na URL. Categorias mantém dez registros por página; setores permanece sem paginação. Ambos mantêm ordenação por nome.
+- Criação e edição usam páginas próprias. A categoria aceita múltiplos setores por checkboxes, com a orientação de que uma categoria sem setor não fica disponível nos tickets.
+- O modal de exclusão identifica o registro e seus efeitos, recebe um título acessível e foca inicialmente “Cancelar”. Escape fecha o diálogo e devolve o foco ao botão de origem. Após excluir, a listagem mantém a busca e ajusta a página, se necessário.
+- Supervisores e administradores ativos podem listar, criar, editar e excluir. `AuthorizeCatalogs` consulta novamente o usuário e suas funções em cada requisição Livewire e nas ações de persistência. IDs de edição e de confirmação de exclusão são propriedades bloqueadas; os registros são consultados novamente antes da operação.
+- `SaveCategoria`, `SaveSetor`, `DeleteCategoria` e `DeleteSetor` são compartilhadas por Livewire e pelos controllers HTTP. Preservam validação, transações, eventos de auditoria, pivot `categoria_setor` e o campo de compatibilidade `setor_id`.
+- Excluir categorias preserva os tickets, removendo o vínculo com a categoria. Excluir setores preserva usuários e tickets, remove seus vínculos com o setor e promove outro setor associado nas categorias, quando houver.
+- Setores vinculados a caixas de e-mail, inclusive inativas, não podem ser excluídos. A resposta informa que a caixa deve ser transferida para outro setor; a transação não deixa alterações parciais.
+- As mensagens de sucesso ficam no componente da listagem e são substituídas a cada operação. O layout moderno mantém `showSuccess=true` como padrão; o layout dos cadastros desativa essa cópia estática com `:show-success="false"`.
+
+### Verificação e reversão dos cadastros
+
+Executar `php artisan test --filter=ModernCatalogsTest`, os testes existentes de categorias compartilhadas e a suíte completa em `nexodesk_testing`. A cobertura inclui HTTP e Livewire, JSON real, auditoria, perda de permissão/sessão, manipulação de IDs, validações, filtros, paginação, preservação de vínculos e bloqueio por caixa de e-mail.
+
+Executar `npm run build:modern` e conferir desktop/mobile, temas, teclado, foco dos modais e transição para o legado. As capturas e os cenários exercitados estão em [screenshots/cadastros](screenshots/cadastros/README.md).
+
+A reversão consiste em reverter somente o commit desta migração e recompilar o build moderno. Não há migrações de banco, alterações da autenticação ou novas dependências a desfazer.
+
+## Cadastros relacionados: empresas, contatos e usuários
+
+As páginas de listagem, criação e edição em `/cadastros/empresas`, `/cadastros/clientes` e `/cadastros/usuarios` agora usam o layout moderno. A navegação compartilhada inclui Empresas e Usuários, além de Categorias e Setores. Contatos são acessados somente dentro de cada empresa; a antiga listagem independente redireciona para Empresas. Os menus legados, URLs, nomes de rotas, middlewares e endpoints HTTP permanecem disponíveis. Minha conta, instalação inicial, tickets e API não foram migrados nesta etapa.
+
+### Regras e relacionamentos
+
+- Empresas mantêm os dados cadastrais, CPF/CNPJ com máscara e envio sem pontuação, seleção de UF e horas contratadas. A validação existente continua compartilhada com os endpoints HTTP, inclusive a unicidade do documento. A exclusão usa confirmação e preserva contatos e tickets, removendo o vínculo com a empresa pelas regras existentes do banco.
+- A edição de empresa contém a lista de seus contatos e o acesso a “Novo contato” com a empresa de origem. Esse vínculo é somente leitura na interface e bloqueado no estado Livewire; editar um contato não permite transferi-lo de empresa. Criar um contato exige empresa válida, tanto no POST quanto no Livewire; sem contexto de empresa, o GET de criação redireciona para Empresas. O contato representa o cliente que acessa o portal para acompanhar os tickets de sua empresa. O perfil é sempre `cliente`, independentemente de valores enviados pelo cliente.
+- Usuários mantêm nome, e-mail, senha, perfil, setor e a opção de visualizar tickets de outros setores, válida somente para analistas. A interface não acrescenta seleção de empresa aos usuários da equipe; o vínculo já existente é preservado pelo formulário Livewire. O endpoint HTTP continua aceitando o campo opcional conforme seu contrato anterior.
+- Supervisores ativos gerenciam analistas e contatos. Administradores ativos também gerenciam supervisores e administradores. `ManagePeople` reconsulta as permissões do ator e verifica o perfil do registro; `CatalogComponent` revalida a sessão e o status em cada requisição. Formulários revalidam também o registro na hidratação, e todas as ações consultam novamente o alvo antes de persistir.
+- Senhas exigem oito caracteres e confirmação na criação; na edição, deixar em branco mantém a senha atual. O estado das senhas é limpo após cada tentativa. Não há envio de convites nem alteração da configuração de e-mail.
+- Ativar/desativar usa modal com o nome e o estado desejado, ambos bloqueados contra alteração do cliente. Desativar encerra sessões e limpa o remember token; usuários e tickets são preservados. O usuário de ID 1 mantém sua proteção contra alteração de status. A autodesativação encerra a sessão; a troca do próprio perfil para analista retorna a `/home` por carregamento completo.
+- Empresas, contatos e usuários têm busca por nome com debounce de 300 ms e `search` na URL. As listas de empresas e usuários têm dez registros por página e ordenação por nome. Usuários mostram apenas ativos por padrão e aceitam `todos` para incluir inativos; contatos mostram ambos os estados. A lista dentro da empresa permanece sem paginação. A página é ajustada após exclusão ou desativação, preservando a busca.
+
+`SaveEmpresa`, `DeleteEmpresa`, `SavePerson` e `ChangePersonStatus` concentram validação e persistência para controllers e Livewire. As alterações usam transações e os eventos de auditoria dos modelos. Os componentes nunca chamam controllers. A varredura do Tailwind e o refresh do Vite incluem apenas as views migradas, sem incorporar a instalação inicial nem outros diretórios legados.
+
+### Validação e reversão dos cadastros relacionados
+
+`ModernRelatedCatalogsTest` cobre as telas migradas e o redirecionamento da antiga listagem independente, CRUD por HTTP e Livewire, envio JSON real, filtros, paginação, validação, senhas, perfis, IDs bloqueados, perda de sessão, alteração do próprio usuário, encerramento de sessões e preservação de contatos/tickets ao excluir empresas. Os testes anteriores de autorização, contatos, categorias e contratos de rotas/API continuam na suíte.
+
+Executar `php artisan test` exclusivamente em `nexodesk_testing` e `npm run build:modern`. As verificações visuais e capturas estão em [screenshots/relacionados](screenshots/relacionados/README.md).
+
+Para reverter, reverter o commit que contiver esta entrega e reconstruir os assets modernos. Não há migrações, novas dependências ou configuração de e-mail a desfazer. Se a entrega for agrupada com a migração de categorias/setores no mesmo commit, sua reversão também abrangerá esses cadastros; separar os commits permite reversão independente.

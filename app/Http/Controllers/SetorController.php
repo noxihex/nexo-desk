@@ -2,89 +2,47 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Categoria;
+use App\Actions\Cadastros\DeleteSetor;
+use App\Actions\Cadastros\SaveSetor;
 use App\Models\Setor;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class SetorController extends Controller
 {
-    /**
-     * Exibe a lista de setores.
-     */
     public function index(Request $request)
     {
-        $setores = Setor::when($request->filled('search'), function ($query) use ($request) {
-                $query->where('nome', 'like', '%' . $request->input('search') . '%');
-            })
-            ->orderBy('nome')
-            ->get();
-
-        return view('cadastros.setores.index', compact('setores'));
+        return view('cadastros.setores.index');
     }
 
-    /**
-     * Exibe o formulário para criar um novo setor.
-     */
     public function create()
     {
         return view('cadastros.setores.create');
     }
 
-    /**
-     * Armazena um novo setor no banco de dados.
-     */
     public function store(Request $request)
     {
-        $request->validate([
-            'nome' => 'required|string|max:255',
-        ]);
-
-        Setor::create($request->all());
+        app(SaveSetor::class)->handle($request->all());
 
         return redirect()->route('setores.index')->with('success', 'Setor criado com sucesso!');
     }
 
-    /**
-     * Exibe o formulário para editar um setor existente.
-     */
     public function edit(Setor $setor)
     {
         return view('cadastros.setores.edit', compact('setor'));
     }
 
-    /**
-     * Atualiza um setor existente no banco de dados.
-     */
     public function update(Request $request, Setor $setor)
     {
-        $request->validate([
-            'nome' => 'required|string|max:255',
-        ]);
-
-        $setor->update($request->all());
+        app(SaveSetor::class)->handle($request->all(), $setor->id);
 
         return redirect()->route('setores.index')->with('success', 'Setor atualizado com sucesso!');
     }
 
-    /**
-     * Remove um setor do banco de dados.
-     */
     public function destroy(Setor $setor)
     {
-        DB::transaction(function () use ($setor) {
-            Categoria::where('setor_id', $setor->id)->get()->each(function ($categoria) use ($setor) {
-                $novoSetorLegado = $categoria->setores()
-                    ->where('setores.id', '!=', $setor->id)
-                    ->orderBy('setores.id')
-                    ->value('setores.id');
-
-                $categoria->update(['setor_id' => $novoSetorLegado]);
-            });
-
-            $setor->delete();
-        });
+        app(DeleteSetor::class)->handle($setor->id);
 
         return redirect()->route('setores.index')->with('success', 'Setor excluído com sucesso!');
     }
+
 }

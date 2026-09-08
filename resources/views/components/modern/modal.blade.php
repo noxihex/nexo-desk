@@ -12,11 +12,16 @@
 @endisset
 
 <flux:modal :name="$name" :dismissible="$dismissible" {{ $attributes }}>
-    <div class="space-y-6">
+    <div class="space-y-6"
+        @if($title)
+            x-data
+            x-init="$el.closest('dialog')?.setAttribute('aria-labelledby', @js('modern-modal-title-'.$name))"
+        @endif
+    >
         @if($title || $description)
             <div>
                 @if($title)
-                    <flux:heading size="lg">{{ $title }}</flux:heading>
+                    <flux:heading :id="'modern-modal-title-'.$name" size="lg" level="2">{{ $title }}</flux:heading>
                 @endif
 
                 @if($description)
