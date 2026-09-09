@@ -77,13 +77,14 @@ Para adicionar a navegação, preencha o slot `navigation` do layout apenas com 
 <x-slot:navigation>
     <a
         href="{{ route('nome-da-rota-moderna') }}"
-        wire:navigate
         class="block rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
     >
         Nome da página
     </a>
 </x-slot:navigation>
 ```
+
+Os links usam navegação convencional. Não use `wire:navigate`: o carregamento completo impede que assets modernos e legados sejam transportados entre páginas.
 
 ## Componentes `x-modern:*`
 
@@ -102,6 +103,8 @@ Os wrappers são a API pública das novas páginas. Atributos adicionais como `c
 ```
 
 O estado de loading é automático para `type="submit"` e `wire:click`; use `:loading="false"` para desativá-lo ou `:loading="true"` para forçá-lo.
+
+As páginas modernas preservam a semântica visual do legado com uma apresentação mais suave: ações principais e buscas usam azul; criar, salvar e ativar usam `variant="filled" color="green"`; visualizar e detalhes usam `filled` com `sky`; editar usa `filled` com `amber`; excluir e desativar usam `filled` com `red`; cancelar e voltar permanecem `outline`. O vermelho sólido de `variant="danger"` não deve ser usado nas ações comuns de exclusão, pois compete excessivamente com o restante da interface.
 
 ### Campo
 
@@ -294,3 +297,45 @@ As páginas de listagem, criação e edição em `/cadastros/empresas`, `/cadast
 Executar `php artisan test` exclusivamente em `nexodesk_testing` e `npm run build:modern`. As verificações visuais e capturas estão em [screenshots/relacionados](screenshots/relacionados/README.md).
 
 Para reverter, reverter o commit que contiver esta entrega e reconstruir os assets modernos. Não há migrações, novas dependências ou configuração de e-mail a desfazer. Se a entrega for agrupada com a migração de categorias/setores no mesmo commit, sua reversão também abrangerá esses cadastros; separar os commits permite reversão independente.
+
+## Minha conta
+
+Capturas e cenários de conferência visual: [screenshots/minha-conta](screenshots/minha-conta/README.md).
+
+`/minhaconta` usa o layout moderno e o componente `App\Livewire\Modern\Account\Settings`, com formulários independentes para nome/e-mail, senha e preferências de notificação. O menu do usuário nas páginas modernas inclui “Minha conta”. Clientes e analistas acessam sua própria conta sem links administrativos; supervisores e administradores também têm os atalhos de cadastros.
+
+`App\Actions\Account\UpdateAccount` compartilha validação e persistência com os PUTs existentes. As URLs, mensagens e redirecionamentos HTTP permanecem preservados. O componente reconsulta o usuário ativo em cada requisição e bloqueia a submissão se a sessão passar a pertencer a outra conta. Não aceita um identificador de usuário para decidir quem será atualizado.
+
+A senha atual é obrigatória para alterar a senha, e a nova senha exige oito caracteres e confirmação. Os três campos de senha são limpos após cada tentativa. As instruções ficam acima dos campos de nova senha e confirmação para preservar o alinhamento. A edição do perfil retorna por carregamento completo à própria página para atualizar também o nome no menu. Senha e preferências exibem retorno reativo em suas seções.
+
+As oito opções de notificação preservam os quatro eventos e os canais central interna/e-mail. Sem preferência persistida, todas começam habilitadas, como antes. Salvar a preferência não altera a configuração de envio de e-mail. Os assets continuam isolados do legado, e o Tailwind/Vite incluem somente a view migrada de Minha conta.
+
+Validar com `php artisan test --filter=ModernAccountTest`, suíte completa em `nexodesk_testing` e `npm run build:modern`. A cobertura inclui os dois transportes, JSON real, permissões, validação de perfil e senha, preferências desmarcadas, sessão expirada, usuário inativo e tentativa de troca de conta. Para reverter, reverter o commit da entrega e recompilar os assets modernos; não há migração de banco nem dependências adicionais.
+
+## Relatórios modernos
+
+Os relatórios ativos `/relatorios/horas` e `/relatorios/analista` usam o layout moderno e componentes Livewire. Os nomes das rotas, middleware de supervisor/administrador e links dos tickets foram preservados. Os controllers GET continuam como entradas das views; `CompanyReport` e `AnalystReport`, em `App\Actions\Reports`, concentram validação, consultas e séries para uso no carregamento inicial e nas submissões Livewire.
+
+O relatório por empresa mantém período, empresa, setor opcional e a opção “Desconsiderar tickets abertos”. A tabela segue a regra anterior: com a opção habilitada, lista tickets fechados no período; desabilitada, inclui tickets criados ou fechados no período. Exibe total de tickets e soma de `horas_gastas`. O gráfico diário mantém contagens de tickets abertos e finalizados para a empresa e o setor selecionados.
+
+O relatório por analista mantém período e usuário da equipe. A tabela lista tickets atribuídos ao usuário e criados no período, com empresa, status e percentual de SLA. Os indicadores mostram total, abertos e fechados. O gráfico registra criações, finalizações, transferências e tickets assumidos pelo usuário, agrupados por hora em períodos de até 24 horas e por dia acima disso. O cálculo visual de SLA usa minutos decorridos positivos por meio de `ElapsedTime`.
+
+Os filtros usam `wire:submit`, mostram erros por campo e ficam sincronizados com a URL para permitir recarregar ou compartilhar a consulta. Antes da primeira consulta há um estado de orientação; resultados sem tickets possuem estado vazio próprio. O usuário ativo e suas permissões são revalidados em cada requisição. Os filtros efetivamente aplicados ficam bloqueados no estado Livewire para que mudanças nos controles só afetem o resultado depois de “Gerar relatório”.
+
+Os gráficos são SVGs locais, sem Chart.js, adaptadores de data ou CDN. Cada gráfico inclui descrição acessível, títulos nos pontos e uma tabela expansível com os valores. O tema acompanha claro/escuro/sistema. A impressão exclui navegação, filtros e ações, mantendo identificação, período, indicadores, gráficos e tabela. A visualização mobile mantém os filtros empilhados e as tabelas com rolagem contida.
+
+Executar `php artisan test --filter=ModernReportsTest`, a suíte completa em `nexodesk_testing` e `npm run build:modern`. A cobertura verifica os dois relatórios por HTTP e Livewire, envelope JSON real, permissões, sessão expirada, referências inválidas, períodos, setor, opção de tickets abertos, horas, séries de atividade e SLA. Capturas e cenários visuais estão em [screenshots/relatorios](screenshots/relatorios/README.md).
+
+Para reverter, reverter o commit da entrega e reconstruir os assets modernos. Não há migrações de banco, dependências novas ou alterações nos tickets e APIs a desfazer.
+
+## Listagens modernas de tickets
+
+As rotas staff `/tickets`, `/tickets/my` e `/tickets/pendentes` preservam URLs, nomes e middlewares e agora montam o componente `App\Livewire\Modern\Tickets\TicketIndex`. Os GETs permanecem no `TicketController` como entradas pequenas das views. A criação, os detalhes e a edição continuam no legado e são abertos por navegação convencional, sempre com `return_to` apontando para a listagem e seus filtros atuais.
+
+`App\Actions\Tickets\TicketListing` concentra as consultas. A lista geral mantém busca por ID ou assunto, filtros de setor, categoria e empresa, inclusão de fechados, dez registros por página e ordenação por criação, modificação ou maior percentual de SLA. Uma busca iniciada sem o parâmetro `showClosed` inclui fechados, como antes. “Meus tickets” mostra somente os atribuídos ao usuário autenticado e oculta fechados por padrão. “Pendentes” mantém o significado legado de tickets sem categoria e não fechados.
+
+Analistas sem a permissão de visualizar outros setores continuam limitados ao próprio setor em Geral e Pendentes; supervisores, administradores e analistas com essa opção veem todos os setores. `AuthorizeTicketLists` reconsulta o usuário autenticado, ativo e com perfil staff em cada requisição Livewire. O tipo da listagem e o alvo de exclusão são bloqueados no estado do componente e os registros são consultados novamente antes da operação.
+
+A exclusão continua visível somente para administradores e foi extraída para `DeleteTicket`, compartilhada pelo Livewire e pelo endpoint DELETE existente. O ticket e seus vínculos são removidos em transação; anexos correspondentes são removidos do disco público. Não houve alteração das APIs, das telas internas de tickets, da criação ou das interações de atendimento.
+
+Executar `php artisan test --filter=ModernTicketListingsTest`, a suíte completa em `nexodesk_testing` e `npm run build:modern`. Conferir as três listas em desktop e mobile, temas claro/escuro/sistema, teclado, filtros e paginação, além das transições para criação, detalhes, edição e retorno do legado. Para reverter, reverter o commit da entrega e reconstruir os assets modernos; não há migrações nem dependências novas.

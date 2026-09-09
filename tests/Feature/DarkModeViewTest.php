@@ -60,13 +60,14 @@ class DarkModeViewTest extends TestCase
         );
     }
 
-    public function test_my_tickets_renders_the_global_theme_toggle_once(): void
+    public function test_my_tickets_uses_the_modern_theme_controls_without_legacy_toggle(): void
     {
         Role::findOrCreate('analista', 'web');
         $user = User::factory()->create(['status' => true]);
         $user->assignRole('analista');
 
         $response = $this->actingAs($user)->get(route('tickets.my'))->assertOk();
-        $this->assertSame(1, substr_count($response->getContent(), 'id="btxThemeToggle"'));
+        $response->assertSee('Tema claro')->assertSee('Tema escuro')->assertSee('Usar tema do sistema');
+        $this->assertSame(0, substr_count($response->getContent(), 'id="btxThemeToggle"'));
     }
 }

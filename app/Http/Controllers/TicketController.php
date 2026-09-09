@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Tickets\AuthorizeTicketLists;
+use App\Actions\Tickets\DeleteTicket;
 use App\Support\AttachmentRules;
 use App\Support\ElapsedTime;
 use App\Support\TicketReturnUrl;
@@ -16,9 +18,7 @@ use App\Models\Mensagem;
 use App\Models\TicketAttachment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Pagination\LengthAwarePaginator;
 use App\Services\TicketTimelineService;
 
 
@@ -28,107 +28,11 @@ class TicketController extends Controller
      * Exibe a lista de tickets com ordenação opcional.
      */
     public function index(Request $request)
-{
-    $user = Auth::user();
+    {
+        app(AuthorizeTicketLists::class)->handle();
 
-    // Define um valor padrão para 'sort' se estiver vazio
-    $sort = $request->input('sort') ?: 'created_at'; // Padrão é 'created_at'
-    $search = $request->input('search'); // Termo de pesquisa
-
-    // Define o valor de 'showClosed' baseado no parâmetro explícito ou no estado padrão
-    $showClosed = $request->has('showClosed') ? $request->input('showClosed') : ($search ? '1' : '0');
-
-    // Obtém os filtros da requisição
-    $setorId = $request->input('setor_id');
-    $categoriaId = $request->input('categoria_id');
-    $empresaId = $request->input('empresa_id');
-
-    // Query base com os relacionamentos necessários
-    $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista');
-
-    if ($user->deveRestringirTicketsAoSetor()) {
-        $ticketsQuery->where('setor_id', $user->setor_id);
+        return view('tickets.index');
     }
-
-    // Lógica de pesquisa (ID ou Assunto)
-    if ($search) {
-        $ticketsQuery->where(function ($query) use ($search) {
-            $query->where('id', 'like', "%$search%")
-                  ->orWhere('assunto', 'like', "%$search%");
-        });
-    }
-
-    // Filtro para tickets fechados (mostrar ou ocultar)
-    if ($showClosed === '0') {
-        $ticketsQuery->where('status', '!=', 'fechado');
-    }
-
-    // Filtro por setor
-    if ($setorId) {
-        $ticketsQuery->where('setor_id', $setorId);
-    }
-
-    if ($categoriaId) {
-        $ticketsQuery->where('categoria_id', $categoriaId);
-    }
-
-    if ($empresaId) {
-        $ticketsQuery->where('empresa_id', $empresaId);
-    }
-
-    // Ordenação por SLA
-    if ($sort === 'sla') {
-        $tickets = $ticketsQuery->get(); // Coleta todos os tickets para ordenação manual
-
-        // Calcula o SLA e ordena manualmente
-        $tickets = $tickets->sortByDesc(function ($ticket) {
-            $slaTotal = $ticket->categoria->slatotal ?? 0;
-
-            $dataCriacao = $ticket->created_at ? \Carbon\Carbon::parse($ticket->created_at) : now();
-
-            if ($ticket->status === 'fechado') {
-                $dataFinalizacao = $ticket->data_hora_finalizado ? \Carbon\Carbon::parse($ticket->data_hora_finalizado) : $dataCriacao;
-                $minutosDecorridos = ElapsedTime::wholeMinutes($dataFinalizacao, $dataCriacao);
-            } else {
-                $minutosDecorridos = ElapsedTime::wholeMinutes(now(), $dataCriacao);
-            }
-
-            return $slaTotal > 0 ? ($minutosDecorridos / $slaTotal) * 100 : 0;
-        });
-
-        // Paginação manual
-        $perPage = 10;
-        $currentPage = LengthAwarePaginator::resolveCurrentPage();
-        $tickets = new LengthAwarePaginator(
-            $tickets->slice(($currentPage - 1) * $perPage, $perPage)->values(),
-            $tickets->count(),
-            $perPage,
-            $currentPage,
-            ['path' => $request->url(), 'query' => $request->query()] // Preserva os parâmetros
-        );
-    } else {
-        // Paginação padrão com ordenação direta pelo banco
-        $tickets = $ticketsQuery->orderBy($sort, 'desc')->paginate(10)->withQueryString();
-    }
-
-    // Carrega setores para os filtros
-    if ($user->deveRestringirTicketsAoSetor()) {
-        $setores = Setor::where('id', $user->setor_id)->get();
-    } else {
-        $setores = Setor::all();
-    }
-
-    $categorias = Categoria::when(
-        $user->deveRestringirTicketsAoSetor(),
-        fn ($query) => $query->whereHas('setores', fn ($setores) => $setores->whereKey($user->setor_id))
-    )->orderBy('nome')->get();
-    $empresas = Empresa::orderBy('nome')->get();
-
-    // Se o usuário for um analista, ele só poderá ver e filtrar seu próprio setor.
-    return view('tickets.index', compact(
-        'tickets', 'showClosed', 'setores', 'setorId', 'categorias', 'categoriaId', 'empresas', 'empresaId'
-    ));
-}
 
 
 
@@ -326,32 +230,16 @@ class TicketController extends Controller
      */
     public function destroy(Request $request, Ticket $ticket)
     {
-        // Exclui anexos do storage e do banco de dados
-        foreach ($ticket->attachments as $anexo) {
-            Storage::delete($anexo->file_path);
-            $anexo->delete();
-        }
+        app(DeleteTicket::class)->handle($ticket->id);
 
-        $ticket->delete();
         return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket excluído com sucesso!');
     }
 
     public function myTickets(Request $request)
     {
-        $sort = $request->input('sort', 'created_at');
-        $showClosed = $request->input('showClosed', '0');
-        $userId = Auth::id();
+        app(AuthorizeTicketLists::class)->handle();
 
-        $ticketsQuery = Ticket::with('categoria', 'user', 'cliente', 'empresa', 'setor', 'analista')
-            ->where('atribuido_ao_analista_id', $userId)
-            ->orderBy($sort, 'desc');
-
-        if ($showClosed == '0') {
-            $ticketsQuery->where('status', '!=', 'fechado');
-        }
-
-        $tickets = $ticketsQuery->paginate(10)->withQueryString();
-        return view('tickets.my', compact('tickets', 'showClosed', 'sort'));
+        return view('tickets.my');
     }
 
 
@@ -688,23 +576,9 @@ public function carregarCategorias($setor_id)
 
 public function pendentes(Request $request)
 {
-    $user = Auth::user(); // Usuário logado
+    app(AuthorizeTicketLists::class)->handle();
 
-    // Inicia a query base para tickets pendentes
-    $ticketsQuery = Ticket::with(['cliente', 'empresa', 'setor', 'analista'])
-        ->whereNull('categoria_id') // Sem categoria atribuída
-        ->where('status', '!=', 'fechado'); // Apenas tickets abertos
-
-    // ADIÇÃO: Aplica o filtro de setor para o perfil 'analista'
-    if ($user->deveRestringirTicketsAoSetor()) {
-        $ticketsQuery->where('setor_id', $user->setor_id);
-    }
-
-    // Executa a query final com ordenação e paginação
-    $tickets = $ticketsQuery->orderBy('created_at', 'desc')
-        ->paginate(10);
-
-    return view('tickets.pendentes', compact('tickets'));
+    return view('tickets.pendentes');
 }
 
 

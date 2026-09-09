@@ -12,6 +12,12 @@
 @source '../views/cadastros/usuarios/edit.blade.php';
 @source '../views/components/layouts/modern.blade.php';
 @source '../views/components/layouts/auth.blade.php';
+@source '../views/minhaconta/edit.blade.php';
+@source '../views/relatorios/horas/index.blade.php';
+@source '../views/relatorios/analista/index.blade.php';
+@source '../views/tickets/index.blade.php';
+@source '../views/tickets/my.blade.php';
+@source '../views/tickets/pendentes.blade.php';
 @source '../views/auth/**/*.blade.php';
 @source '../views/cadastros/categorias/**/*.blade.php';
 @source '../views/cadastros/setores/**/*.blade.php';
@@ -37,4 +43,28 @@
 
 [x-cloak] {
     display: none !important;
+}
+
+@media print {
+    body:has(.report-content) aside,
+    body:has(.report-content) header,
+    body:has(.report-content) .report-filters,
+    body:has(.report-content) .report-print-button,
+    body:has(.report-content) .report-ticket-action,
+    body:has(.report-content) details,
+    body:has(.report-content) main > div:first-child a {
+        display: none !important;
+    }
+    body:has(.report-content), body:has(.report-content) main,
+    body:has(.report-content) .report-content * {
+        color: #18181b !important;
+        background-color: white !important;
+        box-shadow: none !important;
+    }
+    body:has(.report-content) aside + div { padding-inline-start: 0 !important; }
+    body:has(.report-content) main { max-width: none; padding: 0; }
+    .report-results, .report-results div { overflow: visible !important; }
+    .report-results table { font-size: 9pt; width: 100%; }
+    .report-results th, .report-results td { white-space: normal !important; }
+    .report-results tr { break-inside: avoid; }
 }

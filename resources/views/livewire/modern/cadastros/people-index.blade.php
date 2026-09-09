@@ -5,7 +5,7 @@
             <x-modern.input type="search" name="search" label="Pesquisar por nome" wire:model.live.debounce.300ms="search" />
         </div>
         @if(!$contact)<x-modern.checkbox name="todos" label="Incluir inativos" wire:model.live="todos" />@endif
-        <x-modern.button :href="route($routePrefix.'.create', $empresaId ? ['empresa_id' => $empresaId] : [])" icon="plus">{{ $contact ? 'Novo contato' : 'Novo usuário' }}</x-modern.button>
+        <x-modern.button :href="route($routePrefix.'.create', $empresaId ? ['empresa_id' => $empresaId] : [])" variant="filled" color="green" icon="plus">{{ $contact ? 'Novo contato' : 'Novo usuário' }}</x-modern.button>
     </div>
     <p role="status" wire:loading class="text-sm text-zinc-500">Atualizando...</p>
     <x-modern.card class="overflow-hidden">
@@ -40,9 +40,9 @@
                         <x-modern.table.cell>
                             @if($contact || $administrator || !$record->hasAnyRole(['supervisor', 'administrador']))
                                 <div class="flex flex-wrap gap-2">
-                                    <x-modern.button :href="route($routePrefix.'.edit', $record)" variant="outline" size="sm" :aria-label="'Editar '.$record->name">Editar</x-modern.button>
+                                    <x-modern.button :href="route($routePrefix.'.edit', $record)" variant="filled" color="amber" size="sm" icon="pencil-square" :aria-label="'Editar '.$record->name">Editar</x-modern.button>
                                     @if($contact || $record->id !== 1)
-                                        <x-modern.button :variant="$record->status ? 'danger' : 'outline'" size="sm" :icon="$record->status ? 'stop-circle' : null" wire:click="confirmStatus({{ $record->id }})" :aria-label="($record->status ? 'Desativar ' : 'Ativar ').$record->name">{{ $record->status ? 'Desativar' : 'Ativar' }}</x-modern.button>
+                                        <x-modern.button variant="filled" :color="$record->status ? 'red' : 'green'" size="sm" :icon="$record->status ? 'x-mark' : 'check'" wire:click="confirmStatus({{ $record->id }})" :aria-label="($record->status ? 'Desativar ' : 'Ativar ').$record->name">{{ $record->status ? 'Desativar' : 'Ativar' }}</x-modern.button>
                                     @endif
                                 </div>
                             @endif
@@ -61,7 +61,7 @@
             @error('status')<x-modern.alert variant="danger">{{ $message }}</x-modern.alert>@enderror
             <div class="flex flex-wrap justify-end gap-2">
                 <x-modern.button variant="outline" autofocus x-on:click="$flux.modal('person-status').close()">Cancelar</x-modern.button>
-                <x-modern.button type="submit" :variant="$desiredStatus ? 'primary' : 'danger'" wire:loading.attr="disabled">Confirmar</x-modern.button>
+                <x-modern.button type="submit" variant="filled" :color="$desiredStatus ? 'green' : 'red'" wire:loading.attr="disabled">Confirmar</x-modern.button>
             </div>
         </form>
     </x-modern.modal>

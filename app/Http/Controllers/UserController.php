@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Account\UpdateAccount;
+
 use App\Actions\Cadastros\ManagePeople;
 use App\Actions\Cadastros\SavePerson;
 use App\Actions\Cadastros\ChangePersonStatus;
@@ -154,17 +156,7 @@ public function editMinhaConta()
 
 public function updateMinhaConta(Request $request)
 {
-    // Validação dos dados
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|email|max:255|unique:users,email,' . auth()->id(),
-    ]);
-
-    // Atualiza o nome e o e-mail
-    $user = auth()->user();
-    $user->name = $request->name;
-    $user->email = $request->email;
-    $user->save();
+    app(UpdateAccount::class)->profile($request->all());
 
     return redirect()->route('minhaconta.edit')->with('success', 'Perfil atualizado com sucesso!');
 }
@@ -172,22 +164,9 @@ public function updateMinhaConta(Request $request)
 
 public function updateMinhaSenha(Request $request)
 {
-    // Validação das senhas
-    $request->validate([
-        'current_password' => 'required',
-        'password' => 'required|string|min:8|confirmed',
-    ]);
-
-    $user = auth()->user();
-
-    // Verifica se a senha atual está correta
-    if (!Hash::check($request->current_password, $user->password)) {
+    if (! app(UpdateAccount::class)->password($request->all())) {
         return redirect()->route('minhaconta.edit')->with('error', 'A senha atual está incorreta.');
     }
-
-    // Atualiza a nova senha
-    $user->password = Hash::make($request->password);
-    $user->save();
 
     return redirect()->route('minhaconta.edit')->with('success', 'Senha alterada com sucesso!');
 }

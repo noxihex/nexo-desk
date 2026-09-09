@@ -102,6 +102,8 @@
                     />
 
                     <flux:menu>
+                        <flux:menu.item :href="route('minhaconta.edit')" icon="user-circle">Minha conta</flux:menu.item>
+                        <flux:menu.separator />
                         <flux:menu.item icon="sun" x-on:click="$flux.appearance = 'light'">Tema claro</flux:menu.item>
                         <flux:menu.item icon="moon" x-on:click="$flux.appearance = 'dark'">Tema escuro</flux:menu.item>
                         <flux:menu.item icon="computer-desktop" x-on:click="$flux.appearance = 'system'">Usar tema do sistema</flux:menu.item>

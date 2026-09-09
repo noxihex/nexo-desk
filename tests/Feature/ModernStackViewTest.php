@@ -194,6 +194,40 @@ class ModernStackViewTest extends TestCase
         $this->assertStringContainsString('Conteúdo do modal', $html);
     }
 
+    public function test_modern_action_buttons_follow_the_legacy_semantic_palette(): void
+    {
+        $ticketListing = File::get(resource_path('views/livewire/modern/tickets/ticket-index.blade.php'));
+        $report = File::get(resource_path('views/livewire/modern/reports/report-page.blade.php'));
+
+        $this->assertStringContainsString('variant="filled" color="sky"', $ticketListing);
+        $this->assertStringContainsString('variant="filled" color="amber"', $ticketListing);
+        $this->assertStringContainsString('variant="filled" color="red"', $ticketListing);
+        $this->assertStringContainsString('variant="filled" color="green"', $ticketListing);
+        $this->assertStringContainsString('variant="filled" color="sky"', $report);
+
+        foreach (File::allFiles(resource_path('views/livewire/modern')) as $view) {
+            $contents = $view->getContents();
+
+            $this->assertSame(
+                0,
+                preg_match('/<x-modern\.button\b[^>]*\bvariant="danger"/s', $contents),
+                $view->getPathname().' must not use the strong danger button variant.',
+            );
+
+            if (str_ends_with($view->getFilename(), '-form.blade.php') || $view->getFilename() === 'settings.blade.php') {
+                $this->assertStringContainsString('variant="filled" color="green"', $contents, $view->getPathname());
+            }
+
+            if (str_ends_with($view->getFilename(), '-index.blade.php')) {
+                $this->assertStringContainsString('color="amber"', $contents, $view->getPathname());
+                $this->assertTrue(
+                    str_contains($contents, 'color="red"') || str_contains($contents, "'red'"),
+                    $view->getPathname().' must use the soft red palette for destructive actions.',
+                );
+            }
+        }
+    }
+
     public function test_modern_sources_and_legacy_templates_remain_isolated(): void
     {
         $css = File::get(resource_path('css/modern.css'));

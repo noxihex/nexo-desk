@@ -41,7 +41,7 @@
             <x-modern.input name="horas_contratadas" label="Horas contratadas" wire:model="horas_contratadas" type="number" step="1" required />
         </div>
         <div class="flex flex-wrap gap-3">
-            <x-modern.button type="submit" wire:loading.attr="disabled">{{ $recordId ? 'Salvar alterações' : 'Criar empresa' }}</x-modern.button>
+            <x-modern.button type="submit" variant="filled" color="green" wire:loading.attr="disabled">{{ $recordId ? 'Salvar alterações' : 'Criar empresa' }}</x-modern.button>
             <x-modern.button :href="route('empresas.index')" variant="outline">Cancelar</x-modern.button>
         </div>
     </form>

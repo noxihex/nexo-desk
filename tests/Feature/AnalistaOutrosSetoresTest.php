@@ -64,11 +64,9 @@ class AnalistaOutrosSetoresTest extends TestCase
 
         $response = $this->actingAs($analista)->get(route('tickets.index'));
 
-        $response->assertOk();
-        $this->assertEqualsCanonicalizing(
-            [$ticketMesmoSetor->id],
-            $response->viewData('tickets')->pluck('id')->all()
-        );
+        $response->assertOk()
+            ->assertSee($ticketMesmoSetor->assunto)
+            ->assertDontSee($ticketOutroSetor->assunto);
 
         $this->actingAs($analista)
             ->get(route('tickets.show', $ticketOutroSetor))
@@ -81,11 +79,9 @@ class AnalistaOutrosSetoresTest extends TestCase
 
         $response = $this->actingAs($analista)->get(route('tickets.index'));
 
-        $response->assertOk();
-        $this->assertEqualsCanonicalizing(
-            [$ticketMesmoSetor->id, $ticketOutroSetor->id],
-            $response->viewData('tickets')->pluck('id')->all()
-        );
+        $response->assertOk()
+            ->assertSee($ticketMesmoSetor->assunto)
+            ->assertSee($ticketOutroSetor->assunto);
 
         $this->actingAs($analista)
             ->get(route('tickets.show', $ticketOutroSetor))

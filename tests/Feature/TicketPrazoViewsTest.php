@@ -10,19 +10,25 @@ class TicketPrazoViewsTest extends TestCase
     {
         $index = file_get_contents(resource_path('views/tickets/index.blade.php'));
         $mine = file_get_contents(resource_path('views/tickets/my.blade.php'));
+        $listing = file_get_contents(resource_path('views/livewire/modern/tickets/ticket-index.blade.php'));
         $show = file_get_contents(resource_path('views/tickets/show.blade.php'));
 
-        $this->assertStringNotContainsString('<strong>Prazo:</strong>', $index);
-        $this->assertStringNotContainsString('<strong>Origem:</strong>', $index);
-        $this->assertStringContainsString("format('d/m')", $index);
-        $this->assertStringNotContainsString('<strong>Contato:</strong>', $index);
-        $this->assertStringNotContainsString('<strong>Modificado:</strong>', $index);
-        $this->assertStringNotContainsString('<strong>Grupo:</strong>', $index);
-        $this->assertStringNotContainsString('<strong>Atribuído ao Analista:</strong>', $index);
-        $this->assertStringNotContainsString('<strong>SLA:</strong>', $index);
-        $this->assertStringContainsString('ticket-list-card__actions', $index);
-        $this->assertStringNotContainsString('<strong>Prazo:</strong>', $mine);
-        $this->assertStringNotContainsString('<strong>Origem:</strong>', $mine);
+        $this->assertStringContainsString('livewire:modern.tickets.ticket-index', $index);
+        $this->assertStringContainsString('livewire:modern.tickets.ticket-index', $mine);
+        $this->assertStringNotContainsString('Prazo', $listing);
+        $this->assertStringNotContainsString('Origem', $listing);
+        $this->assertStringContainsString("'d/m/Y - H:i'", $listing);
+        $this->assertStringContainsString('<details class="group', $listing);
+        $this->assertStringContainsString('Filtros adicionais', $listing);
+        $this->assertStringContainsString('>Buscar</x-modern.button>', $listing);
+        $this->assertStringNotContainsString('Buscar e filtrar', $listing);
+        $this->assertStringContainsString('variant="filled" color="sky"', $listing);
+        $this->assertStringContainsString('variant="filled" color="amber"', $listing);
+        $this->assertStringNotContainsString('Contato', $listing);
+        $this->assertStringNotContainsString('Modificado:', $listing);
+        $this->assertStringNotContainsString('Grupo', $listing);
+        $this->assertStringNotContainsString('Atribuído ao Analista', $listing);
+        $this->assertStringNotContainsString('<dt class="font-medium text-zinc-500 dark:text-zinc-400">SLA</dt>', $listing);
         $this->assertStringNotContainsString('<strong>Prazo:</strong>', $show);
         $this->assertStringContainsString('<strong>Horas Gastas:</strong>', $show);
         $this->assertStringContainsString('<strong>Modificado:</strong>', $show);

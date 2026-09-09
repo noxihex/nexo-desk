@@ -27,7 +27,7 @@
             @endforeach
         </fieldset>
         <div class="flex flex-wrap gap-3">
-            <x-modern.button type="submit" wire:loading.attr="disabled">{{ $recordId ? 'Salvar alterações' : 'Criar categoria' }}</x-modern.button>
+            <x-modern.button type="submit" variant="filled" color="green" wire:loading.attr="disabled">{{ $recordId ? 'Salvar alterações' : 'Criar categoria' }}</x-modern.button>
             <x-modern.button :href="route('categorias.index')" variant="outline">Cancelar</x-modern.button>
         </div>
     </form>
