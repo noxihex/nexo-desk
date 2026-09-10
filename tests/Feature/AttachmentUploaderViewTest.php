@@ -6,22 +6,20 @@ use Tests\TestCase;
 
 class AttachmentUploaderViewTest extends TestCase
 {
-    public function test_all_ticket_attachment_flows_use_the_shared_component(): void
+    public function test_all_modern_ticket_attachment_flows_use_the_shared_component(): void
     {
-        $views = [
-            'tickets/create.blade.php' => 'anexos[]',
-            'tickets/cliente/create.blade.php' => 'anexos[]',
-            'tickets/show.blade.php' => 'attachments[]',
-            'tickets/cliente/show.blade.php' => 'attachments[]',
-        ];
+        $modernCreate = file_get_contents(resource_path('views/livewire/modern/tickets/ticket-form.blade.php'));
+        $modernShow = file_get_contents(resource_path('views/livewire/modern/tickets/ticket-show.blade.php'));
+        $clientCreate = file_get_contents(resource_path('views/livewire/modern/client-tickets/client-ticket-create.blade.php'));
+        $clientShow = file_get_contents(resource_path('views/livewire/modern/client-tickets/client-ticket-show.blade.php'));
+        $modernUploader = file_get_contents(resource_path('views/components/modern/file-upload.blade.php'));
 
-        foreach ($views as $path => $name) {
-            $view = file_get_contents(resource_path('views/' . $path));
-            $this->assertStringContainsString('<x-attachment-uploader name="' . $name . '"', $view);
-            $this->assertStringNotContainsString('addAttachmentField', $view);
-        }
-
-        $component = file_get_contents(resource_path('views/components/attachment-uploader.blade.php'));
-        $this->assertStringContainsString("'maxSizeMb' => 10", $component);
+        $this->assertStringContainsString('<x-modern.file-upload model="newAnexos"', $modernCreate);
+        $this->assertStringContainsString('<x-modern.file-upload model="newMessageAttachments"', $modernShow);
+        $this->assertStringContainsString('<x-modern.file-upload model="newAnexos"', $clientCreate);
+        $this->assertStringContainsString('<x-modern.file-upload model="newMessageAttachments"', $clientShow);
+        $this->assertStringContainsString('wire:model="{{ $model }}"', $modernUploader);
+        $this->assertStringContainsString('multiple', $modernUploader);
+        $this->assertStringNotContainsString('x-attachment-uploader', $modernCreate.$modernShow.$clientCreate.$clientShow);
     }
 }

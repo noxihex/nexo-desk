@@ -1,5 +1,8 @@
 <x-layouts.modern title="Minha conta" heading="Minha conta">
     <x-slot:navigation>
+        @hasanyrole('analista|supervisor|administrador')
+            <x-modern.staff.overview-link />
+        @endhasanyrole
         <a href="{{ route('minhaconta.edit') }}" aria-current="page" class="block rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 dark:bg-blue-950 dark:text-blue-300">Minha conta</a>
         @hasanyrole('analista|supervisor|administrador')
             <div class="mt-6"><x-modern.tickets.links /></div>

@@ -165,7 +165,7 @@ class TicketInternalCollaborationTest extends TestCase
         $this->assertSame('Status', collect($change['changes'])->firstWhere('field', 'status')['label']);
     }
 
-    public function test_staff_timeline_lists_oldest_messages_first_and_distinguishes_authors(): void
+    public function test_staff_timeline_lists_newest_messages_first_and_distinguishes_authors(): void
     {
         $context = $this->context();
         $clientMessage = $context['ticket']->mensagens()->create([
@@ -182,18 +182,18 @@ class TicketInternalCollaborationTest extends TestCase
         $staffMessage->forceFill(['created_at' => now()->subMinute()])->save();
 
         $messages = app(TicketTimelineService::class)
-            ->paginate($context['ticket']->fresh()->load('user'), 50, 'timeline_page', true)
+            ->paginate($context['ticket']->fresh()->load('user'), 50, 'timeline_page', false)
             ->getCollection()
             ->where('type', 'publica')
             ->values();
 
-        $this->assertSame(['client', 'staff'], $messages->pluck('author_role')->all());
-        $this->assertSame(['Cliente', 'Analista'], $messages->pluck('author_role_label')->all());
+        $this->assertSame(['staff', 'client'], $messages->pluck('author_role')->all());
+        $this->assertSame(['Analista', 'Cliente'], $messages->pluck('author_role_label')->all());
 
         $this->actingAs($context['analyst'])
             ->get(route('tickets.show', $context['ticket']))
             ->assertOk()
-            ->assertSeeInOrder(['Mensagem antiga do cliente', 'Mensagem nova da staff'])
+            ->assertSeeInOrder(['Mensagem nova da staff', 'Mensagem antiga do cliente'])
             ->assertSee('timeline-message-client', false)
             ->assertSee('timeline-message-staff', false);
     }

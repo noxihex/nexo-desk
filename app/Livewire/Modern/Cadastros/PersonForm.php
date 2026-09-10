@@ -21,6 +21,7 @@ abstract class PersonForm extends CatalogComponent
     public $setor_id = null;
     public string $role = 'analista';
     public bool $pode_ver_tickets_outros_setores = false;
+    public bool $pode_finalizar_tickets_empresa = false;
 
     public function mount(?int $recordId = null, ?int $empresaId = null): void
     {
@@ -40,6 +41,7 @@ abstract class PersonForm extends CatalogComponent
         $this->setor_id = old('setor_id', $user?->setor_id);
         $this->role = old('role', $user?->roles->first()?->name ?? 'analista');
         $this->pode_ver_tickets_outros_setores = (bool) old('pode_ver_tickets_outros_setores', $user?->pode_ver_tickets_outros_setores ?? false);
+        $this->pode_finalizar_tickets_empresa = (bool) old('pode_finalizar_tickets_empresa', $user?->pode_finalizar_tickets_empresa ?? false);
     }
 
     public function hydrate(): void
@@ -58,6 +60,7 @@ abstract class PersonForm extends CatalogComponent
                 'password' => $this->password, 'password_confirmation' => $this->password_confirmation,
                 'empresa_id' => $this->empresaId, 'setor_id' => $this->setor_id ?: null,
                 'role' => $this->role, 'pode_ver_tickets_outros_setores' => $this->pode_ver_tickets_outros_setores,
+                'pode_finalizar_tickets_empresa' => $this->pode_finalizar_tickets_empresa,
             ], $this->contact, $this->recordId);
         } finally {
             $this->reset('password', 'password_confirmation');

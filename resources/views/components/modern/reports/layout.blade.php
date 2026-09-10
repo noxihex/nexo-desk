@@ -2,6 +2,7 @@
 
     <x-layouts.modern :title="$title" :heading="$title">
         <x-slot:navigation>
+            <x-modern.staff.overview-link />
             <div class="mb-6"><x-modern.tickets.links /></div>
             <p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Cadastros</p>
             @foreach(['empresas' => 'Empresas', 'usuarios' => 'Usuários', 'categorias' => 'Categorias', 'setores' => 'Setores'] as $key => $label)

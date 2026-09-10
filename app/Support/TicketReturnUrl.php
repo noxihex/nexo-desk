@@ -45,6 +45,7 @@ class TicketReturnUrl
             parse_url(route('tickets.my'), PHP_URL_PATH),
             parse_url(route('tickets.pendentes'), PHP_URL_PATH),
             parse_url(route('tickets.cliente.index'), PHP_URL_PATH),
+            parse_url(route('home'), PHP_URL_PATH),
         ];
     }
 }

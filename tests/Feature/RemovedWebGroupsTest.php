@@ -42,7 +42,7 @@ class RemovedWebGroupsTest extends TestCase
     {
         $users = file_get_contents(app_path('Http/Controllers/UserController.php'));
         $tickets = file_get_contents(app_path('Http/Controllers/TicketController.php'));
-        $dashboard = file_get_contents(app_path('Http/Controllers/VisaoGeralController.php'));
+        $dashboard = file_get_contents(app_path('Actions/Overview/StaffOverview.php'));
 
         $this->assertStringNotContainsString("'grupo_id' => \$request->grupo_id", $users);
         $this->assertStringNotContainsString("'grupo_id' => \$request->grupo_id", $tickets);

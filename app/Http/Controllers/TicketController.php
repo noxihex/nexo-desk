@@ -2,31 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Tickets\AssumeTicket;
+use App\Actions\Tickets\AuthorizeTicketFlow;
 use App\Actions\Tickets\AuthorizeTicketLists;
 use App\Actions\Tickets\DeleteTicket;
-use App\Support\AttachmentRules;
-use App\Support\ElapsedTime;
-use App\Support\TicketReturnUrl;
-use App\Rules\CategoriaPertenceAoSetor;
-
-use App\Models\Ticket;
+use App\Actions\Tickets\FinalizeTicket;
+use App\Actions\Tickets\SaveTicket;
+use App\Actions\Tickets\TransferTicket;
 use App\Models\Categoria;
-use App\Models\Empresa;
-use App\Models\User;
 use App\Models\Setor;
-use App\Models\Mensagem;
+use App\Models\Ticket;
 use App\Models\TicketAttachment;
+use App\Models\User;
+use App\Support\TicketReturnUrl;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use App\Services\TicketTimelineService;
-
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
-    /**
-     * Exibe a lista de tickets com ordenação opcional.
-     */
     public function index(Request $request)
     {
         app(AuthorizeTicketLists::class)->handle();
@@ -34,200 +27,44 @@ class TicketController extends Controller
         return view('tickets.index');
     }
 
-
-
-
-
-
-
-
-
-
-    /**
-     * Exibe o formulário de criação de ticket.
-     */
     public function create(Request $request)
     {
-        $categorias = Categoria::all();
-        $clientes = User::role(['cliente'])->get();
-        $empresas = Empresa::all();
-        $setores = Setor::all();
-        $analistas = $this->analistasAtivos()->get();
-
+        app(AuthorizeTicketFlow::class)->staff();
         $returnUrl = TicketReturnUrl::resolve($request);
 
-        return view('tickets.create', compact('categorias', 'clientes', 'empresas', 'setores', 'analistas', 'returnUrl'));
+        return view('tickets.create', compact('returnUrl'));
     }
 
-    /**
-     * Armazena um novo ticket no banco de dados.
-     */
     public function store(Request $request)
     {
-        // Valida os campos do formulário e os arquivos
-        $request->validate(array_merge([
-            'assunto' => 'required|string|max:255',
-            'descricao' => 'required|string',
-            'categoria_id' => [
-                'required',
-                'exists:categorias,id',
-                new CategoriaPertenceAoSetor($request->input('setor_id')),
-            ],
-            'cliente_id' => 'nullable|exists:users,id',
-            'empresa_id' => 'nullable|exists:empresas,id',
-            'setor_id' => 'nullable|exists:setores,id',
-            'atribuido_ao_analista_id' => $this->regrasAnalista('setor_id'),
-        ], AttachmentRules::for('anexos')));
-
-        // Criação do ticket
-        $ticket = Ticket::create([
-            'assunto' => $request->assunto,
-            'descricao' => $request->descricao,
-            'categoria_id' => $request->categoria_id,
-            'user_id' => Auth::id(),
-            'cliente_id' => $request->cliente_id,
-            'empresa_id' => $request->empresa_id,
-            'setor_id' => $request->setor_id,
-            'atribuido_ao_analista_id' => $request->atribuido_ao_analista_id ?: null, // Define como null se estiver vazio
-            'status' => 'aberto',
-        ]);
-
-        Log::info("Ticket criado com ID: {$ticket->id}");
-
-        // Processa cada anexo e salva no banco de dados
-        if ($request->hasFile('anexos')) {
-            foreach ($request->file('anexos') as $file) {
-                if ($file->isValid()) {
-                    // Gera um nome único para o arquivo
-                    $uniqueName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-                    // Salva o arquivo em storage/app/public/anexos com o nome único
-                    $filePath = $file->storeAs('anexos', $uniqueName, 'public');
-                    Log::info("Anexo salvo no caminho: " . $filePath);
-
-                    // Salva o caminho do arquivo e o ID do ticket em ticket_attachments
-                    TicketAttachment::create([
-                        'ticket_id' => $ticket->id,
-                        'file_path' => $filePath,
-                    ]);
-
-                    Log::info("Registro de anexo criado no banco de dados para o Ticket ID: {$ticket->id}");
-                } else {
-                    Log::error("Arquivo inválido: " . $file->getClientOriginalName());
-                }
-            }
-        } else {
-            Log::warning("Nenhum anexo encontrado na requisição.");
-        }
+        app(SaveTicket::class)->handle($request->all(), $request->file('anexos', []));
 
         return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket criado com sucesso!');
     }
 
-
-
-
-
-
-    /**
-     * Exibe um ticket específico.
-     */
-    public function show(Request $request, Ticket $ticket, TicketTimelineService $timelineService)
+    public function show(Request $request, Ticket $ticket)
     {
-        $user = Auth::user();
-
+        app(AuthorizeTicketFlow::class)->ticket($ticket->id);
         $returnUrl = TicketReturnUrl::resolve($request);
 
-    if (! $user->podeVisualizarTicket($ticket)) {
-        abort(403, 'Acesso não autorizado.');
+        return view('tickets.show', compact('ticket', 'returnUrl'));
     }
-    
-        // Recupera os anexos relacionados ao ticket
-        $anexos = $ticket->attachments;
-
-        // Obter setores disponíveis
-        $setores = Setor::all();
-
-        // Obter categorias associadas ao setor do ticket (ou uma coleção vazia caso o setor não esteja definido)
-        $categoriasAssociadas = $ticket->setor_id
-            ? Categoria::whereHas('setores', fn ($query) => $query->whereKey($ticket->setor_id))
-                ->orderBy('nome')->get()
-            : collect(); // Retorna coleção vazia se não houver setor associado
-
-        // A interface de transferência filtra esta lista pelo setor escolhido.
-        $analistas = $this->analistasAtivos()->get();
-
-
-        $setorSelecionado = $ticket->setor_id;
-
-        $ticket->load(['user', 'seguidores.roles']);
-        $timeline = $timelineService->paginate(
-            $ticket,
-            50,
-            'timeline_page',
-            true,
-            (bool) $user->timeline_conversations_only
-        );
-        $isFollowing = $ticket->seguidores->contains('id', $user->id);
-
-        // Retorna os dados para a view
-        return view('tickets.show', compact('ticket', 'anexos', 'setores', 'categoriasAssociadas', 'analistas', 'setorSelecionado', 'returnUrl', 'timeline', 'isFollowing'));
-    }
-
-
-
 
     public function edit(Request $request, Ticket $ticket)
     {
-        $categorias = Categoria::all();
-        $clientes = User::role(['cliente'])->get();
-        $empresas = Empresa::all();
-        $setores = Setor::all();
-
-        $analistas = $this->analistasAtivos()->get();
-
+        app(AuthorizeTicketFlow::class)->staff();
         $returnUrl = TicketReturnUrl::resolve($request);
 
-        return view('tickets.edit', compact('ticket', 'categorias', 'clientes', 'empresas', 'setores', 'analistas', 'returnUrl'));
+        return view('tickets.edit', compact('ticket', 'returnUrl'));
     }
-
 
     public function update(Request $request, Ticket $ticket)
     {
-        $categoriaRules = ['required', 'exists:categorias,id'];
-        $mesmaCombinacaoHistorica = (string) $request->input('categoria_id') === (string) $ticket->categoria_id
-            && (string) $request->input('setor_id') === (string) $ticket->setor_id;
-        if (!$mesmaCombinacaoHistorica) {
-            $categoriaRules[] = new CategoriaPertenceAoSetor($request->input('setor_id'));
-        }
-
-        $request->validate([
-            'assunto' => 'required|string|max:255',
-            'descricao' => 'required|string',
-            'categoria_id' => $categoriaRules,
-            'cliente_id' => 'nullable|exists:users,id',
-            'empresa_id' => 'nullable|exists:empresas,id',
-            'setor_id' => 'nullable|exists:setores,id',
-            'atribuido_ao_analista_id' => $this->regrasAnalista('setor_id'),
-            'status' => 'required|in:aberto,pendente cliente,pendente analista,fechado',
-        ]);
-
-        $ticket->update([
-            'assunto' => $request->assunto,
-            'descricao' => $request->descricao,
-            'categoria_id' => $request->categoria_id,
-            'cliente_id' => $request->cliente_id,
-            'empresa_id' => $request->empresa_id,
-            'setor_id' => $request->setor_id,
-            'atribuido_ao_analista_id' => $request->atribuido_ao_analista_id,
-            'status' => $request->status,
-        ]);
+        app(SaveTicket::class)->handle($request->all(), [], $ticket->id);
 
         return redirect()->to(TicketReturnUrl::resolve($request))->with('success', 'Ticket atualizado com sucesso!');
     }
 
-    /**
-     * Exclui um ticket e seus anexos.
-     */
     public function destroy(Request $request, Ticket $ticket)
     {
         app(DeleteTicket::class)->handle($ticket->id);
@@ -242,346 +79,117 @@ class TicketController extends Controller
         return view('tickets.my');
     }
 
+    public function pendentes(Request $request)
+    {
+        app(AuthorizeTicketLists::class)->handle();
 
-
-
+        return view('tickets.pendentes');
+    }
 
     public function finalize(Request $request, $id)
     {
         $ticket = Ticket::findOrFail($id);
-        $user = Auth::user(); // Recupera o usuário autenticado
-
-        // Verifica se o ticket possui uma categoria
-        if (!$ticket->categoria) {
+        if (! $ticket->categoria) {
             return redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => TicketReturnUrl::resolve($request)])
                 ->with('error', 'O ticket precisa estar vinculado a uma categoria para ser finalizado.');
         }
+        app(FinalizeTicket::class)->handle((int) $id, $request->all());
 
-        // SLA definido na categoria
-        $slaUpdate = $ticket->categoria->slaupdate;
-
-        // Recuperar todas as mensagens do ticket, ordenadas por criação
-        $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
-
-        // Variável para somar o tempo total congelado
-        $tempoTotalMinutos = 0;
-
-        // Data inicial (início da contagem)
-        $dataReferencia = $ticket->created_at;
-
-        // Iterar pelas mensagens para calcular o tempo congelado
-        foreach ($mensagens as $mensagem) {
-            $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
-            $tempoCongelado = min($tempoDecorrido, $slaUpdate);
-            $tempoTotalMinutos += $tempoCongelado;
-            $dataReferencia = $mensagem->created_at;
-        }
-
-        $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
-        $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
-        $tempoTotalMinutos += $tempoCongeladoFinal;
-
-        // Validar os campos enviados
-        $request->validate([
-            'descricao_fechamento' => 'required|string',
-            'horas' => 'required|integer|min:0',
-            'minutos' => 'required|integer|min:0|max:59',
-        ]);
-
-        // Atualizar o ticket com os dados de finalização
-        $ticket->status = 'fechado';
-        $horas = (int) $request->input('horas');
-$minutos = (int) $request->input('minutos');
-$ticket->horas_gastas = ($horas * 60) + $minutos;
-        $ticket->descricao_final = $request->input('descricao_fechamento');
-        $ticket->atribuido_ao_analista_id = $user->id;
-        $ticket->finalizado_por_usuario_id = $user->id;
-        $ticket->data_hora_finalizado = now();
-        $ticket->save();
-
-        // Criar mensagem de finalização
-        $mensagem = new Mensagem();
-        $mensagem->ticket_id = $ticket->id;
-        $mensagem->user_id = $user->id;
-        $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
-        $mensagem->tipo = 'sistema';
-        $mensagem->save();
-
-        return redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => TicketReturnUrl::resolve($request)])
+        return redirect()->route('tickets.show', ['ticket' => $id, 'return_to' => TicketReturnUrl::resolve($request)])
             ->with('success', 'Ticket finalizado com sucesso!');
     }
 
     public function calcularHorasSugeridas($id)
     {
         try {
-            $ticket = Ticket::findOrFail($id);
+            [, $ticket] = app(AuthorizeTicketFlow::class)->ticket((int) $id);
+            $minutes = app(FinalizeTicket::class)->suggestedMinutes($ticket);
 
-            // Verifica se o ticket possui uma categoria
-            if (!$ticket->categoria) {
-                return response()->json([
-                    'error' => 'O ticket precisa estar vinculado a uma categoria para ser finalizado.'
-                ], 400); // Status 400 para indicar erro de validação
-            }
-
-            // SLA definido na categoria
-            $slaUpdate = $ticket->categoria->slaupdate;
-
-            // Recuperar mensagens do ticket
-            $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
-
-            // Variável para somar o tempo total congelado
-            $tempoTotalMinutos = 0;
-            $dataReferencia = $ticket->created_at;
-
-            foreach ($mensagens as $mensagem) {
-                $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
-                $tempoCongelado = min($tempoDecorrido, $slaUpdate);
-                $tempoTotalMinutos += $tempoCongelado;
-                $dataReferencia = $mensagem->created_at;
-            }
-
-            $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
-            $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
-            $tempoTotalMinutos += $tempoCongeladoFinal;
-
-            return response()->json([
-                'horas' => intdiv($tempoTotalMinutos, 60),
-                'minutos' => $tempoTotalMinutos % 60,
-            ]);
-        } catch (\Exception $e) {
+            return response()->json(['horas' => intdiv($minutes, 60), 'minutos' => $minutes % 60]);
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            return response()->json(['error' => $exception->validator->errors()->first()], 400);
+        } catch (\Throwable $exception) {
             return response()->json(['error' => 'Erro ao calcular horas sugeridas.'], 500);
         }
     }
 
-
-
-
-
-    public function assumirTicket(Request $request, $id)
+    public function assumirTicket(Request $request, Ticket $ticket)
     {
-        $ticket = Ticket::findOrFail($id);
-        $user = Auth::user(); // Recupera o usuário autenticado
+        $ticket = app(AssumeTicket::class)->handle($ticket->id, $request->all());
 
-        // Validação
-        $request->validate([
-            'setor' => 'required|exists:setores,id',
-            'categoria' => [
-                'required',
-                'exists:categorias,id',
-                new CategoriaPertenceAoSetor($request->input('setor')),
-            ],
+        return $this->operationRedirect($request, $ticket, 'Ticket assumido com sucesso!');
+    }
+
+    public function transferirTicket(Request $request, Ticket $ticket)
+    {
+        $ticket = app(TransferTicket::class)->handle($ticket->id, $request->all());
+
+        return $this->operationRedirect($request, $ticket, 'Ticket transferido com sucesso!');
+    }
+
+    public function carregarCategorias($setor_id)
+    {
+        app(AuthorizeTicketFlow::class)->staff();
+
+        return response()->json(Categoria::whereHas('setores', fn ($query) => $query->whereKey($setor_id))
+            ->orderBy('nome')->get());
+    }
+
+    public function carregarAssumir(Ticket $ticket, Request $request)
+    {
+        return $this->show($request, $ticket);
+    }
+
+    public function carregarTransferir(Ticket $ticket, Request $request)
+    {
+        return $this->show($request, $ticket);
+    }
+
+    public function showWithTransferOptions($id)
+    {
+        [, $ticket] = app(AuthorizeTicketFlow::class)->ticket((int) $id);
+
+        return response()->json([
+            'setores' => Setor::orderBy('nome')->get(),
+            'analistas' => $this->analistasAtivos()->get(),
+            'ticket' => $ticket,
         ]);
+    }
 
-        // Atualiza setor e categoria do ticket
-        $ticket->setor_id = $request->setor;
-        $ticket->categoria_id = $request->categoria;
+    public function obterDadosTransferencia($ticketId)
+    {
+        [, $ticket] = app(AuthorizeTicketFlow::class)->ticket((int) $ticketId);
 
-        // Atribui o ticket ao analista atual
-        $ticket->atribuido_ao_analista_id = $user->id;
-
-        // Preenche os campos de auditoria para indicar quem assumiu e quando
-        $ticket->assumido_por_usuario_id = $user->id;
-        $ticket->data_hora_assumido = now(); // Define a data e hora atual
-
-        if ($ticket->status === 'aberto') {
-            $ticket->status = 'pendente analista';
-        }
-
-        $ticket->save();
-
-        // Cria uma mensagem de auditoria indicando que o usuário assumiu o ticket
-        Mensagem::create([
-            'ticket_id' => $ticket->id,
-            'descricao' => "{$user->name} assumiu o ticket.", // Mensagem indicando quem assumiu
-            'user_id' => $user->id, // Registra o ID do usuário que assumiu
-            'tipo' => 'sistema',
+        return response()->json([
+            'setores' => Setor::orderBy('nome')->get(),
+            'analistas' => $ticket->setor_id ? $this->analistasAtivos($ticket->setor_id)->get() : collect(),
+            'ticket' => $ticket,
         ]);
-
-        $returnUrl = TicketReturnUrl::resolve($request);
-        $canStillView = $user->podeVisualizarTicket($ticket);
-
-        return $canStillView
-            ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket assumido com sucesso!')
-            : redirect()->to($returnUrl)->with('success', 'Ticket assumido com sucesso!');
     }
 
+    public function downloadAttachment(Ticket $ticket, TicketAttachment $attachment)
+    {
+        app(AuthorizeTicketFlow::class)->ticket($ticket->id);
+        abort_unless((int) $attachment->ticket_id === (int) $ticket->id, 404);
+        abort_unless(Storage::disk('public')->exists($attachment->file_path), 404);
 
-// Função para transferir o ticket
-public function transferirTicket(Request $request, $id)
-{
-    $ticket = Ticket::findOrFail($id);
-
-    $dados = $request->validate([
-        'setor' => 'required|exists:setores,id',
-        'categoria' => [
-            'required',
-            'exists:categorias,id',
-            new CategoriaPertenceAoSetor($request->input('setor')),
-        ],
-        'analista' => $this->regrasAnalista('setor'),
-    ]);
-
-    $user = Auth::user(); // Recupera o usuário autenticado (quem está fazendo a transferência)
-
-    // Atualiza o setor e o analista, se fornecidos
-    if ($dados['setor']) {
-        $ticket->setor_id = $dados['setor'];
-    }
-    $ticket->categoria_id = $dados['categoria'];
-    if ($request->has('analista')) { // Verifica se a chave 'analista' existe na requisição, mesmo que o valor seja null
-        $ticket->atribuido_ao_analista_id = $dados['analista']; // Define como null se nenhum analista for selecionado
+        return Storage::disk('public')->download($attachment->file_path, basename($attachment->file_path));
     }
 
-    // Preenche os campos de auditoria de transferência
-    $ticket->transferido_por_usuario_id = $user->id; // ID do usuário que transferiu o ticket
-    $ticket->data_hora_transferido = now(); // Data e hora atuais da transferência
-
-    $ticket->save();
-
-    // Recupera os nomes do usuário que transferiu e do novo analista atribuído
-        $novoAnalista = User::find($dados['analista'] ?? null); // Busca o novo analista pelo ID
-
-    // Cria a mensagem indicando a transferência
-    $mensagem = new Mensagem();
-    $mensagem->ticket_id = $ticket->id;
-    $mensagem->user_id = $user->id; // ID do usuário que fez a transferência
-    $destino = $novoAnalista ? $novoAnalista->name : ($ticket->setor ? $ticket->setor->nome : 'sem setor');
-    $mensagem->descricao = "{$user->name} transferiu o ticket para {$destino}";
-    $mensagem->tipo = 'sistema';
-    $mensagem->save();
-
-    $returnUrl = TicketReturnUrl::resolve($request);
-    $canStillView = $user->podeVisualizarTicket($ticket);
-
-    return $canStillView
-        ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', 'Ticket transferido com sucesso!')
-        : redirect()->to($returnUrl)->with('success', 'Ticket transferido com sucesso!');
-}
-
-
-
-public function showWithTransferOptions($id)
-{
-    $ticket = Ticket::with(['categoria', 'cliente', 'empresa', 'setor', 'analista'])->findOrFail($id);
-
-    // Dados para os dropdowns do modal de transferência
-    $setores = Setor::all();  // Carrega todos os setores
-    $analistas = $this->analistasAtivos()->get();
-
-    // Retorna os dados como JSON para a requisição AJAX
-    return response()->json([
-        'setores' => $setores,
-        'analistas' => $analistas,
-        'ticket' => $ticket
-    ]);
-}
-
-public function obterDadosTransferencia($ticketId)
-{
-    $ticket = Ticket::findOrFail($ticketId);
-
-    // Obter setores disponíveis
-    $setores = Setor::all();
-
-    // Obter os analistas disponíveis no setor atual do ticket
-    $analistas = $ticket->setor_id
-        ? $this->analistasAtivos($ticket->setor_id)->get()
-        : collect();
-
-    // Retornar os dados como JSON
-    return response()->json([
-        'setores' => $setores,
-        'analistas' => $analistas,
-        'ticket' => $ticket, // Incluindo os dados do ticket para preenchimento automático
-    ]);
-}
-
-
-public function carregarAssumir($id, Request $request)
-{
-    $ticket = Ticket::with(['setor', 'categoria'])->findOrFail($id);
-
-    // Obter todos os setores
-    $setores = Setor::all();
-
-    // Verificar se o setor foi enviado via query string para atualizar categorias
-    $setorSelecionado = $request->input('setor', $ticket->setor_id);
-
-    // Obter categorias associadas ao setor selecionado
-    $categoriasAssociadas = $setorSelecionado
-        ? Categoria::whereHas('setores', fn ($query) => $query->whereKey($setorSelecionado))
-            ->orderBy('nome')->get()
-        : collect(); // Retorna coleção vazia se não houver setor selecionado
-
-    // Retornar a view com os dados
-    return view('tickets.show', compact('ticket', 'setores', 'categoriasAssociadas', 'setorSelecionado'));
-}
-
-
-public function carregarTransferir($id)
-{
-    // Busca o ticket pelo ID com os relacionamentos necessários
-    $ticket = Ticket::with(['setor', 'analista'])->findOrFail($id);
-
-    // Carregar todos os setores
-    $setores = Setor::all();
-
-    // A interface de transferência filtra os analistas ativos pelo setor escolhido.
-    $analistas = $this->analistasAtivos()->get();
-
-    // Retorna os dados para a view do modal (no caso `tickets.show`)
-    return view('tickets.show', compact('ticket', 'setores', 'analistas'));
-}
-
-public function carregarCategorias($setor_id)
-{
-    // Busca categorias associadas ao setor informado
-    $categorias = Categoria::whereHas('setores', fn ($query) => $query->whereKey($setor_id))
-        ->orderBy('nome')->get();
-
-    // Retorna as categorias como JSON
-    return response()->json($categorias);
-}
-
-    /**
-     * Retorna somente integrantes ativos que podem ser atribuídos a tickets.
-     */
     private function analistasAtivos(?int $setorId = null)
     {
-        return User::role(['analista', 'supervisor', 'administrador'])
+        return User::whereHas('roles', fn ($query) => $query->whereIn('name', ['analista', 'supervisor', 'administrador']))
             ->where('status', true)
             ->when($setorId, fn ($query) => $query->where('setor_id', $setorId));
     }
 
-    /**
-     * Garante que o analista escolhido esteja ativo e pertença ao setor informado.
-     */
-    private function regrasAnalista(string $campoSetor): array
+    private function operationRedirect(Request $request, Ticket $ticket, string $message)
     {
-        return [
-            'nullable',
-            'exists:users,id',
-            function ($attribute, $value, $fail) use ($campoSetor) {
-                if (!$value) {
-                    return;
-                }
+        $user = app(AuthorizeTicketFlow::class)->staff();
+        $returnUrl = TicketReturnUrl::resolve($request);
 
-                $setorId = request()->input($campoSetor);
-                if (!$setorId || !$this->analistasAtivos((int) $setorId)->whereKey($value)->exists()) {
-                    $fail('O analista selecionado deve estar ativo e pertencer ao setor escolhido.');
-                }
-            },
-        ];
+        return $user->podeVisualizarTicket($ticket)
+            ? redirect()->route('tickets.show', ['ticket' => $ticket->id, 'return_to' => $returnUrl])->with('success', $message)
+            : redirect()->to($returnUrl)->with('success', $message);
     }
-
-public function pendentes(Request $request)
-{
-    app(AuthorizeTicketLists::class)->handle();
-
-    return view('tickets.pendentes');
-}
-
-
-
-
 }

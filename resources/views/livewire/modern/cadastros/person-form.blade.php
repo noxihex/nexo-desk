@@ -1,7 +1,7 @@
 <x-modern.card class="max-w-3xl">
     <form wire:submit="save" class="space-y-6">
         @if($contact)
-            <x-modern.alert>Empresa: {{ $empresa?->nome ?? 'Sem empresa' }}. Este contato acessará o portal do cliente para acompanhar os tickets da empresa.</x-modern.alert>
+            <x-modern.alert>Empresa: {{ $empresa?->nome ?? 'Sem empresa' }}.</x-modern.alert>
             <input type="hidden" name="empresa_id" value="{{ $empresaId }}">
             @error('empresa_id')
                 <x-modern.alert variant="danger">{{ $message }}</x-modern.alert>
@@ -26,6 +26,8 @@
             @if($role === 'analista')
                 <x-modern.checkbox name="pode_ver_tickets_outros_setores" wire:model="pode_ver_tickets_outros_setores" label="Permitir visualizar tickets de outros setores" />
             @endif
+        @else
+            <x-modern.checkbox name="pode_finalizar_tickets_empresa" wire:model="pode_finalizar_tickets_empresa" label="Pode finalizar tickets da empresa" />
         @endif
         <div class="flex flex-wrap gap-3">
             <x-modern.button type="submit" variant="filled" color="green" wire:loading.attr="disabled">{{ $recordId ? 'Salvar alterações' : ($contact ? 'Criar contato' : 'Criar usuário') }}</x-modern.button>

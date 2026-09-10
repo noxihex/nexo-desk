@@ -93,11 +93,13 @@ class ModernRelatedCatalogsTest extends TestCase
         Livewire::test(ContatoForm::class, ['empresaId' => $company->id])->set('name', 'Contato novo')->set('email', 'contact@example.invalid')
             ->set('password', 'Password-123')->set('password_confirmation', 'different')->call('save')->assertHasErrors(['password'])
             ->set('password', 'Password-123')->set('password_confirmation', 'Password-123')->set('role', 'administrador')
+            ->set('pode_finalizar_tickets_empresa', true)
             ->call('save')->assertHasNoErrors()->assertRedirect(route('empresas.edit', $company));
         $contact = User::where('email', 'contact@example.invalid')->firstOrFail();
         $hash = $contact->password;
         $this->assertTrue($contact->hasRole('cliente'));
         $this->assertSame($company->id, $contact->empresa_id);
+        $this->assertTrue($contact->pode_finalizar_tickets_empresa);
         Livewire::test(ContatoForm::class, ['recordId' => $contact->id])->set('name', 'Novo nome')->call('save')->assertHasNoErrors();
         $this->assertSame($hash, $contact->fresh()->password);
         Livewire::test(ContatoIndex::class, ['empresaId' => $company->id])->assertSee('Novo nome');

@@ -69,7 +69,7 @@ class ApiV2Test extends TestCase
             $base['user']->assignRole('analista');
             $this->actingAs($base['user']);
             $payload = ['setor' => $base['setor']->id, 'categoria' => $base['categoria']->id];
-            $this->post("/tickets/{$ticket->id}/assumir", $payload)->assertRedirect();
+            $this->post("/tickets/{$ticket->id}/assumir", $payload)->assertRedirect()->assertSessionHasNoErrors();
         } else {
             $this->postJson("{$prefix}/tickets/{$ticket->id}/assumir", $payload)
                 ->assertOk()

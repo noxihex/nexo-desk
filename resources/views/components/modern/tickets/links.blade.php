@@ -1,7 +1,7 @@
 @props(['section' => null])
 
 <p class="mb-3 px-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">Tickets</p>
-@foreach(['general' => ['tickets.index', 'Geral'], 'mine' => ['tickets.my', 'Meus tickets'], 'pending' => ['tickets.pendentes', 'Pendentes']] as $key => [$route, $label])
+@foreach(['general' => ['tickets.index', 'Geral'], 'create' => ['tickets.create', 'Criar ticket'], 'mine' => ['tickets.my', 'Meus tickets'], 'pending' => ['tickets.pendentes', 'Pendentes']] as $key => [$route, $label])
     <a
         href="{{ route($route) }}"
         @if($section === $key) aria-current="page" @endif

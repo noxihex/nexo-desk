@@ -2,10 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Actions\Overview\StaffOverview;
+use App\Livewire\Modern\Overview\StaffOverview as StaffOverviewComponent;
 use App\Models\Empresa;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -22,14 +25,13 @@ class VisaoGeralFiltersTest extends TestCase
         $selectedTicket = $this->createTicket($selectedCompany, $administrator, 'Ticket da empresa selecionada');
         $this->createTicket($otherCompany, $administrator, 'Ticket de outra empresa');
 
-        $response = $this->actingAs($administrator)
-            ->get(route('home', ['empresa' => $selectedCompany->id]));
+        $this->actingAs($administrator);
 
-        $response->assertOk()
-            ->assertViewHas('ticketsAbertos', function ($tickets) use ($selectedTicket) {
-                return $tickets->pluck('id')->all() === [$selectedTicket->id];
-            })
-            ->assertSee('name="empresa"', false)
+        Livewire::withQueryParams(['empresa' => $selectedCompany->id])
+            ->test(StaffOverviewComponent::class)
+            ->assertSet('empresa', (string) $selectedCompany->id)
+            ->assertSee($selectedTicket->assunto)
+            ->assertDontSee('Ticket de outra empresa')
             ->assertSee('Empresa selecionada');
     }
 
@@ -39,13 +41,10 @@ class VisaoGeralFiltersTest extends TestCase
         $activeAnalyst = $this->userWithRole('analista', ['name' => 'Analista ativo', 'status' => true]);
         $inactiveAnalyst = $this->userWithRole('analista', ['name' => 'Analista inativo', 'status' => false]);
 
-        $response = $this->actingAs($administrator)->get(route('home'));
+        $listing = app(StaffOverview::class)->handle($administrator);
 
-        $response->assertOk()
-            ->assertViewHas('analistas', function ($analistas) use ($activeAnalyst, $inactiveAnalyst) {
-                return $analistas->contains($activeAnalyst)
-                    && ! $analistas->contains($inactiveAnalyst);
-            });
+        $this->assertTrue($listing['analistas']->contains($activeAnalyst));
+        $this->assertFalse($listing['analistas']->contains($inactiveAnalyst));
     }
 
     private function userWithRole(string $role, array $attributes = []): User

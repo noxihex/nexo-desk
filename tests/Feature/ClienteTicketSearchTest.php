@@ -2,10 +2,12 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Modern\ClientTickets\ClientTicketIndex;
 use App\Models\Empresa;
 use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
 
@@ -112,16 +114,20 @@ class ClienteTicketSearchTest extends TestCase
             $this->ticket($cliente, $empresa, "Consulta persistida {$i}");
         }
 
-        $this->actingAs($cliente)
-            ->get(route('tickets.cliente.index', [
+        $this->actingAs($cliente);
+
+        Livewire::withQueryParams([
                 'viewCompanyTickets' => 1,
                 'search' => 'Consulta',
-            ]))
-            ->assertOk()
-            ->assertSee('name="search"', false)
-            ->assertSee('value="Consulta"', false)
-            ->assertSee('name="viewCompanyTickets" value="1"', false)
-            ->assertSee('viewCompanyTickets=0&amp;search=Consulta', false)
-            ->assertSee('viewCompanyTickets=1&amp;search=Consulta&amp;page=2', false);
+            ])
+            ->test(ClientTicketIndex::class)
+            ->assertSet('search', 'Consulta')
+            ->assertSet('viewCompanyTickets', true)
+            ->assertSee('Ver somente meus tickets')
+            ->assertSee('Consulta persistida')
+            ->call('nextPage')
+            ->assertSet('paginators.page', 2)
+            ->assertSet('search', 'Consulta')
+            ->assertSet('viewCompanyTickets', true);
     }
 }

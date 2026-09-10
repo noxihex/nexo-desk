@@ -55,9 +55,7 @@ class ModernTicketListingsTest extends TestCase
 
             foreach (['tickets.index', 'tickets.my', 'tickets.pendentes'] as $route) {
                 $this->get(route($route))->assertOk()
-                    ->assertSee('Geral')
-                    ->assertSee('Meus tickets')
-                    ->assertSee('Pendentes')
+                    ->assertSeeInOrder(['Geral', 'Criar ticket', 'Meus tickets', 'Pendentes'])
                     ->assertSee('Tema escuro')
                     ->assertDontSee('jquery', false)
                     ->assertDontSee('adminlte', false)

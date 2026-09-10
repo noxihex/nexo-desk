@@ -11,7 +11,7 @@ class TicketPrazoViewsTest extends TestCase
         $index = file_get_contents(resource_path('views/tickets/index.blade.php'));
         $mine = file_get_contents(resource_path('views/tickets/my.blade.php'));
         $listing = file_get_contents(resource_path('views/livewire/modern/tickets/ticket-index.blade.php'));
-        $show = file_get_contents(resource_path('views/tickets/show.blade.php'));
+        $show = file_get_contents(resource_path('views/livewire/modern/tickets/ticket-show.blade.php'));
 
         $this->assertStringContainsString('livewire:modern.tickets.ticket-index', $index);
         $this->assertStringContainsString('livewire:modern.tickets.ticket-index', $mine);
@@ -30,7 +30,7 @@ class TicketPrazoViewsTest extends TestCase
         $this->assertStringNotContainsString('Atribuído ao Analista', $listing);
         $this->assertStringNotContainsString('<dt class="font-medium text-zinc-500 dark:text-zinc-400">SLA</dt>', $listing);
         $this->assertStringNotContainsString('<strong>Prazo:</strong>', $show);
-        $this->assertStringContainsString('<strong>Horas Gastas:</strong>', $show);
-        $this->assertStringContainsString('<strong>Modificado:</strong>', $show);
+        $this->assertStringContainsString('Horas gastas', $show);
+        $this->assertStringContainsString('Atualizado em', $show);
     }
 }

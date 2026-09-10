@@ -2,6 +2,7 @@
 
 <x-layouts.modern :title="$title" :heading="$title">
     <x-slot:navigation>
+        <x-modern.staff.overview-link />
         <x-modern.tickets.links :section="$section" />
 
         @hasanyrole('supervisor|administrador')

@@ -47,6 +47,8 @@ class ModernStackViewTest extends TestCase
         BLADE);
 
         $this->assertStringContainsString('<title>Teste · ', $html);
+        $this->assertStringContainsString('href="'.asset('favicon.ico').'"', $html);
+        $this->assertStringContainsString('src="'.asset('favicon.ico').'"', $html);
         $this->assertStringContainsString('id="modern-sidebar"', $html);
         $this->assertStringContainsString('aria-controls="modern-sidebar"', $html);
         $this->assertStringContainsString('aria-label="Abrir menu"', $html);
@@ -218,7 +220,7 @@ class ModernStackViewTest extends TestCase
                 $this->assertStringContainsString('variant="filled" color="green"', $contents, $view->getPathname());
             }
 
-            if (str_ends_with($view->getFilename(), '-index.blade.php')) {
+            if (str_ends_with($view->getFilename(), '-index.blade.php') && str_contains($contents, 'openDelete')) {
                 $this->assertStringContainsString('color="amber"', $contents, $view->getPathname());
                 $this->assertTrue(
                     str_contains($contents, 'color="red"') || str_contains($contents, "'red'"),

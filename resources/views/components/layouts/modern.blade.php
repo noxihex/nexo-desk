@@ -12,6 +12,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ $title ? $title.' · '.config('app.name', 'Nexo Desk') : config('app.name', 'Nexo Desk') }}</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}">
 
     @vite('resources/js/modern.js')
     @livewireStyles
@@ -67,9 +68,12 @@
         aria-label="Navegação principal"
     >
         <div class="flex h-16 shrink-0 items-center justify-between border-b border-zinc-200 px-5 dark:border-zinc-800">
-            <span class="text-lg font-semibold tracking-tight text-zinc-950 dark:text-white">
-                {{ config('app.name', 'Nexo Desk') }}
-            </span>
+            <div class="flex min-w-0 items-center gap-2.5">
+                <img src="{{ asset('favicon.ico') }}" alt="" class="size-8 shrink-0 object-contain" aria-hidden="true">
+                <span class="truncate text-lg font-semibold tracking-tight text-zinc-950 dark:text-white">
+                    {{ config('app.name', 'Nexo Desk') }}
+                </span>
+            </div>
 
             <button
                 type="button"

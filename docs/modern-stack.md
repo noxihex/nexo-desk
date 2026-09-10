@@ -236,7 +236,7 @@ A primeira migração atende `/login`, `/password/reset`, `/password/reset/{toke
 
 Os formulários ativos usam `wire:submit`. As operações em `App\Actions\Auth` são compartilhadas com os POSTs existentes, mantendo validações, respostas HTTP/JSON, guard, broker, mensagens e redirecionamentos. O login compartilha o limite de cinco tentativas por minuto por e-mail/IP entre os dois transportes. A confirmação revalida a sessão em cada submissão. As senhas são limpas do estado dos componentes após a tentativa, e o token de redefinição é uma propriedade bloqueada do Livewire.
 
-Os links e redirecionamentos usam carregamento completo, inclusive na entrada das telas internas legadas. O layout de autenticação carrega somente Vite, Livewire e Flux, oferece os temas claro/escuro/sistema e não utiliza a sidebar moderna. Os wrappers adicionais `x-modern.checkbox` (`name`, `label`) e `x-modern.alert` (`variant`, `heading`, conteúdo no slot padrão) encaminham atributos ao Flux Free; o aviso define `role="alert"` para erros e `role="status"` nos demais casos.
+Os links e redirecionamentos usam carregamento completo, inclusive na entrada das telas internas legadas. O layout de autenticação carrega somente Vite, Livewire e Flux, exibe a marca e o favicon do Nexo Desk e oferece os temas claro/escuro/sistema por três botões de ícone acessíveis. Ele não utiliza a sidebar moderna. Os wrappers adicionais `x-modern.checkbox` (`name`, `label`) e `x-modern.alert` (`variant`, `heading`, conteúdo no slot padrão) encaminham atributos ao Flux Free; o aviso define `role="alert"` para erros e `role="status"` nos demais casos.
 
 A recuperação respeita `PASSWORD_RESET_ENABLED` a cada envio. O padrão continua desativado, com a mesma orientação para procurar o administrador. Não há alteração de configuração de e-mail nem de banco de dados.
 
@@ -330,12 +330,60 @@ Para reverter, reverter o commit da entrega e reconstruir os assets modernos. N�
 
 ## Listagens modernas de tickets
 
-As rotas staff `/tickets`, `/tickets/my` e `/tickets/pendentes` preservam URLs, nomes e middlewares e agora montam o componente `App\Livewire\Modern\Tickets\TicketIndex`. Os GETs permanecem no `TicketController` como entradas pequenas das views. A criação, os detalhes e a edição continuam no legado e são abertos por navegação convencional, sempre com `return_to` apontando para a listagem e seus filtros atuais.
+As rotas staff `/tickets`, `/tickets/my` e `/tickets/pendentes` preservam URLs, nomes e middlewares e agora montam o componente `App\Livewire\Modern\Tickets\TicketIndex`. Os GETs permanecem no `TicketController` como entradas pequenas das views. Criação, detalhes e edição também usam a stack moderna e recebem `return_to` apontando para a listagem e seus filtros atuais. A sidebar apresenta Geral, Criar ticket, Meus tickets e Pendentes nessa ordem; no portal do cliente, Criar ticket aparece antes de Meus tickets.
 
 `App\Actions\Tickets\TicketListing` concentra as consultas. A lista geral mantém busca por ID ou assunto, filtros de setor, categoria e empresa, inclusão de fechados, dez registros por página e ordenação por criação, modificação ou maior percentual de SLA. Uma busca iniciada sem o parâmetro `showClosed` inclui fechados, como antes. “Meus tickets” mostra somente os atribuídos ao usuário autenticado e oculta fechados por padrão. “Pendentes” mantém o significado legado de tickets sem categoria e não fechados.
 
 Analistas sem a permissão de visualizar outros setores continuam limitados ao próprio setor em Geral e Pendentes; supervisores, administradores e analistas com essa opção veem todos os setores. `AuthorizeTicketLists` reconsulta o usuário autenticado, ativo e com perfil staff em cada requisição Livewire. O tipo da listagem e o alvo de exclusão são bloqueados no estado do componente e os registros são consultados novamente antes da operação.
 
-A exclusão continua visível somente para administradores e foi extraída para `DeleteTicket`, compartilhada pelo Livewire e pelo endpoint DELETE existente. O ticket e seus vínculos são removidos em transação; anexos correspondentes são removidos do disco público. Não houve alteração das APIs, das telas internas de tickets, da criação ou das interações de atendimento.
+A exclusão continua visível somente para administradores e foi extraída para `DeleteTicket`, compartilhada pelo Livewire e pelo endpoint DELETE existente. O ticket e seus vínculos são removidos em transação; anexos correspondentes são removidos do disco público. Não houve alteração das APIs.
 
 Executar `php artisan test --filter=ModernTicketListingsTest`, a suíte completa em `nexodesk_testing` e `npm run build:modern`. Conferir as três listas em desktop e mobile, temas claro/escuro/sistema, teclado, filtros e paginação, além das transições para criação, detalhes, edição e retorno do legado. Para reverter, reverter o commit da entrega e reconstruir os assets modernos; não há migrações nem dependências novas.
+
+## Fluxo moderno de tickets
+
+As rotas staff de criação, detalhes e edição mantêm os contratos REST existentes e usam `TicketForm` e `TicketShow`, em `App\Livewire\Modern\Tickets`. As views `tickets.create`, `tickets.show` e `tickets.edit` são entradas pequenas do layout moderno. Não há `wire:navigate`; a volta às listagens e qualquer transição para páginas legadas usa carregamento completo.
+
+`SaveTicket`, `AssumeTicket`, `TransferTicket`, `FinalizeTicket`, `FollowTicket` e `UpdateTimelinePreference` concentram as mutações compartilhadas entre Livewire e os controllers HTTP. Criação e atualização preservam a associação histórica entre categoria e setor, validam analistas ativos do setor escolhido e usam transação. Contato, empresa, setor, categoria e analista usam comboboxes pesquisáveis por teclado, preservando o preenchimento automático da empresa e os filtros dependentes de setor. Na criação, o uploader acumula até cinco anexos escolhidos em uma ou mais seleções, mostra cada arquivo e permite removê-lo antes do envio. Anexos de abertura são públicos; anexos de respostas públicas continuam no disco público; anexos de notas internas ficam no disco local privado. Falhas após armazenamento removem os arquivos já gravados.
+
+A tela de detalhes reúne dados do ticket, anexos, timeline paginada, preferência por exibir apenas conversas, seguidores e todas as ações de atendimento. Respostas públicas podem alterar o ticket para “Pendente cliente” ou “Pendente analista”. Notas internas não alteram status, aceitam menções somente a integrantes ativos que podem visualizar o ticket e não ficam visíveis no portal do cliente. Download de anexo verifica novamente o ticket, o vínculo do arquivo e a permissão do usuário.
+
+No card de dados, “Voltar” fica isolado à esquerda e as ações operacionais ficam agrupadas à direita. Horas gastas aparecem somente em tickets fechados. Seguir/deixar de seguir pertence ao cabeçalho do histórico, acima da preferência da timeline. A timeline exibe primeiro os três eventos mais recentes, sem rolagem interna, e permite carregar os anteriores em grupos de dez pelo botão compacto “Exibir mensagens mais antigas”, alinhado à esquerda.
+
+A composição de mensagens fica em um card próprio, próxima ao legado: textarea, anexos, botão dividido para resposta pública e mudança opcional para Pendente Cliente ou Pendente Analista, além do botão separado de nota interna. Digitar `@` no texto apresenta integrantes autorizados, e a seleção completa a menção; menções continuam restritas às notas internas. Os uploaders da criação e das mensagens seguem o padrão visual de dropzone e lista de arquivos do Flux, aceitam até cinco anexos acumulados em uma ou mais seleções e permitem remoção individual antes do envio, sem depender do componente Pro.
+
+Assumir define o usuário atual como responsável e exige setor/categoria compatíveis. Transferir exige categoria disponível no setor de destino e aceita deixar o ticket sem analista. Finalizar exige categoria, relato final e tempo em horas/minutos; a sugestão continua baseada nas interações não internas e no SLA de atualização. Todas essas operações registram os eventos de sistema e auditoria já existentes. Editar permanece disponível visualmente para supervisores e administradores, e excluir somente para administradores.
+
+O componente reconsulta o usuário ativo e o ticket autorizado em todas as requisições Livewire. O identificador do ticket e a URL de retorno ficam bloqueados, e o registro é consultado novamente antes de cada mutação. `ModernTicketFlowTest` cobre entradas modernas, criação, edição histórica, mensagens, menções, anexos públicos/privados, seguidores, ações, identidade bloqueada e download seguro. Executar esse teste, a suíte completa em `nexodesk_testing`, `npm run build:modern` e o QA de desktop/mobile, temas e teclado antes da entrega.
+
+## Portal moderno de tickets do cliente
+
+As rotas existentes em `/tickets/cliente` agora usam o layout moderno e os componentes `ClientTicketIndex`, `ClientTicketCreate` e `ClientTicketShow`, em `App\Livewire\Modern\ClientTickets`. URLs, nomes de rota, middlewares e endpoints POST foram preservados. As mutações HTTP e Livewire compartilham `CreateClientTicket`, `ReplyToClientTicket` e `FinalizeClientTicket`; a finalização permanece apenas como contrato legado, sem ação visível no novo portal.
+
+A listagem começa nos tickets do próprio contato, permite alternar para todos os tickets da mesma empresa e pesquisar por ID ou assunto. Contatos sem empresa continuam limitados aos próprios tickets. A autorização reconsulta o usuário ativo com perfil cliente em cada requisição e restringe detalhes e mutações à empresa autenticada; o identificador do ticket e a URL de retorno são bloqueados no estado Livewire.
+
+Na criação, contato e empresa são derivados da sessão e exibidos como dados somente leitura. Setor usa o mesmo seletor pesquisável do fluxo staff. O uploader moderno acumula até cinco arquivos escolhidos em seleções sucessivas, aceita remoção individual e grava anexos públicos vinculados ao novo ticket.
+
+Os detalhes mostram horas gastas e relato final somente quando o ticket está fechado. O histórico expõe apenas mensagens públicas, em ordem da mais recente para a mais antiga, começa com três itens e carrega os anteriores em grupos de dez pelo botão alinhado à esquerda. Notas internas e eventos de sistema nunca são enviados para a view do cliente. A composição fica em card próprio, aceita texto ou anexos múltiplos e, ao responder, altera o status para “Pendente analista”. Tickets fechados não exibem o compositor.
+
+`ModernClientTicketFlowTest` cobre entradas modernas, escopo pessoal/empresa, pesquisa, criação e resposta com anexos acumulados, privacidade do histórico, carregamento progressivo, revalidação de acesso, identidade bloqueada e apresentação de tickets fechados. Executar também `ClienteTicketSearchTest`, a suíte completa em `nexodesk_testing`, `npm run build:modern` e o QA visual em desktop/mobile e temas claro/escuro. Não há migrações nem dependências novas; a reversão consiste em reverter a entrega e recompilar os assets modernos.
+
+## Visão Geral moderna da staff
+
+Para analistas, supervisores e administradores, `/home` monta `App\Livewire\Modern\Overview\StaffOverview` no layout moderno. A URL, o nome `home`, os middlewares e o endpoint `/tickets/atencao` foram preservados; o controller escolhe a entrada correspondente ao perfil sem transportar assets entre AdminLTE/Mix e Vite/Livewire.
+
+Os quatro indicadores mantêm as regras anteriores: tickets abertos atribuídos ao usuário, tickets abertos em seu setor, tickets não assumidos no setor e tickets atribuídos que ultrapassaram o SLA de atualização. Os dois últimos podem ser expandidos para acessar diretamente os IDs envolvidos. Analistas recebem somente os indicadores; supervisores e administradores também recebem o quadro por status. Consultas do quadro nem sequer são executadas para analistas.
+
+O quadro mantém as colunas Aberto, Pendente cliente, Pendente analista e Fechado, com rolagem interna por coluna e limite de 100 fechados. Cada card mostra empresa, assunto, categoria e analista, e usa o botão azul-claro para os detalhes. A URL de retorno aceita `/home` e preserva os filtros do painel ao abrir um ticket.
+
+Supervisores podem ordenar o quadro por tickets mais novos ou antigos. Administradores também filtram por analista, setor e empresa usando seletores pesquisáveis. Cada alteração atualiza o Kanban imediatamente, sem botão de aplicação. Os filtros ficam sincronizados na URL, podem ser limpos em conjunto e respeitam a limitação de setor dos analistas onde ela se aplica. O usuário autenticado, ativo e com perfil staff é reconsultado em todas as requisições Livewire.
+
+`ModernStaffOverviewTest` cobre a separação entre as entradas staff/cliente, indicadores, alerta de SLA, endpoint de atenção, filtros, ordenação, retorno seguro, diferenças de perfil e perda de autorização. A reversão consiste em reverter a entrega e recompilar os assets modernos; não há migrações ou dependências novas.
+
+## Visão Geral moderna do cliente
+
+Clientes também usam `/home` com uma entrada própria, `home-client`, e o componente `App\Livewire\Modern\Overview\ClientOverview`. O painel mantém os quatro indicadores do legado: tickets pessoais ativos, tickets ativos da empresa, tickets da empresa aguardando resposta e tickets fechados da empresa. Cada indicador permite expandir os IDs acessíveis e abrir os detalhes com retorno à Visão Geral.
+
+O escopo pessoal usa `cliente_id`, igual à listagem moderna, inclusive para tickets abertos pela equipe em nome do contato. Os demais indicadores são limitados à empresa autenticada; clientes sem empresa veem somente seus tickets pessoais. O componente revalida papel e status em toda requisição Livewire. A navegação do portal exibe “Visão geral” acima da categoria Tickets e a ação principal abre um novo ticket preservando o retorno para `/home`.
+
+`ModernClientOverviewTest` cobre entrada e assets modernos, ordem da navegação, métricas pessoais e corporativas, isolamento entre empresas, clientes sem empresa e perda de autorização. Executar também `ModernStaffOverviewTest`, a suíte completa no banco `nexodesk_testing` e `npm run build:modern` antes da entrega.

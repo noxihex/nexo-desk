@@ -34,6 +34,8 @@ class SavePerson
                     'role' => ['required', Rule::in(app(ManagePeople::class)->roles())],
                     'pode_ver_tickets_outros_setores' => 'sometimes|boolean',
                 ];
+            } else {
+                $rules['pode_finalizar_tickets_empresa'] = 'sometimes|boolean';
             }
 
             $data = Validator::make($input, $rules)->validate();
@@ -45,6 +47,9 @@ class SavePerson
                 $user->setor_id = $data['setor_id'] ?? null;
                 $user->pode_ver_tickets_outros_setores = $data['role'] === 'analista'
                     && (bool) ($data['pode_ver_tickets_outros_setores'] ?? false);
+                $user->pode_finalizar_tickets_empresa = false;
+            } else {
+                $user->pode_finalizar_tickets_empresa = (bool) ($data['pode_finalizar_tickets_empresa'] ?? false);
             }
             if (! $user->exists) {
                 $user->status = true;

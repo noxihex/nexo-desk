@@ -2,19 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Actions\Tickets\UpdateTimelinePreference;
 use Illuminate\Http\Request;
 
 class TicketTimelinePreferenceController extends Controller
 {
     public function update(Request $request)
     {
-        $data = $request->validate([
-            'conversations_only' => ['required', 'boolean'],
-        ]);
-
-        $request->user()->update([
-            'timeline_conversations_only' => $data['conversations_only'],
-        ]);
+        app(UpdateTimelinePreference::class)->handle($request->input('conversations_only'));
 
         return redirect()->back();
     }

@@ -26,6 +26,7 @@ class User extends Authenticatable implements Auditable
         'grupo_id',
         'setor_id',
         'pode_ver_tickets_outros_setores',
+        'pode_finalizar_tickets_empresa',
         'empresa_id',
         'status',
         'timeline_conversations_only',
@@ -50,6 +51,7 @@ class User extends Authenticatable implements Auditable
         'email_verified_at' => 'datetime',
         'status' => 'boolean',
         'pode_ver_tickets_outros_setores' => 'boolean',
+        'pode_finalizar_tickets_empresa' => 'boolean',
         'timeline_conversations_only' => 'boolean',
     ];
 
@@ -145,6 +147,7 @@ class User extends Authenticatable implements Auditable
         'grupo_id',
         'setor_id',
         'pode_ver_tickets_outros_setores',
+        'pode_finalizar_tickets_empresa',
         'empresa_id',
         'status',
     ];

@@ -2,17 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Actions\Overview\StaffOverview;
+use App\Actions\Tickets\AuthorizeTicketLists;
+use App\Models\Empresa;
+use App\Models\Setor;
 use App\Models\Ticket;
 use App\Models\User;
-use App\Models\Setor;
-use App\Models\Empresa;
-
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use App\Services\SlaDeadlineCalculator;
+use Illuminate\Http\Request;
 
 class VisaoGeralController extends Controller
 {
@@ -21,6 +18,16 @@ class VisaoGeralController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user()->loadMissing('roles');
+
+        if ($user->isStaff()) {
+            return view('home-staff');
+        }
+
+        if ($user->hasRole('cliente')) {
+            return view('home-client');
+        }
+
         // Captura os parâmetros de ordenação e filtros
         $order = $request->input('order', 'desc');
         $analista = $request->input('analista');
@@ -29,8 +36,6 @@ class VisaoGeralController extends Controller
 
         // Consulta base para tickets
         $query = Ticket::query();
-        $user = Auth::user();
-
         if ($user->deveRestringirTicketsAoSetor()) {
             $query->where('setor_id', $user->setor_id);
         }
@@ -120,24 +125,12 @@ class VisaoGeralController extends Controller
 
 
 
-public function obterTicketsAtencao()
-{
-    $tickets = Ticket::whereIn('status', ['aberto', 'pendente cliente', 'pendente analista']) // Inclui todos os status relevantes
-        ->where('atribuido_ao_analista_id', Auth::id()) // Apenas tickets atribuídos ao analista atual
-        ->whereHas('categoria', function ($query) {
-            $query->whereNotNull('slaupdate'); // Apenas categorias com slaupdate definido
-        })
-        ->get();
+    public function obterTicketsAtencao()
+    {
+        $user = app(AuthorizeTicketLists::class)->handle();
 
-    $calculator = app(SlaDeadlineCalculator::class);
-    $ticketsComAlerta = $tickets
-        ->filter(fn ($ticket) => $calculator->updateIsDue($ticket))
-        ->pluck('id')
-        ->values()
-        ->all();
-
-    return $ticketsComAlerta; // Retorna apenas os tickets com alerta
-}
+        return app(StaffOverview::class)->attentionTicketIds($user);
+    }
 
 public function contarMeusTicketsAbertosCliente()
 {

@@ -22,7 +22,7 @@ class TicketReturnUrlTest extends TestCase
 
     public function test_it_accepts_each_supported_ticket_list_as_an_origin(): void
     {
-        foreach (['tickets.index', 'tickets.my', 'tickets.pendentes', 'tickets.cliente.index'] as $routeName) {
+        foreach (['tickets.index', 'tickets.my', 'tickets.pendentes', 'tickets.cliente.index', 'home'] as $routeName) {
             $returnUrl = route($routeName, ['page' => 2]);
             $request = Request::create('/tickets/10', 'GET', ['return_to' => $returnUrl]);
 

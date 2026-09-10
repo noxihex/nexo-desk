@@ -74,7 +74,9 @@
             {{ $tickets->total() }} {{ $tickets->total() === 1 ? 'ticket encontrado' : 'tickets encontrados' }}.
             <span wire:loading wire:target="applyFilters, clearFilters, showClosed, gotoPage, nextPage, previousPage">Atualizando lista...</span>
         </p>
-        <x-modern.button :href="route('tickets.create', ['return_to' => $returnUrl])" variant="filled" color="green" icon="plus">Novo ticket</x-modern.button>
+        @if($general)
+            <x-modern.button :href="route('tickets.create', ['return_to' => $returnUrl])" variant="filled" color="green" icon="plus">Novo ticket</x-modern.button>
+        @endif
     </div>
 
     <div class="space-y-4" aria-busy="false" wire:loading.attr="aria-busy">

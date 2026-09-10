@@ -2,333 +2,102 @@
 
 namespace App\Http\Controllers;
 
-use App\Support\AttachmentRules;
-use App\Support\ElapsedTime;
+use App\Actions\Tickets\AuthorizeClientTicketFlow;
+use App\Actions\Tickets\CreateClientTicket;
+use App\Actions\Tickets\FinalizeClientTicket;
+use App\Actions\Tickets\ReplyToClientTicket;
 use App\Support\TicketReturnUrl;
-
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use App\Models\Ticket;
-use App\Models\Categoria;
-use App\Models\Empresa;
-use App\Models\User;
-use App\Models\Setor;
-use App\Models\Mensagem;
-use App\Models\TicketAttachment;
-use App\Models\MessageAttachment;
-
-
-
+use Illuminate\Validation\ValidationException;
 
 class ClienteTicketController extends Controller
 {
-    /**
-     * Exibe a lista de tickets do cliente e/ou da empresa.
-     */
-    public function index(Request $request)
+    public function index()
     {
-        $user = auth()->user(); // Usuário autenticado
-        $empresaId = $user->empresa_id; // Empresa vinculada ao usuário
-        $userId = $user->id; // ID do usuário autenticado
-        $search = $request->input('search');
+        app(AuthorizeClientTicketFlow::class)->client();
 
-        // Define se a visualização será dos tickets da empresa ou apenas dos tickets do cliente
-        $viewCompanyTickets = filter_var($request->get('viewCompanyTickets', false), FILTER_VALIDATE_BOOLEAN);
-
-        $query = Ticket::query();
-
-        if ($empresaId) {
-            // Todo ticket exibido ao cliente precisa pertencer à empresa dele.
-            $query->where('empresa_id', $empresaId);
-
-            if (!$viewCompanyTickets) {
-                // Na visão pessoal, limita também ao cliente autenticado.
-                $query->where('cliente_id', $userId);
-            }
-        } else {
-            // Usuários sem empresa só podem acessar os próprios tickets sem empresa.
-            $query->where('cliente_id', $userId)
-                  ->whereNull('empresa_id');
-        }
-
-        // Pesquisa por ID ou assunto dentro do escopo de tickets já autorizado.
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('id', 'like', "%{$search}%")
-                  ->orWhere('assunto', 'like', "%{$search}%");
-            });
-        }
-
-        // Ordena do mais recente para o mais antigo
-        $query->orderBy('created_at', 'desc');
-
-        // Paginação de tickets
-        $tickets = $query->paginate(10)->withQueryString();
-
-        // Retorna a view com os dados de tickets e a flag de visualização
-        return view('tickets.cliente.index', compact('tickets', 'viewCompanyTickets'));
+        return view('tickets.cliente.index');
     }
-
-
 
     public function show(Request $request, $id)
-{
-    // Busca o ticket pelo ID, garantindo que seja do mesmo usuário ou empresa
-    $ticket = $this->ticketPermitidoAoCliente($id, [
-        'attachments',
-        'categoria',
-        'user',
-        'empresa',
-    ]);
+    {
+        [, $ticket] = app(AuthorizeClientTicketFlow::class)->ticket((int) $id);
 
-    $ticket->load(['mensagens' => function ($query) {
-        $query->publicas()->orderBy('created_at');
-    }, 'mensagens.user', 'mensagens.attachments']);
-
-    // Retorna a view com o ticket
-    $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
-
-    return view('tickets.cliente.show', compact('ticket', 'returnUrl'));
-}
-
-
-
-public function storeMessage(Request $request, $id)
-{
-    $request->validate(array_merge([
-        'descricao' => 'nullable|string|required_without:attachments',
-    ], AttachmentRules::for('attachments')));
-
-    // Busca o ticket e verifica permissões
-    $user = auth()->user();
-    $ticket = $this->ticketPermitidoAoCliente($id);
-
-    // Cria a mensagem vinculada ao ticket
-    $mensagem = Mensagem::create([
-        'user_id' => $user->id,
-        'ticket_id' => $id,
-        'descricao' => $request->filled('descricao') ? $request->descricao : 'Anexo enviado.',
-        'tipo' => Mensagem::TIPO_PUBLICA,
-    ]);
-
-    // Processa os anexos enviados, se houver
-    if ($request->hasFile('attachments')) {
-        foreach ($request->file('attachments') as $file) {
-            if ($file->isValid()) {
-                // Gera um nome único para o arquivo
-                $uniqueName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-
-                // Salva o arquivo na pasta especificada com o nome único
-                $path = $file->storeAs('attachments/messages', $uniqueName, 'public');
-
-                // Salva o anexo usando o modelo `MessageAttachment`
-                MessageAttachment::create([
-                    'mensagem_id' => $mensagem->id,
-                    'file_path' => $path,
-                ]);
-
-                Log::info("Anexo salvo no caminho: " . $path);
-            } else {
-                Log::error("Arquivo inválido: " . $file->getClientOriginalName());
-            }
-        }
-    }
-
-    // Atualiza o status do ticket para "pendente analista"
-    $ticket->status = 'pendente analista';
-    $ticket->save();
-
-    // Redireciona de volta para a página do ticket com mensagem de sucesso
-    return redirect()
-        ->route('tickets.cliente.show', [
-            'id' => $ticket->id,
-            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
-        ])
-        ->with('success', 'Mensagem enviada com sucesso!');
-}
-
-
-public function create(Request $request)
-{
-    $setores = Setor::all();
-
-    $returnUrl = TicketReturnUrl::resolve($request, 'tickets.cliente.index');
-
-    return view('tickets.cliente.create', compact('setores', 'returnUrl'));
-}
-
-public function store(Request $request)
-{
-    $request->validate(array_merge([
-        'assunto' => 'required|string|max:255',
-        'descricao' => 'required|string',
-        'setor_id' => 'nullable|exists:setores,id', // Setor agora pode ser nulo
-    ], AttachmentRules::for('anexos')));
-
-    // Obtém o usuário autenticado
-    $user = auth()->user();
-
-    // Cria o ticket com a descrição modificada
-    $ticket = Ticket::create([
-        'assunto' => $request->assunto,
-        'descricao' => $request->input('descricao'),
-        'setor_id' => $request->setor_id,
-        'user_id' => $user->id,
-        'cliente_id' => $user->id,
-        'empresa_id' => $user->empresa_id,
-        'status' => 'aberto',
-        'grupo_id' => null,
-        'categoria_id' => null,
-        'atribuido_ao_analista_id' => null,
-    ]);
-
-    // Processa anexos, se houver
-    if ($request->hasFile('anexos')) {
-        foreach ($request->file('anexos') as $file) {
-            if ($file->isValid()) {
-                $uniqueName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME) . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $filePath = $file->storeAs('attachments/tickets', $uniqueName, 'public');
-
-                TicketAttachment::create([
-                    'ticket_id' => $ticket->id,
-                    'file_path' => $filePath,
-                ]);
-            }
-        }
-    }
-
-    // Redireciona para a página de listagem de tickets com uma mensagem de sucesso
-    return redirect()->to(TicketReturnUrl::resolve($request, 'tickets.cliente.index'))->with('success', 'Ticket criado com sucesso!');
-}
-
-
-public function finalize(Request $request, $id)
-{
-    $ticket = $this->ticketPermitidoAoCliente($id);
-    $user = Auth::user(); // Recupera o usuário autenticado
-
-    // Verifica se o ticket possui uma categoria
-    if (!$ticket->categoria) {
-        return redirect()->route('tickets.cliente.show', [
-            'id' => $ticket->id,
-            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
-        ])
-            ->with('error', 'O ticket precisa estar vinculado a uma categoria para ser finalizado.');
-    }
-
-    // SLA definido na categoria
-    $slaUpdate = $ticket->categoria->slaupdate;
-
-    // Recuperar todas as mensagens do ticket, ordenadas por criação
-    $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
-
-    // Variável para somar o tempo total congelado
-    $tempoTotalMinutos = 0;
-
-    // Data inicial (início da contagem)
-    $dataReferencia = $ticket->created_at;
-
-    // Iterar pelas mensagens para calcular o tempo congelado
-    foreach ($mensagens as $mensagem) {
-        $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
-        $tempoCongelado = min($tempoDecorrido, $slaUpdate);
-        $tempoTotalMinutos += $tempoCongelado;
-        $dataReferencia = $mensagem->created_at;
-    }
-
-    $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
-    $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
-    $tempoTotalMinutos += $tempoCongeladoFinal;
-
-    // Validar os campos enviados
-    $request->validate([
-        'descricao_fechamento' => 'required|string',
-        'horas' => 'required|integer|min:0',
-        'minutos' => 'required|integer|min:0|max:59',
-    ]);
-
-    // Atualizar o ticket com os dados de finalização
-    $ticket->status = 'fechado';
-    $ticket->horas_gastas = $tempoTotalMinutos; // Salvar o tempo total em minutos
-    $ticket->descricao_final = $request->input('descricao_fechamento');
-    $ticket->finalizado_por_usuario_id = $user->id;
-    $ticket->data_hora_finalizado = now();
-    $ticket->save();
-
-    // Criar mensagem de finalização
-    $mensagem = new Mensagem();
-    $mensagem->ticket_id = $ticket->id;
-    $mensagem->user_id = $user->id;
-    $mensagem->descricao = "{$user->name} finalizou o ticket. Relato final: {$ticket->descricao_final}";
-    $mensagem->tipo = 'sistema';
-    $mensagem->save();
-
-    return redirect()->route('tickets.cliente.show', [
-        'id' => $ticket->id,
-        'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
-    ])
-        ->with('success', 'Ticket finalizado com sucesso!');
-}
-
-public function calcularHorasSugeridas($id)
-{
-    try {
-        $ticket = $this->ticketPermitidoAoCliente($id);
-
-        // Verifica se o ticket possui uma categoria
-        if (!$ticket->categoria) {
-            return response()->json([
-                'error' => 'O ticket precisa estar vinculado a uma categoria para ser finalizado.'
-            ], 400); // Status 400 para indicar erro de validação
-        }
-
-        // SLA definido na categoria
-        $slaUpdate = $ticket->categoria->slaupdate;
-
-        // Recuperar mensagens do ticket
-        $mensagens = $ticket->mensagens()->semInternas()->orderBy('created_at', 'asc')->get();
-
-        // Variável para somar o tempo total congelado
-        $tempoTotalMinutos = 0;
-        $dataReferencia = $ticket->created_at;
-
-        foreach ($mensagens as $mensagem) {
-            $tempoDecorrido = ElapsedTime::wholeMinutes($dataReferencia, $mensagem->created_at);
-            $tempoCongelado = min($tempoDecorrido, $slaUpdate);
-            $tempoTotalMinutos += $tempoCongelado;
-            $dataReferencia = $mensagem->created_at;
-        }
-
-        $tempoFinal = ElapsedTime::wholeMinutes($dataReferencia, now());
-        $tempoCongeladoFinal = min($tempoFinal, $slaUpdate);
-        $tempoTotalMinutos += $tempoCongeladoFinal;
-
-        return response()->json([
-            'horas' => intdiv($tempoTotalMinutos, 60),
-            'minutos' => $tempoTotalMinutos % 60,
+        return view('tickets.cliente.show', [
+            'ticketId' => $ticket->id,
+            'returnUrl' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
         ]);
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        abort(404);
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'Erro ao calcular horas sugeridas.'], 500);
-    }
-}
-
-private function ticketPermitidoAoCliente($id, array $with = []): Ticket
-{
-    $user = auth()->user();
-    $query = Ticket::with($with)->whereKey($id);
-
-    if ($user->empresa_id !== null) {
-        $query->where('empresa_id', $user->empresa_id);
-    } else {
-        $query->where('cliente_id', $user->id)
-            ->whereNull('empresa_id');
     }
 
-    return $query->firstOrFail();
-}
+    public function create(Request $request)
+    {
+        app(AuthorizeClientTicketFlow::class)->client();
 
+        return view('tickets.cliente.create', [
+            'returnUrl' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+        ]);
+    }
+
+    public function store(Request $request)
+    {
+        app(CreateClientTicket::class)->handle(
+            $request->only(['assunto', 'descricao', 'setor_id']),
+            $request->file('anexos', [])
+        );
+
+        return redirect()->to(TicketReturnUrl::resolve($request, 'tickets.cliente.index'))
+            ->with('success', 'Ticket criado com sucesso!');
+    }
+
+    public function storeMessage(Request $request, $id)
+    {
+        app(ReplyToClientTicket::class)->handle((int) $id, [
+            'descricao' => $request->input('descricao'),
+        ], $request->file('attachments', []));
+
+        return redirect()->route('tickets.cliente.show', [
+            'id' => $id,
+            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+        ])->with('success', 'Mensagem enviada com sucesso!');
+    }
+
+    public function finalize(Request $request, $id)
+    {
+        try {
+            app(FinalizeClientTicket::class)->handle((int) $id, $request->only([
+                'descricao_fechamento',
+            ]));
+        } catch (ValidationException $exception) {
+            if ($exception->validator->errors()->has('categoria')) {
+                return redirect()->route('tickets.cliente.show', [
+                    'id' => $id,
+                    'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+                ])->with('error', $exception->validator->errors()->first('categoria'));
+            }
+            throw $exception;
+        }
+
+        return redirect()->route('tickets.cliente.show', [
+            'id' => $id,
+            'return_to' => TicketReturnUrl::resolve($request, 'tickets.cliente.index'),
+        ])->with('success', 'Ticket finalizado com sucesso!');
+    }
+
+    public function calcularHorasSugeridas($id)
+    {
+        [, $ticket] = app(FinalizeClientTicket::class)->authorize((int) $id);
+
+        try {
+            $minutes = app(FinalizeClientTicket::class)->suggestedMinutes($ticket);
+
+            return response()->json([
+                'horas' => intdiv($minutes, 60),
+                'minutos' => $minutes % 60,
+            ]);
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'error' => $exception->validator->errors()->first('categoria'),
+            ], 400);
+        }
+    }
 }

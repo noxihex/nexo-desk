@@ -13,6 +13,7 @@ class Ticket extends Model implements Auditable
     protected $fillable = [
         'assunto',
         'descricao',
+        'descricao_final',
         'categoria_id',
         'user_id',
         'cliente_id',

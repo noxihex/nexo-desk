@@ -41,9 +41,19 @@ class ModernAuthenticationTest extends TestCase
     {
         foreach (['/login', '/password/reset', '/password/reset/sample?email=user@example.com'] as $url) {
             $this->get($url)->assertOk()->assertSee('wire:submit="submit"', false)
+                ->assertSee('href="'.asset('favicon.ico').'"', false)
+                ->assertSee('src="'.asset('favicon.ico').'"', false)
+                ->assertSee('aria-label="Tema claro"', false)
+                ->assertSee('aria-label="Tema escuro"', false)
+                ->assertSee('aria-label="Usar tema do sistema"', false)
                 ->assertDontSee('adminlte', false)->assertDontSee('bootstrap', false)
                 ->assertDontSee('jquery', false)->assertDontSee('modern-sidebar', false);
         }
+
+        $this->get('/login')
+            ->assertDontSee('Central de atendimento')
+            ->assertDontSee('Acesse sua conta para acompanhar seus atendimentos.')
+            ->assertDontSee('<select aria-label="Aparência"', false);
 
         $this->get('/password/confirm')->assertRedirect('/login');
         $this->actingAs($this->user())->get('/password/confirm')->assertOk()->assertSee('Confirmar senha');

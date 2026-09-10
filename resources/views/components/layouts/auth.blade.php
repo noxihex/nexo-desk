@@ -16,9 +16,8 @@
     <main class="flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6">
         <div class="w-full max-w-md">
             <div class="mb-8 text-center">
-                <span class="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white shadow-sm" aria-hidden="true">N</span>
+                <img src="{{ asset('favicon.ico') }}" alt="" class="mx-auto mb-4 size-20 object-contain" aria-hidden="true">
                 <p class="text-xl font-semibold tracking-tight">{{ config('app.name', 'Nexo Desk') }}</p>
-                <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">Central de atendimento</p>
             </div>
 
             <x-modern.card class="rounded-2xl bg-white p-6 shadow-sm sm:p-8 dark:bg-zinc-900">
@@ -47,15 +46,22 @@
                 {{ $slot }}
             </x-modern.card>
 
-            <div class="mt-6 flex justify-center">
-                <label class="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-                    Aparência
-                    <select aria-label="Aparência" x-data x-model="$flux.appearance" class="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-zinc-700 focus-visible:outline-2 focus-visible:outline-blue-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
-                        <option value="system">Sistema</option>
-                        <option value="light">Claro</option>
-                        <option value="dark">Escuro</option>
-                    </select>
-                </label>
+            <div class="mt-6 flex justify-center" x-data>
+                <div class="inline-flex items-center gap-1 rounded-xl border border-zinc-200 bg-white p-1 shadow-xs dark:border-zinc-700 dark:bg-zinc-900" role="group" aria-label="Aparência">
+                    @foreach(['light' => ['sun', 'Tema claro'], 'dark' => ['moon', 'Tema escuro'], 'system' => ['computer-desktop', 'Usar tema do sistema']] as $appearance => [$icon, $label])
+                        <button
+                            type="button"
+                            x-on:click="$flux.appearance = '{{ $appearance }}'"
+                            x-bind:aria-pressed="($flux.appearance === '{{ $appearance }}').toString()"
+                            x-bind:class="$flux.appearance === '{{ $appearance }}' ? 'bg-zinc-100 text-zinc-950 dark:bg-zinc-700 dark:text-white' : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white'"
+                            class="inline-flex size-9 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
+                            aria-label="{{ $label }}"
+                            title="{{ $label }}"
+                        >
+                            <flux:icon :name="$icon" class="size-4" aria-hidden="true" />
+                        </button>
+                    @endforeach
+                </div>
             </div>
         </div>
     </main>

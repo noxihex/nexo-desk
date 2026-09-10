@@ -6,17 +6,14 @@ use Tests\TestCase;
 
 class ClienteTicketShowViewTest extends TestCase
 {
-    public function test_cliente_ticket_show_uses_layout_javascript_without_reloading_jquery_or_bootstrap()
+    public function test_cliente_ticket_show_is_a_modern_livewire_entry(): void
     {
         $view = file_get_contents(resource_path('views/tickets/cliente/show.blade.php'));
 
-        $this->assertStringContainsString("@extends('adminlte::page')", $view);
-        $this->assertStringContainsString('btn btn-primary btn-sm d-none', $view);
-        $this->assertStringContainsString("$('#finalizeModal').on('show.bs.modal'", $view);
-        $this->assertStringContainsString('<x-attachment-uploader name="attachments[]" :max-size-mb="10" collapsible />', $view);
-        $this->assertStringNotContainsString('function addAttachmentField()', $view);
-        $this->assertStringContainsString('toastr.min.js', $view);
-        $this->assertStringNotContainsString('cdnjs.cloudflare.com/ajax/libs/jquery', $view);
-        $this->assertStringNotContainsString('stackpath.bootstrapcdn.com/bootstrap', $view);
+        $this->assertStringContainsString('<x-modern.client-tickets.layout', $view);
+        $this->assertStringContainsString('<livewire:modern.client-tickets.client-ticket-show', $view);
+        $this->assertStringNotContainsString("@extends('adminlte::page')", $view);
+        $this->assertStringNotContainsString('jquery', strtolower($view));
+        $this->assertStringNotContainsString('bootstrap', strtolower($view));
     }
 }
