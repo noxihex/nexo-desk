@@ -97,7 +97,7 @@
         </nav>
 
         @auth
-            <div class="shrink-0 border-t border-zinc-200 p-4 dark:border-zinc-800">
+            <div class="shrink-0 border-t border-zinc-200 p-4 ps-16 dark:border-zinc-800">
                 <flux:dropdown position="top" align="start" class="w-full">
                     <flux:profile
                         :name="auth()->user()->name"
@@ -176,6 +176,12 @@
             {{ $slot }}
         </main>
     </div>
+
+    @auth
+        @if(auth()->user()->exists)
+            <livewire:modern.notifications.notification-center />
+        @endif
+    @endauth
 
     @livewireScripts
     @fluxScripts

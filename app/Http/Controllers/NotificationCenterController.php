@@ -8,6 +8,10 @@ class NotificationCenterController extends Controller
 {
     public function index(Request $request)
     {
+        if (! $request->expectsJson()) {
+            return view('notifications.index');
+        }
+
         $user = $request->user();
 
         return response()->json([

@@ -13,6 +13,7 @@ export default defineConfig({
                 'resources/views/home-staff.blade.php',
                 'resources/views/home-client.blade.php',
                 'resources/views/minhaconta/edit.blade.php',
+                'resources/views/notifications/**',
                 'resources/views/relatorios/horas/index.blade.php',
                 'resources/views/relatorios/analista/index.blade.php',
                 'resources/views/tickets/index.blade.php',

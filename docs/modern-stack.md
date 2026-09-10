@@ -387,3 +387,13 @@ Clientes também usam `/home` com uma entrada própria, `home-client`, e o compo
 O escopo pessoal usa `cliente_id`, igual à listagem moderna, inclusive para tickets abertos pela equipe em nome do contato. Os demais indicadores são limitados à empresa autenticada; clientes sem empresa veem somente seus tickets pessoais. O componente revalida papel e status em toda requisição Livewire. A navegação do portal exibe “Visão geral” acima da categoria Tickets e a ação principal abre um novo ticket preservando o retorno para `/home`.
 
 `ModernClientOverviewTest` cobre entrada e assets modernos, ordem da navegação, métricas pessoais e corporativas, isolamento entre empresas, clientes sem empresa e perda de autorização. Executar também `ModernStaffOverviewTest`, a suíte completa no banco `nexodesk_testing` e `npm run build:modern` antes da entrega.
+
+## Central moderna de notificações
+
+O layout moderno compartilhado agora apresenta um sino ao lado do perfil na sidebar desktop e no canto direito do cabeçalho móvel. O contador destaca notificações não lidas e é atualizado a cada minuto; quando a contagem aumenta, um aviso breve aparece sem interromper o trabalho. O painel lateral mostra as 20 notificações mais recentes, permite abrir o ticket relacionado e marcar todas como lidas.
+
+A rota existente `/notificacoes` preserva o envelope JSON quando a requisição pede JSON, mantendo a integração do layout legado. Em navegação comum, ela abre a página moderna completa, paginada em 15 itens, com filtro de todas ou somente não lidas e ações individuais e em lote. Nenhuma migração ou dependência adicional foi necessária.
+
+As URLs persistidas dentro da notificação não são usadas diretamente. Ao abrir um item, o destino é reconstruído a partir do ticket e do perfil autenticado, usando a rota staff ou cliente correspondente. Leituras individuais são sempre limitadas às notificações do próprio usuário; conta ativa e autorização são revalidadas em cada requisição Livewire.
+
+Executar `php artisan test --filter=ModernNotificationCenterTest`, a suíte completa e `npm run build:modern`. A cobertura verifica layouts staff/cliente, compatibilidade JSON, limite do painel, paginação, filtro, ações de leitura, isolamento entre contas, destino seguro e perda de autorização.

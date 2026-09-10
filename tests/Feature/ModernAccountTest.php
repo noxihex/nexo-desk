@@ -39,6 +39,9 @@ class ModernAccountTest extends TestCase
             $this->actingAs($this->user($role));
             $response = $this->get(route('minhaconta.edit'))->assertOk()->assertSee('Preferências de notificação')
                 ->assertDontSee('adminlte', false)->assertDontSee('jquery', false)->assertDontSee('toastr', false);
+            if ($role === 'cliente') {
+                $response->assertSeeInOrder(['Visão geral', 'Tickets', 'Criar ticket', 'Meus tickets', 'Minha conta']);
+            }
             if (in_array($role, ['cliente', 'analista'])) {
                 $response->assertDontSee('href="'.route('usuarios.index').'"', false);
             }

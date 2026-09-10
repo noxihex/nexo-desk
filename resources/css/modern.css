@@ -15,6 +15,7 @@
 @source '../views/home-staff.blade.php';
 @source '../views/home-client.blade.php';
 @source '../views/minhaconta/edit.blade.php';
+@source '../views/notifications/**/*.blade.php';
 @source '../views/relatorios/horas/index.blade.php';
 @source '../views/relatorios/analista/index.blade.php';
 @source '../views/tickets/index.blade.php';
