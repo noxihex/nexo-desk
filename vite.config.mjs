@@ -24,6 +24,7 @@ export default defineConfig({
                 'resources/views/tickets/show.blade.php',
                 'resources/views/tickets/cliente/**',
                 'resources/views/auth/**',
+                'resources/views/administracao/**',
                 'resources/views/cadastros/categorias/**',
                 'resources/views/cadastros/empresas/index.blade.php',
                 'resources/views/cadastros/empresas/create.blade.php',

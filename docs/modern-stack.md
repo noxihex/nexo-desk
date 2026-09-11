@@ -397,3 +397,13 @@ A rota existente `/notificacoes` preserva o envelope JSON quando a requisição 
 As URLs persistidas dentro da notificação não são usadas diretamente. Ao abrir um item, o destino é reconstruído a partir do ticket e do perfil autenticado, usando a rota staff ou cliente correspondente. Leituras individuais são sempre limitadas às notificações do próprio usuário; conta ativa e autorização são revalidadas em cada requisição Livewire.
 
 Executar `php artisan test --filter=ModernNotificationCenterTest`, a suíte completa e `npm run build:modern`. A cobertura verifica layouts staff/cliente, compatibilidade JSON, limite do painel, paginação, filtro, ações de leitura, isolamento entre contas, destino seguro e perda de autorização.
+
+## Administração moderna
+
+As quatro rotas administrativas existentes usam agora o layout moderno: usuários logados, caixas de e-mail, auditoria e backups. A sidebar apresenta uma seção Administração somente para administradores, com indicação da página ativa. Essas páginas não exibem a ação genérica de criação de ticket.
+
+A navegação moderna é centralizada em dois componentes independentes. `modern.staff.navigation` é compartilhado por Visão geral, Tickets, Cadastros, Relatórios, Minha conta, Notificações e Administração; `modern.client.navigation` permanece restrito ao portal do cliente. Analistas veem Visão geral e Tickets, supervisores recebem também Cadastros e Relatórios, e administradores recebem ainda Administração. Assim, tipografia, espaçamento, ordem e estado ativo permanecem idênticos entre páginas do mesmo perfil.
+
+Usuários logados lista perfil, IP, navegador e última atividade, ordenando pelas sessões mais recentes, e solicita confirmação antes de encerrar uma sessão. Caixas de e-mail mantém o CRUD HTTP existente em formulários e modais modernos, incluindo setor padrão e estado ativo. Auditoria preserva a paginação e apresenta valores anteriores e novos em modal. Backups continua expondo apenas o nome seguro do arquivo e habilita download somente para registros bem-sucedidos.
+
+As URLs, nomes de rota, middlewares administrativos e regras de download foram preservados. Não há migrações nem dependências novas. Executar `php artisan test --filter=ModernAdministrationTest`, `php artisan test --filter=BackupSecurityTest`, a suíte completa e `npm run build:modern`.

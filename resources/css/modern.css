@@ -26,6 +26,7 @@
 @source '../views/tickets/show.blade.php';
 @source '../views/tickets/cliente/**/*.blade.php';
 @source '../views/auth/**/*.blade.php';
+@source '../views/administracao/**/*.blade.php';
 @source '../views/cadastros/categorias/**/*.blade.php';
 @source '../views/cadastros/setores/**/*.blade.php';
 @source '../views/components/modern/**/*.blade.php';

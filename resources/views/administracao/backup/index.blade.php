@@ -1,70 +1,35 @@
-@extends('adminlte::page')
-@section('title', config('app.name') . ' - Backup')
-
-@section('content_header')
-<p style="font-size: 1.2em;">
-    Administração <i class="fas fa-angle-right" style="font-size: 0.7em;"></i> Backups
-</p>
-@endsection
-
-@section('content')
-    @if(session('success'))
-        <script>
-            toastr.success('{{ session('success') }}', 'Sucesso', { closeButton: true, progressBar: true });
-        </script>
-    @elseif(session('error'))
-        <script>
-            toastr.error('{{ session('error') }}', 'Erro', { closeButton: true, progressBar: true });
-        </script>
-    @endif
-
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Lista de Backups</h3>
-        </div>
-        <div class="card-body p-0">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Data e Hora</th>
-                        <th>Status</th>
-                        <th>Arquivo</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($backups as $backup)
-                        <tr>
-                            <td>{{ $backup->id }}</td>
-                            <td>{{ \Carbon\Carbon::parse($backup->data_hora)->format('d/m/Y H:i:s') }}</td>
-                            <td>
-                                @if($backup->status == 'sucesso')
-                                    <span class="badge badge-success">Sucesso</span>
-                                @else
-                                    <span class="badge badge-danger">Falha</span>
-                                @endif
-                            </td>
-                            <td>{{ basename(str_replace('\\', '/', $backup->local_arquivo)) }}</td>
-                            <td>
-                                @if($backup->status == 'sucesso')
-                                    <a href="{{ route('backup.download', $backup->id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-download"></i> Baixar
-                                    </a>
-                                @else
-                                    <button class="btn btn-sm btn-secondary" disabled>
-                                        <i class="fas fa-download"></i> Indisponível
-                                    </button>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center">Nenhum backup encontrado.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-@endsection
+<x-modern.staff.layout title="Backups" section="administration-backups" :show-create-action="false">
+    <x-modern.card title="Arquivos de backup" description="Somente backups concluídos com sucesso podem ser baixados." class="overflow-hidden">
+        <x-modern.table>
+            <x-modern.table.columns>
+                <x-modern.table.column>ID</x-modern.table.column>
+                <x-modern.table.column>Data e hora</x-modern.table.column>
+                <x-modern.table.column>Status</x-modern.table.column>
+                <x-modern.table.column>Arquivo</x-modern.table.column>
+                <x-modern.table.column>Ações</x-modern.table.column>
+            </x-modern.table.columns>
+            <x-modern.table.rows>
+                @forelse($backups as $backup)
+                    @php($filename = basename(str_replace('\\', '/', $backup->local_arquivo)))
+                    <x-modern.table.row :key="$backup->id">
+                        <x-modern.table.cell class="font-medium">#{{ $backup->id }}</x-modern.table.cell>
+                        <x-modern.table.cell class="whitespace-nowrap">{{ \Carbon\Carbon::parse($backup->data_hora)->format('d/m/Y H:i:s') }}</x-modern.table.cell>
+                        <x-modern.table.cell>
+                            <x-modern.badge :color="$backup->status === 'sucesso' ? 'green' : 'red'">{{ $backup->status === 'sucesso' ? 'Sucesso' : 'Falha' }}</x-modern.badge>
+                        </x-modern.table.cell>
+                        <x-modern.table.cell class="max-w-sm whitespace-normal break-all">{{ $filename }}</x-modern.table.cell>
+                        <x-modern.table.cell>
+                            @if($backup->status === 'sucesso')
+                                <x-modern.button :href="route('backup.download', $backup)" variant="filled" color="blue" size="sm" icon="arrow-down-tray">Baixar</x-modern.button>
+                            @else
+                                <x-modern.button variant="outline" size="sm" icon="arrow-down-tray" disabled>Indisponível</x-modern.button>
+                            @endif
+                        </x-modern.table.cell>
+                    </x-modern.table.row>
+                @empty
+                    <x-modern.table.row><x-modern.table.cell colspan="5" class="py-12 text-center text-zinc-500">Nenhum backup encontrado.</x-modern.table.cell></x-modern.table.row>
+                @endforelse
+            </x-modern.table.rows>
+        </x-modern.table>
+    </x-modern.card>
+</x-modern.staff.layout>

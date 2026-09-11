@@ -4,8 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Session;
+use App\Models\User;
 
 class AdministracaoController extends Controller
 {
@@ -23,11 +22,13 @@ class AdministracaoController extends Controller
                 'sessions.user_agent' // Adiciona o navegador e sistema operacional
             )
             ->whereNotNull('users.id')
+            ->orderByDesc('sessions.last_activity')
             ->get();
 
-        // Adicionando o tipo (Cliente ou Analista) baseado nas permissões (roles)
-        $sessions->transform(function ($session) {
-            $user = \App\Models\User::find($session->user_id); // Busca o usuário relacionado
+        $users = User::with('roles')->whereIn('id', $sessions->pluck('user_id'))->get()->keyBy('id');
+
+        $sessions->transform(function ($session) use ($users) {
+            $user = $users->get($session->user_id);
             $session->role = $user ? $user->getRoleNames()->first() : 'Desconhecido'; // Obtém a role do usuário
             return $session;
         });
