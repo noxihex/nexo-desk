@@ -234,7 +234,7 @@ class ModernClientTicketFlowTest extends TestCase
             ->set('ticketId', $externalTicket->id);
     }
 
-    public function test_closed_ticket_shows_spent_time_and_hides_message_composer(): void
+    public function test_closed_ticket_hides_spent_time_and_message_composer(): void
     {
         $company = $this->company('Empresa A', '12345678000190');
         $client = $this->client($company);
@@ -246,8 +246,8 @@ class ModernClientTicketFlowTest extends TestCase
         $this->actingAs($client);
 
         Livewire::test(ClientTicketShow::class, ['ticketId' => $ticket->id, 'returnUrl' => route('tickets.cliente.index')])
-            ->assertSee('Horas gastas')
-            ->assertSee('1h 15min')
+            ->assertDontSee('Horas gastas')
+            ->assertDontSee('1h 15min')
             ->assertSee('Atendimento concluído')
             ->assertDontSee('Enviar nova mensagem');
     }

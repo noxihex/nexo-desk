@@ -58,7 +58,7 @@ class ModernCatalogsTest extends TestCase
                 '/cadastros/categorias', '/cadastros/categorias/create', '/cadastros/categorias/'.$category->id.'/edit',
                 '/cadastros/setores', '/cadastros/setores/create', '/cadastros/setores/'.$sector->id.'/edit',
             ] as $url) {
-                $this->get($url)->assertOk()->assertSee('Voltar ao sistema')->assertSee('aria-current="page"', false)
+                $this->get($url)->assertOk()->assertDontSee('Voltar ao sistema')->assertSee('aria-current="page"', false)
                     ->assertDontSee('adminlte', false)->assertDontSee('jquery', false)->assertDontSee('bootstrap', false);
             }
             $this->get('/cadastros/categorias')->assertSee('Excluir Acesso');

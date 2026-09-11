@@ -6,8 +6,5 @@
             <x-modern.staff.navigation />
         @endif
     </x-slot:navigation>
-    <x-slot:actions>
-        <x-modern.button :href="route('home')" variant="outline" icon="arrow-left">Voltar ao sistema</x-modern.button>
-    </x-slot:actions>
     <livewire:modern.account.settings />
 </x-layouts.modern>

@@ -14,6 +14,7 @@
     $fieldName = $name ?: $attributes->whereStartsWith('wire:model')->first();
     $invalid ??= $fieldName ? $errors->has($fieldName) : false;
     $wireModel = $attributes->wire('model');
+    $wireModelName = $wireModel->value();
     $searchOptions = collect($options)->map(fn ($optionLabel, $value) => [
         'value' => (string) $value,
         'label' => (string) $optionLabel,
@@ -29,13 +30,13 @@
         <flux:description>{{ $description }}</flux:description>
     @endif
 
-    @if($searchable && $wireModel->value())
+    @if($searchable)
         <div
             class="relative"
             x-data="{
                 open: false,
                 query: '',
-                value: $wire.entangle(@js($wireModel->value())).live,
+                value: @if($wireModelName) $wire.entangle(@js($wireModelName)).live @else @js((string) $selected) @endif,
                 options: {{ Illuminate\Support\Js::from($searchOptions) }},
                 normalize(value) {
                     return String(value ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
@@ -60,6 +61,10 @@
             x-on:click.outside="close()"
             x-on:keydown.escape.stop="close()"
         >
+            @if($fieldName && ! $wireModelName)
+                <input type="hidden" name="{{ $fieldName }}" x-model="value" @disabled($disabled) />
+            @endif
+
             <div class="relative">
                 <input
                     type="text"

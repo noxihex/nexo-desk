@@ -27,9 +27,6 @@
                 <div><dt class="font-medium text-zinc-500 dark:text-zinc-400">Setor</dt><dd class="mt-1">{{ $ticket->setor?->nome ?? 'Sem setor' }}</dd></div>
                 <div><dt class="font-medium text-zinc-500 dark:text-zinc-400">Criado em</dt><dd class="mt-1">{{ $ticket->created_at?->format('d/m/Y - H:i') ?? '—' }}</dd></div>
                 <div><dt class="font-medium text-zinc-500 dark:text-zinc-400">Atualizado em</dt><dd class="mt-1">{{ $ticket->updated_at?->format('d/m/Y - H:i') ?? '—' }}</dd></div>
-                @if($ticket->status === 'fechado')
-                    <div><dt class="font-medium text-zinc-500 dark:text-zinc-400">Horas gastas</dt><dd class="mt-1">{{ intdiv((int) $ticket->horas_gastas, 60) }}h {{ (int) $ticket->horas_gastas % 60 }}min</dd></div>
-                @endif
             </dl>
 
             @if($ticket->status === 'fechado' && $ticket->descricao_final)

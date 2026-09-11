@@ -66,7 +66,7 @@
             <x-modern.checkbox name="showClosed" label="Incluir tickets fechados" wire:model.live="showClosed" />
         </div>
     @else
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">Tickets abertos que ainda precisam receber uma categoria.</p>
+        <p class="text-sm text-zinc-600 dark:text-zinc-400">Tickets abertos por clientes que aguardam classificação pela equipe.</p>
     @endif
 
     <div class="flex flex-wrap items-center justify-between gap-3">

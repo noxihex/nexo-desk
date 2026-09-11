@@ -29,7 +29,7 @@
                             <p class="text-sm">{{ $session->ip_address ?: 'IP não informado' }}</p>
                             <p class="mt-1 break-words text-xs text-zinc-500 dark:text-zinc-400">{{ $session->user_agent ?: 'Navegador não informado' }}</p>
                         </x-modern.table.cell>
-                        <x-modern.table.cell class="whitespace-nowrap">{{ \Carbon\Carbon::createFromTimestamp($session->last_activity)->format('d/m/Y H:i:s') }}</x-modern.table.cell>
+                        <x-modern.table.cell class="whitespace-nowrap">{{ $session->last_activity_at->format('d/m/Y H:i:s') }}</x-modern.table.cell>
                         <x-modern.table.cell>
                             <x-modern.modal :name="'logout-session-'.$session->session_id" title="Encerrar sessão" class="w-full max-w-md">
                                 <x-slot:trigger>

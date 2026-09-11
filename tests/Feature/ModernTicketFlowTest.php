@@ -90,7 +90,18 @@ class ModernTicketFlowTest extends TestCase
             ->assertSee('Responder publicamente')
             ->assertSee('Adicionar nota interna')
             ->assertSee('Use @ para mencionar integrantes da equipe')
+            ->assertSee($context['actor']->name.' (Equipe)')
             ->assertDontSee('Horas gastas');
+    }
+
+    public function test_ticket_details_identify_a_client_creator(): void
+    {
+        $context = $this->context();
+        $context['ticket']->update(['user_id' => $context['client']->id]);
+        $this->actingAs($context['actor']);
+
+        $this->get(route('tickets.show', $context['ticket']))
+            ->assertSee($context['client']->name.' (Cliente)');
     }
 
     public function test_livewire_creates_ticket_with_attachment_and_contact_company(): void
@@ -243,7 +254,8 @@ class ModernTicketFlowTest extends TestCase
         $this->assertSame('fechado', $ticket->status);
         $this->assertSame(75, $ticket->horas_gastas);
         $this->assertSame('Atendimento concluído', $ticket->descricao_final);
-        $component->assertSee('Horas gastas');
+        $component->assertSee('Tempo registrado: 1h 15min')
+            ->assertDontSee('Horas gastas');
     }
 
     public function test_component_rechecks_access_and_locks_ticket_identity(): void

@@ -46,7 +46,7 @@ class ModernRelatedCatalogsTest extends TestCase
             $this->actingAs($this->user($role));
             foreach (['empresas' => $company->id, 'clientes' => $contact->id, 'usuarios' => $analyst->id] as $path => $id) {
                 foreach ($path === 'clientes' ? ['/create?empresa_id='.$company->id, '/'.$id.'/edit'] : ['', '/create', '/'.$id.'/edit'] as $suffix) {
-                    $this->get('/cadastros/'.$path.$suffix)->assertOk()->assertSee('Voltar ao sistema')
+                    $this->get('/cadastros/'.$path.$suffix)->assertOk()->assertDontSee('Voltar ao sistema')
                         ->assertSee('Empresas')->assertDontSee('adminlte', false)->assertDontSee('jquery', false);
                 }
             }

@@ -5,9 +5,5 @@
         <x-modern.staff.navigation :section="'tickets-'.$section" />
     </x-slot:navigation>
 
-    <x-slot:actions>
-        <x-modern.button :href="route('home')" variant="outline" icon="arrow-left">Voltar ao sistema</x-modern.button>
-    </x-slot:actions>
-
     {{ $slot }}
 </x-layouts.modern>

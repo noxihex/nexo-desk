@@ -2,13 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Modern\Administration\AuditIndex;
 use App\Models\Backup;
 use App\Models\InboundMailbox;
 use App\Models\Setor;
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
+use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Tests\TestCase;
@@ -84,6 +87,102 @@ class ModernAdministrationTest extends TestCase
                 ->assertDontSee('jquery', false)
                 ->assertDontSee('adminlte', false);
         }
+    }
+
+    public function test_logged_users_page_displays_last_activity_in_application_timezone(): void
+    {
+        $admin = $this->user('administrador');
+        $user = $this->user('cliente');
+        DB::table('sessions')->insert([
+            'id' => 'session-with-known-activity',
+            'user_id' => $user->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Navegador de teste',
+            'payload' => 'payload',
+            'last_activity' => 1789134000,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('administracao.usuarioslogados'))
+            ->assertSee('11/09/2026 10:40:00');
+    }
+
+    public function test_audit_page_filters_records_by_user_action_object_and_date_range(): void
+    {
+        $admin = $this->user('administrador');
+        $admin->update(['name' => 'Administradora da auditoria']);
+        $auditor = User::factory()->create(['name' => 'Responsavel da auditoria', 'status' => true]);
+
+        DB::table('audits')->insert([
+            [
+                'user_type' => User::class,
+                'user_id' => $auditor->id,
+                'event' => 'updated',
+                'auditable_type' => Ticket::class,
+                'auditable_id' => 1234,
+                'old_values' => json_encode(['status' => 'Alteração selecionada']),
+                'new_values' => json_encode(['status' => 'Concluído']),
+                'created_at' => '2026-09-01 12:00:00',
+                'updated_at' => '2026-09-01 12:00:00',
+            ],
+            [
+                'user_type' => User::class,
+                'user_id' => $admin->id,
+                'event' => 'created',
+                'auditable_type' => User::class,
+                'auditable_id' => $admin->id,
+                'old_values' => json_encode(['name' => 'Alteração fora dos filtros']),
+                'new_values' => json_encode(['name' => 'Outro registro']),
+                'created_at' => '2026-09-03 12:00:00',
+                'updated_at' => '2026-09-03 12:00:00',
+            ],
+        ]);
+
+        $this->actingAs($admin);
+
+        Livewire::test(AuditIndex::class)
+            ->set('userId', (string) $auditor->id)
+            ->set('event', 'updated')
+            ->set('auditableType', Ticket::class)
+            ->set('auditableId', '1234')
+            ->set('from', '2026-09-01')
+            ->set('to', '2026-09-02')
+            ->call('applyFilters')
+            ->assertHasNoErrors()
+            ->assertSee('Todas as ações')
+            ->assertSee('Todos os objetos')
+            ->assertSee('Administradora da auditoria (Equipe)', false)
+            ->assertSee('Responsavel da auditoria (Cliente)', false)
+            ->assertSee('Alteração selecionada')
+            ->assertDontSee('Alteração fora dos filtros');
+    }
+
+    public function test_audit_page_pagination_updates_with_livewire(): void
+    {
+        $admin = $this->user('administrador');
+        $audits = collect(range(1, 11))->map(fn (int $id) => [
+            'user_type' => User::class,
+            'user_id' => $admin->id,
+            'event' => 'updated',
+            'auditable_type' => Ticket::class,
+            'auditable_id' => $id,
+            'old_values' => json_encode(['status' => 'Anterior']),
+            'new_values' => json_encode(['status' => 'Atualizado']),
+            'created_at' => sprintf('2026-09-01 12:%02d:00', 60 - $id),
+            'updated_at' => sprintf('2026-09-01 12:%02d:00', 60 - $id),
+        ])->all();
+        DB::table('audits')->insert($audits);
+
+        $this->actingAs($admin);
+
+        Livewire::test(AuditIndex::class)
+            ->set('event', 'updated')
+            ->call('applyFilters')
+            ->assertViewHas('audits', fn ($audits) => $audits->currentPage() === 1)
+            ->assertSee('wire:click="gotoPage(2, \'page\')"', false)
+            ->call('gotoPage', 2)
+            ->assertViewHas('audits', fn ($audits) => $audits->currentPage() === 2)
+            ->assertSee('Ticket #11');
     }
 
     public function test_administration_pages_reject_guests_and_non_administrators(): void
