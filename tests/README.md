@@ -1,6 +1,6 @@
 # Testes
 
-O Nexo Desk utiliza **PHPUnit 9** para verificar regras de negócio, rotas, autorização e respostas da aplicação. Os testes estão organizados em `tests/Unit` e `tests/Feature`, com configuração em [`phpunit.xml`](../phpunit.xml).
+O Nexo Desk utiliza **PHPUnit 11** para verificar regras de negócio, rotas, autorização e respostas da aplicação. Os testes estão organizados em `tests/Unit` e `tests/Feature`, com configuração em [`phpunit.xml`](../phpunit.xml). A versão suportada pelo projeto é definida em `composer.json` (`^11.5`).
 
 Execute os comandos deste guia na raiz do projeto, em um ambiente de desenvolvimento ou integração contínua.
 
@@ -8,7 +8,7 @@ Execute os comandos deste guia na raiz do projeto, em um ambiente de desenvolvim
 
 Conclua a configuração descrita no [README principal](../README.md) e instale as dependências de desenvolvimento com `composer install` (sem `--no-dev`). O comando `php` deve estar disponível no terminal; caso contrário, utilize o caminho do executável da sua instalação. Em ambientes com containers, execute os comandos no serviço da aplicação.
 
-A suíte requer MySQL ou MariaDB e a extensão PHP `pdo_mysql`. Os testes isolados `RoleSeederTest` e `UnifyClientRolesTest` usam SQLite em memória e também exigem `pdo_sqlite`.
+A suíte principal requer MySQL ou MariaDB e a extensão PHP `pdo_mysql`. Os testes isolados `RoleSeederTest`, `UnifyClientRolesTest`, `CategoriaSetorMigrationTest` e `SanctumExpiresAtMigrationTest` usam SQLite em memória e também exigem `pdo_sqlite`.
 
 ### Banco de testes
 
@@ -18,7 +18,7 @@ Crie uma vez o banco exclusivo para os testes:
 CREATE DATABASE nexodesk_testing CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-**Esse banco é descartável.** Os testes com `RefreshDatabase` recriam as tabelas usando as migrations da aplicação e isolam os dados de cada teste. Não armazene dados de trabalho nele nem execute duas suítes simultaneamente contra o mesmo banco.
+**Esse banco é descartável.** Os testes com `RefreshDatabase` garantem que o schema esteja atualizado usando as migrations da aplicação e isolam os dados de cada teste, normalmente por meio de transações. Não armazene dados de trabalho nele nem execute duas suítes simultaneamente contra o mesmo banco.
 
 A conexão padrão utiliza `127.0.0.1:3306`, usuário `root` e senha vazia. Para usar outra conexão, defina estas variáveis no ambiente do processo ou no `.env` local:
 
@@ -63,6 +63,18 @@ php vendor/phpunit/phpunit/phpunit --order-by=random --random-order-seed=2026090
 
 Repita a mesma semente para reproduzir a ordem ou altere o número para explorar outras sequências.
 
+Para listar os testes disponíveis sem executá-los:
+
+```bash
+./vendor/bin/phpunit --list-tests
+```
+
+Para identificar os dez testes mais lentos:
+
+```bash
+php artisan test --profile
+```
+
 ## Isolamento de serviços
 
 O PHPUnit define uma chave de aplicação exclusiva para testes, cache e sessão em memória, filas síncronas e transporte de e-mail `array`, sem envio real de mensagens. As notificações ficam desativadas por padrão e os cenários focados usam os fakes de Mail e Queue; nenhuma integração depende da antiga API Python local.
@@ -84,6 +96,6 @@ A classe `Tests\TestCase` usa `Http::fake()` para simular chamadas feitas pelo c
 | --- | --- |
 | Falha de conexão ou acesso negado | Disponibilidade do MySQL/MariaDB, variáveis `TEST_DB_*` e permissões do usuário. |
 | Banco `nexodesk_testing` inexistente | Crie o banco com o comando SQL deste guia. |
-| Driver ou extensão ausente | Verifique as extensões do PHP utilizado no terminal, incluindo `pdo_mysql` e `pdo_sqlite`. |
+| Driver ou extensão ausente | Verifique as extensões do PHP utilizado no terminal, incluindo `pdo_mysql` para a suíte principal e `pdo_sqlite` para os testes de migrations e seeders isolados. |
 | Configuração cacheada | Execute `php artisan config:clear` no ambiente de testes. |
 | Falha em uma asserção | Compare o resultado com o requisito atual e investigue a regressão; uma falha antiga não é automaticamente um falso positivo. |
