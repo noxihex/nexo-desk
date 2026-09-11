@@ -1,14 +1,11 @@
-{{-- resources/views/errors/419.blade.php --}}
-@extends('errors::minimal')
+@extends('errors::layout')
 
-@section('title', __('Página Expirada'))
+@section('title', 'Página expirada')
 @section('code', '419')
-@section('message')
-    <script>
-        // Redirecionar para a página de login após 3 segundos
-        setTimeout(function() {
-            window.location.href = "{{ route('login') }}";
-        }, 3000);
-    </script>
-    <p>Sessão expirada. Você será redirecionado para a página de login.</p>
+@section('message', 'Sua sessão expirou. Entre novamente para continuar usando o sistema.')
+
+@section('action')
+    <a href="{{ route('login') }}" class="error-action">
+        Ir para o login
+    </a>
 @endsection

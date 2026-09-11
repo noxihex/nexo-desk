@@ -51,6 +51,13 @@ class ApiRouteContractTest extends TestCase
         $this->assertSame([], $duplicates, 'Nomes de rota duplicados: '.implode(', ', $duplicates));
     }
 
+    public function test_unused_catalog_show_routes_are_not_registered(): void
+    {
+        $this->assertFalse(Route::has('categorias.show'));
+        $this->assertFalse(Route::has('empresas.show'));
+        $this->assertFalse(Route::has('setores.show'));
+    }
+
     public function test_application_route_count_matches_the_upgrade_baseline(): void
     {
         $applicationRoutes = collect(Route::getRoutes())
@@ -58,7 +65,7 @@ class ApiRouteContractTest extends TestCase
                 || str_starts_with($route->uri(), 'livewire-')
                 || str_starts_with($route->uri(), 'flux/'));
 
-        $this->assertCount(126, $applicationRoutes);
+        $this->assertCount(122, $applicationRoutes);
     }
 
     private function assertRoutes(array $expected): void

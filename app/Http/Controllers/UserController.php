@@ -3,14 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Actions\Account\UpdateAccount;
-
 use App\Actions\Cadastros\ManagePeople;
 use App\Actions\Cadastros\SavePerson;
 use App\Actions\Cadastros\ChangePersonStatus;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -71,46 +68,10 @@ class UserController extends Controller
         return redirect()->route('usuarios.index')->with('success', $user->status ? 'Usuário ativado com sucesso!' : 'Usuário desativado com sucesso!');
     }
 
-    /**
-     * Exibe o formulário de instalação inicial.
-     */
-    public function install()
-    {
-        $roles = Role::all(); // Carrega todas as permissões (roles)
-        return view('cadastros.usuarios.install', compact('roles'));
-    }
-
-    /**
-     * Armazena o primeiro usuário na instalação inicial.
-     */
-    public function installStore(Request $request)
-    {
-        // Validação dos campos
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|string', // Valida a permissão (role)
-        ]);
-
-        // Cria o usuário
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
-
-        // Atribui o papel ao usuário
-        $user->assignRole($request->role);
-
-        return redirect('/login')->with('success', 'Usuário criado com sucesso!');
-    }
-
     public function indexClientes()
     {
         return redirect()->route('empresas.index');
     }
-
 
     public function createCliente(Request $request)
     {

@@ -38,30 +38,4 @@ class Handler extends ExceptionHandler
             //
         });
     }
-
-        /**
-     * Render an exception into an HTTP response.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Throwable  $exception
-     * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response
-     */
-    public function render($request, Throwable $exception)
-    {
-        // Verifica se o erro é do tipo 419 (Page Expired)
-        if ($exception instanceof HttpException && $exception->getStatusCode() === 419) {
-            // Redireciona para a página de login com mensagem de erro
-            return redirect()->route('login')->with('error', 'Sua sessão expirou. Por favor, faça login novamente.');
-        }
-
-        // Verifica se o erro é do tipo 404 (Not Found)
-        if ($exception instanceof HttpException && $exception->getStatusCode() === 404) {
-            // Retorna a view personalizada para o erro 404
-            return response()->view('errors.404', [], 404);
-        }
-
-        // Para outros erros, mantém o comportamento padrão
-        return parent::render($request, $exception);
-    }
-
 }

@@ -21,7 +21,7 @@ Conferência realizada no navegador local com dados de demonstração já existe
 - Horas gastas ocultas para tickets ainda não fechados.
 - Uploader em formato de dropzone, com progresso, três arquivos acumulados em duas seleções, lista e controles de remoção conferidos em desktop; composição completa conferida no rodapé mobile.
 - Formulários e detalhes conferidos nos temas claro e escuro.
-- Transição entre o stack moderno e a visão geral legada, com retorno aos detalhes por carregamento completo.
+- Navegação entre tickets e a Visão Geral, com retorno aos detalhes por carregamento completo.
 - Links de criação, detalhes e edição preservando `return_to`, inclusive depois de filtros Livewire.
 - Portal do cliente em desktop: lista pessoal, alternância para tickets da empresa, busca, criação e detalhes; os mesmos breakpoints responsivos do layout moderno são cobertos pelos componentes compartilhados.
 - Criação do cliente com setor pesquisável e uploader acumulativo; resposta pública em card próprio com múltiplos anexos.
@@ -30,4 +30,4 @@ Conferência realizada no navegador local com dados de demonstração já existe
 
 As capturas foram inspecionadas durante o QA no navegador. Nenhum arquivo binário novo foi persistido no worktree nesta execução.
 
-Validação automatizada: `ModernTicketFlowTest`, `ModernTicketListingsTest` e `ModernClientTicketFlowTest`; suíte completa com 227 testes e 1847 asserções; `npm run build:modern` concluído com sucesso.
+Validação automatizada: `ModernTicketFlowTest`, `ModernTicketListingsTest` e `ModernClientTicketFlowTest`; suíte completa com 227 testes e 1847 asserções; `npm run build` concluído com sucesso.

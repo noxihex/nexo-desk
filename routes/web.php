@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SetorController;
 use App\Http\Controllers\EmpresaController;
@@ -22,6 +21,10 @@ use App\Http\Controllers\TicketFollowerController;
 use App\Http\Controllers\TicketMentionController;
 use App\Http\Controllers\InternalMessageAttachmentController;
 use App\Http\Controllers\TicketTimelinePreferenceController;
+use App\Http\Controllers\Auth\ConfirmPasswordController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 
 /*
 |--------------------------------------------------------------------------
@@ -43,7 +46,15 @@ Route::get('/', function () {
 
 
 // Rotas de autenticação
-Auth::routes(['register' => false]);
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login']);
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::get('/password/reset', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+Route::post('/password/email', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/password/reset/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/password/reset', [ResetPasswordController::class, 'reset'])->name('password.update');
+Route::get('/password/confirm', [ConfirmPasswordController::class, 'showConfirmForm'])->name('password.confirm');
+Route::post('/password/confirm', [ConfirmPasswordController::class, 'confirm']);
 
 
 
@@ -110,9 +121,11 @@ Route::middleware(['auth', 'verifica.status', 'role:supervisor|administrador'])-
 
     // Prefixa todas as rotas de cadastros
     Route::prefix('cadastros')->group(function () {
-        Route::resource('categorias', CategoriaController::class);
-        Route::resource('empresas', EmpresaController::class);
-        Route::resource('setores', SetorController::class)->parameters(['setores' => 'setor']);
+        Route::resource('categorias', CategoriaController::class)->except('show');
+        Route::resource('empresas', EmpresaController::class)->except('show');
+        Route::resource('setores', SetorController::class)
+            ->except('show')
+            ->parameters(['setores' => 'setor']);
 
         // Gestão de clientes e usuários (AQUI O ANALISTA SERÁ BARRADO VIA URL)
         Route::get('/clientes', [UserController::class, 'indexClientes'])->name('clientes.index');

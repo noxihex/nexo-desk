@@ -64,12 +64,8 @@ class ModernAuthenticationTest extends TestCase
         $this->assertFalse(Route::has('register'));
         $this->assertFalse(Route::has('verification.notice'));
 
-        foreach (['auth.register', 'auth.verify'] as $view) {
-            $html = view($view)->render();
-            $this->assertStringContainsString('disabled', $html);
-            $this->assertStringNotContainsString('wire:submit', $html);
-            $this->assertStringNotContainsString('adminlte', $html);
-        }
+        $this->assertFileDoesNotExist(resource_path('views/auth/register.blade.php'));
+        $this->assertFileDoesNotExist(resource_path('views/auth/verify.blade.php'));
     }
 
     public function test_livewire_login_remembers_user_regenerates_session_and_redirects_to_intended(): void
@@ -252,5 +248,7 @@ class ModernAuthenticationTest extends TestCase
         $this->postJson('/password/confirm', ['password' => 'new-password'])->assertNoContent();
         $this->post('/logout')->assertRedirect('/');
         $this->postJson('/login', ['email' => $user->email, 'password' => 'new-password'])->assertNoContent();
+        $this->postJson('/logout')->assertNoContent();
+        $this->assertGuest();
     }
 }

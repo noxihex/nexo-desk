@@ -5,19 +5,20 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Auth\Login;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class LoginController extends Controller
 {
-    use AuthenticatesUsers;
-
-    protected $redirectTo = RouteServiceProvider::HOME;
-
     public function __construct()
     {
         $this->middleware('guest')->except('logout');
+    }
+
+    public function showLoginForm()
+    {
+        return view('auth.login');
     }
 
     public function login(Request $request)
@@ -26,6 +27,17 @@ class LoginController extends Controller
 
         return $request->wantsJson()
             ? new JsonResponse([], 204)
-            : redirect()->intended($this->redirectPath());
+            : redirect()->intended(RouteServiceProvider::HOME);
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::guard()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return $request->wantsJson()
+            ? new JsonResponse([], 204)
+            : redirect('/');
     }
 }

@@ -1,6 +1,6 @@
 # Nexo Desk
 
-O **Nexo Desk** é um sistema de gerenciamento de chamados que centraliza o atendimento entre clientes e equipes de suporte. Desenvolvido com **Laravel 12** e **AdminLTE 3**, permite organizar solicitações por empresa, setor e categoria, acompanhar o histórico de atendimento e consultar indicadores de trabalho.
+O **Nexo Desk** é um sistema de gerenciamento de chamados que centraliza o atendimento entre clientes e equipes de suporte. Desenvolvido com **Laravel 12**, **Livewire 4**, **Flux 2**, **Tailwind CSS 4** e **Vite**, permite organizar solicitações por empresa, setor e categoria, acompanhar o histórico de atendimento e consultar indicadores de trabalho.
 
 ## Funcionalidades
 
@@ -90,12 +90,10 @@ Esse seeder pode ser repetido sem duplicações, preserva permissões adicionais
 
 ```bash
 npm install
-npm run prod
+npm run build
 ```
 
-O Laravel Mix gera os arquivos JavaScript e CSS em `public/`. Durante o desenvolvimento, use `npm run dev` para uma compilação ou `npm run watch` para recompilar a cada alteração.
-
-O comando `npm run prod` compila tanto a interface legada com Mix quanto a stack moderna com Vite. Consulte o guia da [stack moderna](docs/modern-stack.md) para executar os builds separadamente, iniciar os dois watchers e criar novas páginas com Livewire e Flux.
+O Vite gera os arquivos JavaScript e CSS otimizados em `public/build`. Durante o desenvolvimento, mantenha `npm run dev` em execução para recompilar as alterações com HMR. Consulte o guia da [stack moderna](docs/modern-stack.md) para criar novas páginas com Livewire e Flux.
 
 ### 5. Crie o primeiro administrador
 
@@ -145,9 +143,8 @@ APP_NAME_INICIO="Nexo"
 APP_NAME_FINAL="Desk"
 ```
 
-A logo e o favicon originais também são versionados. Opcionalmente, para utilizar outra identidade visual, substitua os arquivos:
+A identidade visual padrão também é versionada. Opcionalmente, para utilizar outra marca, substitua o arquivo usado como logo e favicon:
 
-- `public/vendor/adminlte/dist/img/logodesk.png`
 - `public/favicon.ico`
 
 A recuperação de senha por e-mail vem desativada (`PASSWORD_RESET_ENABLED=false`). Para habilitá-la, configure as variáveis `MAIL_*` com um servidor SMTP válido e defina `PASSWORD_RESET_ENABLED=true`. O host `mailhog` do exemplo precisa ser substituído se esse serviço não estiver disponível no seu ambiente.
@@ -204,7 +201,7 @@ Antes de atualizar, faça backup do banco e dos arquivos armazenados. Após obte
 ```bash
 composer install --no-dev --optimize-autoloader
 npm install
-npm run prod
+npm run build
 php artisan migrate --force
 ```
 

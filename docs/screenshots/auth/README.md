@@ -11,4 +11,4 @@ Capturas feitas no navegador com build Vite de produção. Os dados exibidos sã
 - [Template de cadastro inativo](register-mobile.png) e [continuação](register-mobile-bottom.png)
 - [Template de verificação inativo](verify-mobile.png)
 
-Login e confirmação redirecionaram para `/home` com carregamento completo; a página legada carregou somente seus scripts de jQuery, Bootstrap, AdminLTE e Mix. Também foram conferidos labels, foco por teclado, alternância de visibilidade da senha, mensagens reativas e ausência de rolagem horizontal em 390 px.
+Login e confirmação redirecionaram para `/home` com carregamento completo; a página moderna carregou Livewire e os assets Vite sem transportar scripts legados. Também foram conferidos labels, foco por teclado, alternância de visibilidade da senha, mensagens reativas e ausência de rolagem horizontal em 390 px.

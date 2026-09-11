@@ -29,11 +29,3 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
-
-# Gerados pelo MIX
-/public/css/app.css
-/public/css/app.css.map
-/public/js/app.js
-/public/js/app.js.LICENSE.txt
-/public/js/app.js.map
-/public/mix-manifest.json

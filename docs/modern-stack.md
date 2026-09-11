@@ -1,6 +1,6 @@
 # Stack moderna: Vite, Tailwind, Livewire e Flux
 
-Esta fundação permite criar páginas modernas sem alterar as telas existentes em Bootstrap e AdminLTE. O legado continua compilado pelo Laravel Mix; novas páginas usam exclusivamente Vite, Tailwind CSS 4, Livewire 4 e Flux 2 Free.
+A interface web usa exclusivamente Vite, Tailwind CSS 4, Livewire 4 e Flux 2 Free. AdminLTE, Laravel Mix e o scaffolding do Laravel UI foram removidos da aplicação.
 
 ## Requisitos e instalação
 
@@ -22,31 +22,25 @@ Não execute os comandos de publicação de componentes do Flux. Os componentes 
 
 | Comando | Função |
 |---|---|
-| `npm run dev` | Compila o legado uma vez com Mix. |
-| `npm run watch` | Observa e recompila somente o legado. |
-| `npm run dev:modern` | Inicia o Vite moderno com HMR em `5173`. |
-| `npm run dev:all` | Executa o watcher do Mix e o Vite em paralelo. |
-| `npm run build:legacy` | Gera o build de produção do legado. |
-| `npm run build:modern` | Gera o build de produção moderno. |
-| `npm run prod` ou `npm run production` | Executa os dois builds de produção e interrompe se algum falhar. |
+| `npm run dev` | Inicia o Vite com HMR em `5173`. |
+| `npm run build` | Gera os assets otimizados de produção. |
 
-Para trabalhar nas duas interfaces:
+Para desenvolver a interface:
 
 ```bash
 php artisan serve
-npm run dev:all
+npm run dev
 ```
 
-Os dois servidores de frontend não compartilham arquivo HMR. O Mix usa `public/hot`, enquanto o Vite usa `storage/vite.hot`, a porta fixa `5173` e `strictPort`. Se a porta estiver ocupada, o Vite falha explicitamente em vez de escolher outra porta.
+O Vite registra o estado de desenvolvimento em `storage/vite.hot` e usa a porta fixa `5173` com `strictPort`. Se a porta estiver ocupada, ele falha explicitamente em vez de escolher outra porta.
 
 ## Isolamento dos assets
 
 | Stack | Entrada | Saída/manifesto | HMR |
 |---|---|---|---|
-| Legada | `resources/js/app.js` e `resources/sass/app.scss` | `public/js`, `public/css` e `public/mix-manifest.json` | `public/hot` |
-| Moderna | `resources/js/modern.js` e `resources/css/modern.css` | `public/build` e `public/build/manifest.json` | `storage/vite.hot` |
+| Vite | `resources/js/modern.js` e `resources/css/modern.css` | `public/build` e `public/build/manifest.json` | `storage/vite.hot` |
 
-`modern.js` não importa Bootstrap, AdminLTE, jQuery, Sass ou scripts legados. O Tailwind usa `source(none)` e examina somente os layouts modernos, as views de autenticação, os wrappers modernos e as classes/views Livewire. Não inclua `@vite`, diretivas Livewire, Flux ou classes Tailwind em uma view que estenda `adminlte::page` ou `adminlte::auth.*`.
+`modern.js` não importa Bootstrap, AdminLTE, jQuery, Sass ou scripts legados. O Tailwind usa `source(none)` e examina somente os layouts modernos, as views de autenticação, os wrappers modernos e as classes/views Livewire. Nenhuma view da aplicação estende namespaces do AdminLTE.
 
 ## Primeira página moderna
 
@@ -69,7 +63,7 @@ public function render()
 }
 ```
 
-Em uma etapa futura, registre a página preservando o nome da rota e os mesmos middlewares de autenticação, permissão e contexto da versão legada. Não substitua a rota antiga até concluir a validação funcional.
+Registre novas páginas preservando os padrões de autenticação, permissão e contexto já adotados pela aplicação. Ao alterar uma rota existente, mantenha seu contrato público ou documente explicitamente a incompatibilidade.
 
 Para adicionar a navegação, preencha o slot `navigation` do layout apenas com rotas modernas:
 
@@ -84,7 +78,7 @@ Para adicionar a navegação, preencha o slot `navigation` do layout apenas com 
 </x-slot:navigation>
 ```
 
-Os links usam navegação convencional. Não use `wire:navigate`: o carregamento completo impede que assets modernos e legados sejam transportados entre páginas.
+Os links usam navegação convencional. Não use `wire:navigate` sem validar todo o ciclo de vida da página, pois os componentes atuais foram projetados para carregamento completo.
 
 ## Componentes `x-modern:*`
 
@@ -217,7 +211,7 @@ Quando o Flux Free possuir um equivalente, o wrapper deve delegar ao Flux e comp
 - não exponha ao consumidor qual implementação interna está sendo usada;
 - não publique nem copie os componentes internos do Flux para o projeto.
 
-## Checklist antes de substituir uma tela legada
+## Checklist antes de alterar uma página
 
 - Preserve a URL, o nome da rota e os middlewares existentes.
 - Compare autenticação, autorização, validação e mensagens de erro.
@@ -227,33 +221,35 @@ Quando o Flux Free possuir um equivalente, o wrapper deve delegar ao Flux e comp
 - Teste teclado, foco, leitor de tela, responsividade e tema claro/escuro.
 - Adicione testes de regressão para regras de negócio e contratos da página.
 - Valide a página moderna com usuários de cada perfil relevante.
-- Somente então substitua a rota/view antiga; mantenha uma estratégia simples de reversão.
-- Remova dependências legadas apenas quando nenhuma tela ainda depender delas.
+- Mantenha uma estratégia simples de reversão para alterações de maior risco.
+- Adicione dependências somente quando os recursos atuais não atenderem ao caso de uso.
 
 ## Autenticação moderna
 
-A primeira migração atende `/login`, `/password/reset`, `/password/reset/{token}` e `/password/confirm`. Os GETs e nomes de rota continuam nos controllers existentes; as views `auth.*` montam o layout `components.layouts.auth` e os componentes em `App\Livewire\Modern\Auth`.
+A autenticação atende `/login`, `/password/reset`, `/password/reset/{token}` e `/password/confirm`. Os GETs e nomes de rota ficam nos controllers dedicados; as views `auth.*` montam o layout `components.layouts.auth` e os componentes em `App\Livewire\Modern\Auth`.
 
 Os formulários ativos usam `wire:submit`. As operações em `App\Actions\Auth` são compartilhadas com os POSTs existentes, mantendo validações, respostas HTTP/JSON, guard, broker, mensagens e redirecionamentos. O login compartilha o limite de cinco tentativas por minuto por e-mail/IP entre os dois transportes. A confirmação revalida a sessão em cada submissão. As senhas são limpas do estado dos componentes após a tentativa, e o token de redefinição é uma propriedade bloqueada do Livewire.
 
-Os links e redirecionamentos usam carregamento completo, inclusive na entrada das telas internas legadas. O layout de autenticação carrega somente Vite, Livewire e Flux, exibe a marca e o favicon do Nexo Desk e oferece os temas claro/escuro/sistema por três botões de ícone acessíveis. Ele não utiliza a sidebar moderna. Os wrappers adicionais `x-modern.checkbox` (`name`, `label`) e `x-modern.alert` (`variant`, `heading`, conteúdo no slot padrão) encaminham atributos ao Flux Free; o aviso define `role="alert"` para erros e `role="status"` nos demais casos.
+Os links e redirecionamentos usam carregamento completo. O layout de autenticação carrega somente Vite, Livewire e Flux, exibe a marca e o favicon do Nexo Desk e oferece os temas claro/escuro/sistema por três botões de ícone acessíveis. Ele não utiliza a sidebar moderna. Os wrappers adicionais `x-modern.checkbox` (`name`, `label`) e `x-modern.alert` (`variant`, `heading`, conteúdo no slot padrão) encaminham atributos ao Flux Free; o aviso define `role="alert"` para erros e `role="status"` nos demais casos.
 
 A recuperação respeita `PASSWORD_RESET_ENABLED` a cada envio. O padrão continua desativado, com a mesma orientação para procurar o administrador. Não há alteração de configuração de e-mail nem de banco de dados.
 
-`auth.register` e `auth.verify` são somente templates modernos preparados para uma etapa futura. Não possuem ações Livewire nem rotas públicas, e seus controles de envio ficam desabilitados. Ativar esses fluxos exige uma entrega própria, incluindo as regras de cadastro e verificação; não basta expor os templates.
+Cadastro público e verificação de e-mail permanecem deliberadamente indisponíveis. Suas rotas, controllers e templates inativos foram removidos; habilitar esses fluxos no futuro exige uma entrega própria com regras de negócio, autorização e cobertura específicas.
 
 ### Verificação e reversão
 
 - Executar `php artisan test --filter=ModernAuthenticationTest` para os contratos Livewire e HTTP, incluindo o envelope JSON real do Livewire.
-- Executar `php artisan test` no banco exclusivo `nexodesk_testing` e `npm run build:modern` antes da entrega.
-- Conferir login, recuperação, redefinição e confirmação em desktop/mobile, teclado, temas e navegação para o legado; notificações de teste devem ser simuladas.
-- Para reverter, reverter o commit desta migração e executar novamente o build moderno. Os endpoints POST, o logout, os assets Mix e os templates das páginas internas continuam disponíveis; não há migrações a desfazer.
+- Executar `php artisan test` no banco exclusivo `nexodesk_testing` e `npm run build` antes da entrega.
+- Conferir login, recuperação, redefinição e confirmação em desktop/mobile, teclado, temas e navegação para o sistema; notificações de teste devem ser simuladas.
+- Para reverter alterações nesse fluxo, restaurar os controllers, Actions e rotas em conjunto e executar novamente o build. Os endpoints POST e o logout não exigem migrações de banco.
 
 ## Cadastros modernos: categorias e setores
 
-As páginas de listagem, criação e edição em `/cadastros/categorias` e `/cadastros/setores` usam o layout moderno por meio de `x-modern.cadastros.layout`. Os GETs continuam nos controllers existentes e os formulários são componentes em `App\Livewire\Modern\Cadastros`. Os endpoints POST, PUT/PATCH e DELETE mantêm URLs, nomes de rota e redirecionamentos. As consultas de categorias usadas pelos tickets e pela API não foram alteradas. Grupos permanece fora desta migração.
+As páginas de listagem, criação e edição em `/cadastros/categorias` e `/cadastros/setores` usam o layout moderno por meio de `x-modern.cadastros.layout`. Os GETs continuam nos controllers existentes e os formulários são componentes em `App\Livewire\Modern\Cadastros`. Os endpoints POST, PUT/PATCH e DELETE mantêm URLs, nomes de rota e redirecionamentos. Grupos não faz parte da interface web; o modelo e a consulta da API v2 permanecem para compatibilidade histórica.
 
-A sidebar desses cadastros mostra Categorias e Setores com indicação da seção atual. “Voltar ao sistema” abre `/home`. Todos os links entre páginas usam carregamento completo para preservar o isolamento entre Mix e Vite.
+Categorias, empresas e setores não possuem página individual de detalhes. Por isso, seus recursos HTTP não registram as rotas `categorias.show`, `empresas.show` e `setores.show`; os demais endpoints CRUD permanecem disponíveis.
+
+A sidebar desses cadastros mostra Categorias e Setores com indicação da seção atual. “Voltar ao sistema” abre `/home`. Os links usam carregamento completo para manter o estado das páginas previsível.
 
 ### Comportamento e autorização
 
@@ -270,13 +266,13 @@ A sidebar desses cadastros mostra Categorias e Setores com indicação da seçã
 
 Executar `php artisan test --filter=ModernCatalogsTest`, os testes existentes de categorias compartilhadas e a suíte completa em `nexodesk_testing`. A cobertura inclui HTTP e Livewire, JSON real, auditoria, perda de permissão/sessão, manipulação de IDs, validações, filtros, paginação, preservação de vínculos e bloqueio por caixa de e-mail.
 
-Executar `npm run build:modern` e conferir desktop/mobile, temas, teclado, foco dos modais e transição para o legado. As capturas e os cenários exercitados estão em [screenshots/cadastros](screenshots/cadastros/README.md).
+Executar `npm run build` e conferir desktop/mobile, temas, teclado, foco dos modais e navegação entre os módulos. As capturas e os cenários exercitados estão em [screenshots/cadastros](screenshots/cadastros/README.md).
 
-A reversão consiste em reverter somente o commit desta migração e recompilar o build moderno. Não há migrações de banco, alterações da autenticação ou novas dependências a desfazer.
+A reversão dessas páginas exige restaurar suas entradas e componentes em conjunto e recompilar o build. Não há migrações de banco, alterações da autenticação ou novas dependências a desfazer.
 
 ## Cadastros relacionados: empresas, contatos e usuários
 
-As páginas de listagem, criação e edição em `/cadastros/empresas`, `/cadastros/clientes` e `/cadastros/usuarios` agora usam o layout moderno. A navegação compartilhada inclui Empresas e Usuários, além de Categorias e Setores. Contatos são acessados somente dentro de cada empresa; a antiga listagem independente redireciona para Empresas. Os menus legados, URLs, nomes de rotas, middlewares e endpoints HTTP permanecem disponíveis. Minha conta, instalação inicial, tickets e API não foram migrados nesta etapa.
+As páginas de listagem, criação e edição em `/cadastros/empresas`, `/cadastros/clientes` e `/cadastros/usuarios` usam o layout moderno. A navegação compartilhada inclui Empresas e Usuários, além de Categorias e Setores. Contatos são acessados somente dentro de cada empresa; a URL da antiga listagem independente redireciona para Empresas. URLs, nomes de rotas, middlewares e endpoints HTTP públicos foram preservados.
 
 ### Regras e relacionamentos
 
@@ -288,13 +284,13 @@ As páginas de listagem, criação e edição em `/cadastros/empresas`, `/cadast
 - Ativar/desativar usa modal com o nome e o estado desejado, ambos bloqueados contra alteração do cliente. Desativar encerra sessões e limpa o remember token; usuários e tickets são preservados. O usuário de ID 1 mantém sua proteção contra alteração de status. A autodesativação encerra a sessão; a troca do próprio perfil para analista retorna a `/home` por carregamento completo.
 - Empresas, contatos e usuários têm busca por nome com debounce de 300 ms e `search` na URL. As listas de empresas e usuários têm dez registros por página e ordenação por nome. Usuários mostram apenas ativos por padrão e aceitam `todos` para incluir inativos; contatos mostram ambos os estados. A lista dentro da empresa permanece sem paginação. A página é ajustada após exclusão ou desativação, preservando a busca.
 
-`SaveEmpresa`, `DeleteEmpresa`, `SavePerson` e `ChangePersonStatus` concentram validação e persistência para controllers e Livewire. As alterações usam transações e os eventos de auditoria dos modelos. Os componentes nunca chamam controllers. A varredura do Tailwind e o refresh do Vite incluem apenas as views migradas, sem incorporar a instalação inicial nem outros diretórios legados.
+`SaveEmpresa`, `DeleteEmpresa`, `SavePerson` e `ChangePersonStatus` concentram validação e persistência para controllers e Livewire. As alterações usam transações e os eventos de auditoria dos modelos. Os componentes nunca chamam controllers. A varredura do Tailwind e o refresh do Vite incluem as views atuais da aplicação.
 
 ### Validação e reversão dos cadastros relacionados
 
 `ModernRelatedCatalogsTest` cobre as telas migradas e o redirecionamento da antiga listagem independente, CRUD por HTTP e Livewire, envio JSON real, filtros, paginação, validação, senhas, perfis, IDs bloqueados, perda de sessão, alteração do próprio usuário, encerramento de sessões e preservação de contatos/tickets ao excluir empresas. Os testes anteriores de autorização, contatos, categorias e contratos de rotas/API continuam na suíte.
 
-Executar `php artisan test` exclusivamente em `nexodesk_testing` e `npm run build:modern`. As verificações visuais e capturas estão em [screenshots/relacionados](screenshots/relacionados/README.md).
+Executar `php artisan test` exclusivamente em `nexodesk_testing` e `npm run build`. As verificações visuais e capturas estão em [screenshots/relacionados](screenshots/relacionados/README.md).
 
 Para reverter, reverter o commit que contiver esta entrega e reconstruir os assets modernos. Não há migrações, novas dependências ou configuração de e-mail a desfazer. Se a entrega for agrupada com a migração de categorias/setores no mesmo commit, sua reversão também abrangerá esses cadastros; separar os commits permite reversão independente.
 
@@ -308,9 +304,9 @@ Capturas e cenários de conferência visual: [screenshots/minha-conta](screensho
 
 A senha atual é obrigatória para alterar a senha, e a nova senha exige oito caracteres e confirmação. Os três campos de senha são limpos após cada tentativa. As instruções ficam acima dos campos de nova senha e confirmação para preservar o alinhamento. A edição do perfil retorna por carregamento completo à própria página para atualizar também o nome no menu. Senha e preferências exibem retorno reativo em suas seções.
 
-As oito opções de notificação preservam os quatro eventos e os canais central interna/e-mail. Sem preferência persistida, todas começam habilitadas, como antes. Salvar a preferência não altera a configuração de envio de e-mail. Os assets continuam isolados do legado, e o Tailwind/Vite incluem somente a view migrada de Minha conta.
+As oito opções de notificação preservam os quatro eventos e os canais central interna/e-mail. Sem preferência persistida, todas começam habilitadas, como antes. Salvar a preferência não altera a configuração de envio de e-mail. Minha Conta usa exclusivamente os assets gerados pelo Vite.
 
-Validar com `php artisan test --filter=ModernAccountTest`, suíte completa em `nexodesk_testing` e `npm run build:modern`. A cobertura inclui os dois transportes, JSON real, permissões, validação de perfil e senha, preferências desmarcadas, sessão expirada, usuário inativo e tentativa de troca de conta. Para reverter, reverter o commit da entrega e recompilar os assets modernos; não há migração de banco nem dependências adicionais.
+Validar com `php artisan test --filter=ModernAccountTest`, suíte completa em `nexodesk_testing` e `npm run build`. A cobertura inclui os dois transportes, JSON real, permissões, validação de perfil e senha, preferências desmarcadas, sessão expirada, usuário inativo e tentativa de troca de conta. Para reverter, reverter o commit da entrega e recompilar os assets modernos; não há migração de banco nem dependências adicionais.
 
 ## Relatórios modernos
 
@@ -324,7 +320,7 @@ Os filtros usam `wire:submit`, mostram erros por campo e ficam sincronizados com
 
 Os gráficos são SVGs locais, sem Chart.js, adaptadores de data ou CDN. Cada gráfico inclui descrição acessível, títulos nos pontos e uma tabela expansível com os valores. O tema acompanha claro/escuro/sistema. A impressão exclui navegação, filtros e ações, mantendo identificação, período, indicadores, gráficos e tabela. A visualização mobile mantém os filtros empilhados e as tabelas com rolagem contida.
 
-Executar `php artisan test --filter=ModernReportsTest`, a suíte completa em `nexodesk_testing` e `npm run build:modern`. A cobertura verifica os dois relatórios por HTTP e Livewire, envelope JSON real, permissões, sessão expirada, referências inválidas, períodos, setor, opção de tickets abertos, horas, séries de atividade e SLA. Capturas e cenários visuais estão em [screenshots/relatorios](screenshots/relatorios/README.md).
+Executar `php artisan test --filter=ModernReportsTest`, a suíte completa em `nexodesk_testing` e `npm run build`. A cobertura verifica os dois relatórios por HTTP e Livewire, envelope JSON real, permissões, sessão expirada, referências inválidas, períodos, setor, opção de tickets abertos, horas, séries de atividade e SLA. Capturas e cenários visuais estão em [screenshots/relatorios](screenshots/relatorios/README.md).
 
 Para reverter, reverter o commit da entrega e reconstruir os assets modernos. Não há migrações de banco, dependências novas ou alterações nos tickets e APIs a desfazer.
 
@@ -338,11 +334,11 @@ Analistas sem a permissão de visualizar outros setores continuam limitados ao p
 
 A exclusão continua visível somente para administradores e foi extraída para `DeleteTicket`, compartilhada pelo Livewire e pelo endpoint DELETE existente. O ticket e seus vínculos são removidos em transação; anexos correspondentes são removidos do disco público. Não houve alteração das APIs.
 
-Executar `php artisan test --filter=ModernTicketListingsTest`, a suíte completa em `nexodesk_testing` e `npm run build:modern`. Conferir as três listas em desktop e mobile, temas claro/escuro/sistema, teclado, filtros e paginação, além das transições para criação, detalhes, edição e retorno do legado. Para reverter, reverter o commit da entrega e reconstruir os assets modernos; não há migrações nem dependências novas.
+Executar `php artisan test --filter=ModernTicketListingsTest`, a suíte completa em `nexodesk_testing` e `npm run build`. Conferir as três listas em desktop e mobile, temas claro/escuro/sistema, teclado, filtros e paginação, além das transições para criação, detalhes, edição e retorno à listagem. Para reverter, restaurar as entradas e componentes em conjunto e reconstruir os assets; não há migrações nem dependências novas.
 
 ## Fluxo moderno de tickets
 
-As rotas staff de criação, detalhes e edição mantêm os contratos REST existentes e usam `TicketForm` e `TicketShow`, em `App\Livewire\Modern\Tickets`. As views `tickets.create`, `tickets.show` e `tickets.edit` são entradas pequenas do layout moderno. Não há `wire:navigate`; a volta às listagens e qualquer transição para páginas legadas usa carregamento completo.
+As rotas staff de criação, detalhes e edição mantêm os contratos REST existentes e usam `TicketForm` e `TicketShow`, em `App\Livewire\Modern\Tickets`. As views `tickets.create`, `tickets.show` e `tickets.edit` são entradas pequenas do layout moderno. Não há `wire:navigate`; a navegação entre páginas usa carregamento completo.
 
 `SaveTicket`, `AssumeTicket`, `TransferTicket`, `FinalizeTicket`, `FollowTicket` e `UpdateTimelinePreference` concentram as mutações compartilhadas entre Livewire e os controllers HTTP. Criação e atualização preservam a associação histórica entre categoria e setor, validam analistas ativos do setor escolhido e usam transação. Contato, empresa, setor, categoria e analista usam comboboxes pesquisáveis por teclado, preservando o preenchimento automático da empresa e os filtros dependentes de setor. Na criação, o uploader acumula até cinco anexos escolhidos em uma ou mais seleções, mostra cada arquivo e permite removê-lo antes do envio. Anexos de abertura são públicos; anexos de respostas públicas continuam no disco público; anexos de notas internas ficam no disco local privado. Falhas após armazenamento removem os arquivos já gravados.
 
@@ -354,11 +350,11 @@ A composição de mensagens fica em um card próprio, próxima ao legado: textar
 
 Assumir define o usuário atual como responsável e exige setor/categoria compatíveis. Transferir exige categoria disponível no setor de destino e aceita deixar o ticket sem analista. Finalizar exige categoria, relato final e tempo em horas/minutos; a sugestão continua baseada nas interações não internas e no SLA de atualização. Todas essas operações registram os eventos de sistema e auditoria já existentes. Editar permanece disponível visualmente para supervisores e administradores, e excluir somente para administradores.
 
-O componente reconsulta o usuário ativo e o ticket autorizado em todas as requisições Livewire. O identificador do ticket e a URL de retorno ficam bloqueados, e o registro é consultado novamente antes de cada mutação. `ModernTicketFlowTest` cobre entradas modernas, criação, edição histórica, mensagens, menções, anexos públicos/privados, seguidores, ações, identidade bloqueada e download seguro. Executar esse teste, a suíte completa em `nexodesk_testing`, `npm run build:modern` e o QA de desktop/mobile, temas e teclado antes da entrega.
+O componente reconsulta o usuário ativo e o ticket autorizado em todas as requisições Livewire. O identificador do ticket e a URL de retorno ficam bloqueados, e o registro é consultado novamente antes de cada mutação. `ModernTicketFlowTest` cobre entradas modernas, criação, edição histórica, mensagens, menções, anexos públicos/privados, seguidores, ações, identidade bloqueada e download seguro. Executar esse teste, a suíte completa em `nexodesk_testing`, `npm run build` e o QA de desktop/mobile, temas e teclado antes da entrega.
 
 ## Portal moderno de tickets do cliente
 
-As rotas existentes em `/tickets/cliente` agora usam o layout moderno e os componentes `ClientTicketIndex`, `ClientTicketCreate` e `ClientTicketShow`, em `App\Livewire\Modern\ClientTickets`. URLs, nomes de rota, middlewares e endpoints POST foram preservados. As mutações HTTP e Livewire compartilham `CreateClientTicket`, `ReplyToClientTicket` e `FinalizeClientTicket`; a finalização permanece apenas como contrato legado, sem ação visível no novo portal.
+As rotas existentes em `/tickets/cliente` usam o layout moderno e os componentes `ClientTicketIndex`, `ClientTicketCreate` e `ClientTicketShow`, em `App\Livewire\Modern\ClientTickets`. URLs, nomes de rota, middlewares e endpoints POST foram preservados. As mutações HTTP e Livewire compartilham `CreateClientTicket`, `ReplyToClientTicket` e `FinalizeClientTicket`; a finalização permanece disponível apenas pelo endpoint de compatibilidade, sem ação visível no portal.
 
 A listagem começa nos tickets do próprio contato, permite alternar para todos os tickets da mesma empresa e pesquisar por ID ou assunto. Contatos sem empresa continuam limitados aos próprios tickets. A autorização reconsulta o usuário ativo com perfil cliente em cada requisição e restringe detalhes e mutações à empresa autenticada; o identificador do ticket e a URL de retorno são bloqueados no estado Livewire.
 
@@ -366,11 +362,11 @@ Na criação, contato e empresa são derivados da sessão e exibidos como dados 
 
 Os detalhes mostram horas gastas e relato final somente quando o ticket está fechado. O histórico expõe apenas mensagens públicas, em ordem da mais recente para a mais antiga, começa com três itens e carrega os anteriores em grupos de dez pelo botão alinhado à esquerda. Notas internas e eventos de sistema nunca são enviados para a view do cliente. A composição fica em card próprio, aceita texto ou anexos múltiplos e, ao responder, altera o status para “Pendente analista”. Tickets fechados não exibem o compositor.
 
-`ModernClientTicketFlowTest` cobre entradas modernas, escopo pessoal/empresa, pesquisa, criação e resposta com anexos acumulados, privacidade do histórico, carregamento progressivo, revalidação de acesso, identidade bloqueada e apresentação de tickets fechados. Executar também `ClienteTicketSearchTest`, a suíte completa em `nexodesk_testing`, `npm run build:modern` e o QA visual em desktop/mobile e temas claro/escuro. Não há migrações nem dependências novas; a reversão consiste em reverter a entrega e recompilar os assets modernos.
+`ModernClientTicketFlowTest` cobre entradas modernas, escopo pessoal/empresa, pesquisa, criação e resposta com anexos acumulados, privacidade do histórico, carregamento progressivo, revalidação de acesso, identidade bloqueada e apresentação de tickets fechados. Executar também `ClienteTicketSearchTest`, a suíte completa em `nexodesk_testing`, `npm run build` e o QA visual em desktop/mobile e temas claro/escuro. Não há migrações nem dependências novas; a reversão consiste em reverter a entrega e recompilar os assets modernos.
 
 ## Visão Geral moderna da staff
 
-Para analistas, supervisores e administradores, `/home` monta `App\Livewire\Modern\Overview\StaffOverview` no layout moderno. A URL, o nome `home`, os middlewares e o endpoint `/tickets/atencao` foram preservados; o controller escolhe a entrada correspondente ao perfil sem transportar assets entre AdminLTE/Mix e Vite/Livewire.
+Para analistas, supervisores e administradores, `/home` monta `App\Livewire\Modern\Overview\StaffOverview` no layout moderno. A URL, o nome `home`, os middlewares e o endpoint `/tickets/atencao` foram preservados; o controller escolhe a entrada correspondente ao perfil sem transportar assets antigos. Clientes recebem sua entrada moderna própria e usuários sem um perfil reconhecido recebem HTTP 403. O antigo `HomeController`, a view genérica `home.blade.php` e suas consultas auxiliares foram removidos, portanto não existe mais fallback para o painel legado.
 
 Os quatro indicadores mantêm as regras anteriores: tickets abertos atribuídos ao usuário, tickets abertos em seu setor, tickets não assumidos no setor e tickets atribuídos que ultrapassaram o SLA de atualização. Os dois últimos podem ser expandidos para acessar diretamente os IDs envolvidos. Analistas recebem somente os indicadores; supervisores e administradores também recebem o quadro por status. Consultas do quadro nem sequer são executadas para analistas.
 
@@ -386,17 +382,17 @@ Clientes também usam `/home` com uma entrada própria, `home-client`, e o compo
 
 O escopo pessoal usa `cliente_id`, igual à listagem moderna, inclusive para tickets abertos pela equipe em nome do contato. Os demais indicadores são limitados à empresa autenticada; clientes sem empresa veem somente seus tickets pessoais. O componente revalida papel e status em toda requisição Livewire. A navegação do portal exibe “Visão geral” acima da categoria Tickets e a ação principal abre um novo ticket preservando o retorno para `/home`.
 
-`ModernClientOverviewTest` cobre entrada e assets modernos, ordem da navegação, métricas pessoais e corporativas, isolamento entre empresas, clientes sem empresa e perda de autorização. Executar também `ModernStaffOverviewTest`, a suíte completa no banco `nexodesk_testing` e `npm run build:modern` antes da entrega.
+`ModernClientOverviewTest` cobre entrada e assets modernos, ordem da navegação, métricas pessoais e corporativas, isolamento entre empresas, clientes sem empresa e perda de autorização. Executar também `ModernStaffOverviewTest`, a suíte completa no banco `nexodesk_testing` e `npm run build` antes da entrega.
 
 ## Central moderna de notificações
 
 O layout moderno compartilhado agora apresenta um sino ao lado do perfil na sidebar desktop e no canto direito do cabeçalho móvel. O contador destaca notificações não lidas e é atualizado a cada minuto; quando a contagem aumenta, um aviso breve aparece sem interromper o trabalho. O painel lateral mostra as 20 notificações mais recentes, permite abrir o ticket relacionado e marcar todas como lidas.
 
-A rota existente `/notificacoes` preserva o envelope JSON quando a requisição pede JSON, mantendo a integração do layout legado. Em navegação comum, ela abre a página moderna completa, paginada em 15 itens, com filtro de todas ou somente não lidas e ações individuais e em lote. Nenhuma migração ou dependência adicional foi necessária.
+A rota existente `/notificacoes` preserva o envelope JSON quando a requisição pede JSON, mantendo o contrato para consumidores programáticos. Em navegação comum, ela abre a página moderna completa, paginada em 15 itens, com filtro de todas ou somente não lidas e ações individuais e em lote. Nenhuma migração ou dependência adicional foi necessária.
 
 As URLs persistidas dentro da notificação não são usadas diretamente. Ao abrir um item, o destino é reconstruído a partir do ticket e do perfil autenticado, usando a rota staff ou cliente correspondente. Leituras individuais são sempre limitadas às notificações do próprio usuário; conta ativa e autorização são revalidadas em cada requisição Livewire.
 
-Executar `php artisan test --filter=ModernNotificationCenterTest`, a suíte completa e `npm run build:modern`. A cobertura verifica layouts staff/cliente, compatibilidade JSON, limite do painel, paginação, filtro, ações de leitura, isolamento entre contas, destino seguro e perda de autorização.
+Executar `php artisan test --filter=ModernNotificationCenterTest`, a suíte completa e `npm run build`. A cobertura verifica layouts staff/cliente, compatibilidade JSON, limite do painel, paginação, filtro, ações de leitura, isolamento entre contas, destino seguro e perda de autorização.
 
 ## Administração moderna
 
@@ -406,4 +402,42 @@ A navegação moderna é centralizada em dois componentes independentes. `modern
 
 Usuários logados lista perfil, IP, navegador e última atividade, ordenando pelas sessões mais recentes, e solicita confirmação antes de encerrar uma sessão. Caixas de e-mail mantém o CRUD HTTP existente em formulários e modais modernos, incluindo setor padrão e estado ativo. Auditoria preserva a paginação e apresenta valores anteriores e novos em modal. Backups continua expondo apenas o nome seguro do arquivo e habilita download somente para registros bem-sucedidos.
 
-As URLs, nomes de rota, middlewares administrativos e regras de download foram preservados. Não há migrações nem dependências novas. Executar `php artisan test --filter=ModernAdministrationTest`, `php artisan test --filter=BackupSecurityTest`, a suíte completa e `npm run build:modern`.
+As URLs, nomes de rota, middlewares administrativos e regras de download foram preservados. Não há migrações nem dependências novas. Executar `php artisan test --filter=ModernAdministrationTest`, `php artisan test --filter=BackupSecurityTest`, a suíte completa e `npm run build`.
+
+## Páginas de erro modernas
+
+As respostas HTML 401, 403, 404, 419, 429, 500 e 503 usam um layout público próprio do Nexo Desk, com favicon, tema claro/escuro, tipografia e ações consistentes com a interface moderna. Fallbacks `4xx` e `5xx` cobrem os demais códigos sem retornar ao template genérico do framework. As ações levam ao login, à visão geral ou permitem tentar novamente conforme o erro. No 403, uma conta autenticada sem perfil suportado pode encerrar a sessão sem entrar em um ciclo entre login e visão geral. A página 419 mantém o código HTTP, explica que a sessão expirou e oferece a entrada no sistema sem redirecionamento automático.
+
+O `Handler` não intercepta mais esses códigos. O tratamento padrão do Laravel seleciona as views e preserva a negociação de conteúdo, portanto requisições que esperam JSON continuam recebendo o envelope JSON correspondente em vez de HTML. `ModernErrorPagesTest` cobre os status específicos, os fallbacks, ausência de AdminLTE e scripts de redirecionamento, ações de recuperação e negociação JSON. Não há migrações nem dependências novas; executar o teste focado, a suíte completa, `php artisan view:cache` e `npm run build`.
+
+## Remoção de arquivos legados órfãos
+
+Foram removidos o controller e as três views da antiga administração web de grupos, sem alterar o modelo, as associações históricas ou o endpoint de consulta da API v2. O instalador web antigo também foi excluído: ele não possuía rotas registradas, e a criação inicial segura de administradores permanece disponível pelo comando de console dedicado.
+
+Também foram excluídos oito componentes Blade baseados em Bootstrap que não tinham consumidores (`action-menu`, `attachment-uploader`, `empty-state`, `filter-bar`, `form-actions`, `page-header`, `sla-indicator` e `status-badge`) e os layouts sem uso `layouts.app` e `layouts.notification-center`. Os templates inativos de cadastro e verificação foram retirados posteriormente junto ao Laravel UI. Os overrides do AdminLTE foram removidos na etapa seguinte.
+
+`LegacyOrphansRemovedTest` impede a reintrodução desses arquivos e das rotas do instalador ou do CRUD web de grupos. A verificação inclui ainda cache de views, testes de autenticação e componentes modernos, suíte completa e build Vite; não há migrações ou dependências alteradas nesta etapa.
+
+## Remoção do AdminLTE
+
+O pacote Composer `jeroennoten/laravel-adminlte` e sua dependência exclusiva `almasaeed2010/adminlte` foram removidos. Também saíram `config/adminlte.php`, os overrides e traduções publicados, os assets em `public/vendor` e os inicializadores de tema que existiam apenas para o layout antigo. A configuração global `Paginator::useBootstrap()` foi retirada; as listagens modernas usam o paginador do Flux.
+
+Os testes que validavam o sidebar e o tema do AdminLTE foram substituídos por `AdminLteRemovedTest`, que verifica a ausência do pacote, configuração, views, traduções, assets e referências Blade. Os testes funcionais continuam verificando que nenhuma resposta moderna transporta AdminLTE, jQuery ou Bootstrap.
+
+## Remoção do Laravel Mix
+
+O Vite passou a ser o único pipeline de frontend. Foram excluídos `webpack.mix.js`, os fontes antigos em `resources/js/app.js`, `resources/js/bootstrap.js` e `resources/sass`, os bundles em `public/js` e `public/css` e o manifesto `public/mix-manifest.json`.
+
+As dependências npm exclusivas do pipeline anterior — Laravel Mix, Bootstrap, Popper, Axios, Lodash, Sass, loaders e `concurrently` — também foram retiradas. O `package.json` expõe somente `npm run dev` para o servidor com HMR e `npm run build` para produção. `LaravelMixRemovedTest` protege essa configuração e impede a reintrodução dos arquivos e pacotes removidos.
+
+## Remoção do Laravel UI
+
+O pacote `laravel/ui` foi removido após a substituição de `Auth::routes()` por rotas explícitas. Os controllers de login, logout, recuperação, redefinição e confirmação de senha agora usam diretamente as Actions da aplicação e recursos nativos do Laravel 12, preservando URLs, nomes de rota, middlewares e respostas HTML/JSON.
+
+O limite de cinco tentativas de login por minuto continua compartilhado entre HTTP e Livewire por e-mail/IP, agora implementado diretamente em `App\Actions\Auth\Login` com o `RateLimiter` do framework. Os controllers e templates inativos de cadastro público e verificação de e-mail foram excluídos. `LaravelUiRemovedTest` protege a ausência do pacote, do macro de rotas, dos traits antigos e desses artefatos desativados; `ModernAuthenticationTest` mantém a cobertura funcional completa.
+
+## Auditoria final da migração
+
+O método `MensagemController::index`, sem rota e dependente de uma view inexistente, foi removido. A documentação operacional não orienta mais transições para telas antigas, e `LegacyAssetsRemovedTest` faz uma verificação transversal das rotas, views, referências literais dos controllers, dependências, fontes e assets públicos.
+
+A API original em `/api`, os endpoints de compatibilidade ainda documentados e os modelos ou campos históricos permanecem deliberadamente fora da remoção visual. Excluí-los alteraria contratos externos ou dados persistidos e exige uma decisão de versão própria. A nomenclatura interna `Modern` também permanece por organização arquitetural e não carrega dependências da interface retirada.

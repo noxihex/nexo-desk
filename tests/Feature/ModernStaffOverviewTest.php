@@ -68,6 +68,16 @@ class ModernStaffOverviewTest extends TestCase
             ->assertDontSee('adminlte', false);
     }
 
+    public function test_home_rejects_users_without_a_supported_role_and_has_no_legacy_fallback(): void
+    {
+        $user = User::factory()->create(['status' => true]);
+
+        $this->actingAs($user)->get(route('home'))->assertForbidden();
+
+        $this->assertFileDoesNotExist(app_path('Http/Controllers/HomeController.php'));
+        $this->assertFileDoesNotExist(resource_path('views/home.blade.php'));
+    }
+
     public function test_staff_overview_link_is_the_first_navigation_option_across_modern_pages(): void
     {
         $staff = $this->user('administrador');

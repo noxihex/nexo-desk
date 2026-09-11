@@ -230,7 +230,7 @@ class ModernStackViewTest extends TestCase
         }
     }
 
-    public function test_modern_sources_and_legacy_templates_remain_isolated(): void
+    public function test_modern_sources_are_the_only_registered_interface_stack(): void
     {
         $css = File::get(resource_path('css/modern.css'));
         $javascript = File::get(resource_path('js/modern.js'));
@@ -248,18 +248,7 @@ class ModernStackViewTest extends TestCase
         $this->assertStringNotContainsString('flux:sidebar', $layout);
 
         foreach (File::allFiles(resource_path('views')) as $view) {
-            $contents = $view->getContents();
-
-            if (! str_contains($contents, "@extends('adminlte::")
-                && ! str_contains($contents, '@extends("adminlte::')) {
-                continue;
-            }
-
-            $this->assertStringNotContainsString('@vite', $contents, $view->getPathname());
-            $this->assertStringNotContainsString('@livewireStyles', $contents, $view->getPathname());
-            $this->assertStringNotContainsString('@livewireScripts', $contents, $view->getPathname());
-            $this->assertStringNotContainsString('@fluxAppearance', $contents, $view->getPathname());
-            $this->assertStringNotContainsString('@fluxScripts', $contents, $view->getPathname());
+            $this->assertStringNotContainsString('adminlte::', strtolower($view->getContents()), $view->getPathname());
         }
     }
 }

@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Auth;
 
 use App\Actions\Auth\SendPasswordResetLink;
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\SendsPasswordResetEmails;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 
 class ForgotPasswordController extends Controller
 {
-    use SendsPasswordResetEmails;
+    public function showLinkRequestForm()
+    {
+        return view('auth.passwords.email');
+    }
 
     public function sendResetLinkEmail(Request $request)
     {
@@ -21,8 +25,17 @@ class ForgotPasswordController extends Controller
                 ->with('error', SendPasswordResetLink::DISABLED_MESSAGE);
         }
 
-        return $status === Password::RESET_LINK_SENT
-            ? $this->sendResetLinkResponse($request, $status)
-            : $this->sendResetLinkFailedResponse($request, $status);
+        if ($status === Password::RESET_LINK_SENT) {
+            return $request->wantsJson()
+                ? new JsonResponse(['message' => trans($status)])
+                : back()->with('status', trans($status));
+        }
+
+        if ($request->wantsJson()) {
+            throw ValidationException::withMessages(['email' => [trans($status)]]);
+        }
+
+        return back()->withInput($request->only('email'))
+            ->withErrors(['email' => trans($status)]);
     }
 }

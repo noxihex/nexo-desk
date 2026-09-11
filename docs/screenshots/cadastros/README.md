@@ -15,4 +15,4 @@ Capturas com build Vite de produção e registros fictícios exclusivos de `nexo
 
 Conferidos: paginação de categorias; busca sincronizada com a URL e retorno à primeira página; criação e edição; atualização dos setores selecionados; exclusão de um setor fictício com a busca preservada; mensagem de bloqueio por caixa de e-mail; foco inicial em Cancelar, Escape e retorno ao botão de origem; sidebar mobile e ausência de rolagem horizontal da página em 390 px.
 
-O link “Voltar ao sistema” foi conferido: `/home` carregou apenas os scripts legados de jQuery, Bootstrap, AdminLTE e Mix, sem Livewire ou assets Vite.
+O link “Voltar ao sistema” foi conferido: `/home` carregou a visão geral moderna com Livewire e assets Vite, sem jQuery, Bootstrap ou AdminLTE.

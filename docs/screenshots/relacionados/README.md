@@ -8,7 +8,7 @@ Capturas com dados fictícios no banco exclusivo `nexodesk_testing`, em navegado
 - [Usuários no mobile](usuarios-mobile.png): menu recolhido, filtros e tabela com rolagem horizontal dentro do card.
 - [Novo usuário no mobile](usuario-form-mobile.png): campos empilhados, labels e foco visível. O restante do formulário segue abaixo da captura.
 
-Exercitados no navegador: criar contato pela empresa e retornar ao mesmo cadastro com mensagem de sucesso; editar usuário mantendo senha e alterando a permissão entre setores; abrir/cancelar o modal por teclado; alternar temas; navegar para `/home` com carregamento completo. Em `/home`, foram conferidos os assets Mix, Bootstrap, AdminLTE e jQuery, sem assets modernos transportados da página anterior.
+Exercitados no navegador: criar contato pela empresa e retornar ao mesmo cadastro com mensagem de sucesso; editar usuário mantendo senha e alterando a permissão entre setores; abrir/cancelar o modal por teclado; alternar temas; navegar para `/home` com carregamento completo. Em `/home`, foram conferidos Livewire e os assets Vite, sem AdminLTE, Bootstrap ou jQuery.
 
 A suíte automatizada complementa a conferência visual com renderização das nove páginas e os casos de autorização, persistência, filtros e vínculos.
 

@@ -12,4 +12,4 @@ Conferência realizada no navegador local com dados temporários identificados e
 
 As capturas foram inspecionadas durante o QA e não foram persistidas no worktree.
 
-Validação automatizada: `ModernStaffOverviewTest` com cinco testes; suíte completa com 232 testes e 1876 asserções; `npm run build:modern` concluído com sucesso.
+Validação automatizada: `ModernStaffOverviewTest` com cinco testes; suíte completa com 232 testes e 1876 asserções; `npm run build` concluído com sucesso.

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Support\AttachmentRules;
 use App\Support\TicketReturnUrl;
-
 use App\Models\Mensagem;
 use App\Models\Ticket;
 use App\Services\TicketMessageService;
@@ -41,21 +40,5 @@ class MensagemController extends Controller
             'ticket' => $ticket->id,
             'return_to' => TicketReturnUrl::resolve($request),
         ])->with('success', $type === Mensagem::TIPO_INTERNA ? 'Nota interna adicionada com sucesso!' : 'Mensagem enviada com sucesso!');
-    }
-
-
-
-    /**
-     * Exibe mensagens de um ticket específico.
-     */
-    public function index($ticketId)
-    {
-        // Verifica se o ticket existe
-        $ticket = Ticket::findOrFail($ticketId);
-
-        // Recupera as mensagens do ticket
-        $mensagens = Mensagem::where('ticket_id', $ticketId)->with('user')->get();
-
-        return view('mensagens.index', compact('mensagens', 'ticket'));
     }
 }

@@ -26,6 +26,7 @@
 @source '../views/tickets/show.blade.php';
 @source '../views/tickets/cliente/**/*.blade.php';
 @source '../views/auth/**/*.blade.php';
+@source '../views/errors/**/*.blade.php';
 @source '../views/administracao/**/*.blade.php';
 @source '../views/cadastros/categorias/**/*.blade.php';
 @source '../views/cadastros/setores/**/*.blade.php';
@@ -51,6 +52,12 @@
 
 [x-cloak] {
     display: none !important;
+}
+
+@layer components {
+    .error-action {
+        @apply inline-flex min-h-10 items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-xs transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 dark:bg-blue-500 dark:hover:bg-blue-400;
+    }
 }
 
 @media print {

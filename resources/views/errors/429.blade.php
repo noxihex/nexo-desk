@@ -1,8 +1,8 @@
 @extends('errors::layout')
 
-@section('title', 'Página não encontrada')
-@section('code', '404')
-@section('message', 'A página que você tentou acessar não existe ou não está mais disponível.')
+@section('title', 'Muitas tentativas')
+@section('code', '429')
+@section('message', 'Você realizou muitas solicitações em pouco tempo. Aguarde um momento e tente novamente.')
 
 @section('action')
     <a href="{{ auth()->check() ? route('home') : route('login') }}" class="error-action">

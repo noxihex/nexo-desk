@@ -5,21 +5,36 @@ namespace App\Http\Controllers\Auth;
 use App\Actions\Auth\ResetPassword;
 use App\Http\Controllers\Controller;
 use App\Providers\RouteServiceProvider;
-use Illuminate\Foundation\Auth\ResetsPasswords;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 
 class ResetPasswordController extends Controller
 {
-    use ResetsPasswords;
-
-    protected $redirectTo = RouteServiceProvider::HOME;
+    public function showResetForm(Request $request)
+    {
+        return view('auth.passwords.reset', [
+            'token' => $request->route('token'),
+            'email' => $request->input('email'),
+        ]);
+    }
 
     public function reset(Request $request)
     {
         $status = app(ResetPassword::class)->handle($request->only('email', 'password', 'password_confirmation', 'token'));
 
-        return $status === \Illuminate\Support\Facades\Password::PASSWORD_RESET
-            ? $this->sendResetResponse($request, $status)
-            : $this->sendResetFailedResponse($request, $status);
+        if ($status === Password::PASSWORD_RESET) {
+            return $request->wantsJson()
+                ? new JsonResponse(['message' => trans($status)])
+                : redirect(RouteServiceProvider::HOME)->with('status', trans($status));
+        }
+
+        if ($request->wantsJson()) {
+            throw ValidationException::withMessages(['email' => [trans($status)]]);
+        }
+
+        return back()->withInput($request->only('email'))
+            ->withErrors(['email' => trans($status)]);
     }
 }

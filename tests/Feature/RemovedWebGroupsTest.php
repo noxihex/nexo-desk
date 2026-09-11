@@ -15,7 +15,6 @@ class RemovedWebGroupsTest extends TestCase
             ->values();
 
         $this->assertFalse($routes->contains(fn ($uri) => str_starts_with($uri, 'cadastros/grupos')));
-        $this->assertStringNotContainsString("'text' => 'Grupos'", file_get_contents(config_path('adminlte.php')));
     }
 
     public function test_web_forms_and_views_do_not_expose_group_fields(): void
@@ -28,7 +27,6 @@ class RemovedWebGroupsTest extends TestCase
             'tickets/edit.blade.php',
             'tickets/index.blade.php',
             'tickets/show.blade.php',
-            'home.blade.php',
         ];
 
         foreach ($views as $view) {
